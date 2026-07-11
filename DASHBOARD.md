@@ -4,7 +4,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 
 ## Money
 
-- Known recurring spend: **$760.00/mo** — **INCOMPLETE: 13 subscriptions have no cost on record**
+- Known recurring spend: **$813.99/mo** — **INCOMPLETE: 13 subscriptions have no cost on record**
 
 ### Subscriptions
 
@@ -54,12 +54,12 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 - ⚠ cost unknown: Namecheap
 - ⚠ owner decision pending: Cascadeur (refund-requested)
 - ⚠ cost unknown: Apple subs — expiring (no action needed)
-- ⚠ subscriptions: unparseable cost for Meshy: '5.99+'
-- ⚠ subscriptions: unparseable cost for Google Cloud: '~12'
+- ⚠ approximate cost counted: Meshy '5.99+'
+- ⚠ approximate cost counted: Google Cloud '~12'
 - ⚠ cost unknown: OpenAI API
 - ⚠ cost unknown: Linear
 - ⚠ owner decision pending: Rocket Money (active-HIDDEN)
-- ⚠ subscriptions: unparseable cost for 3DAIStudio (LemonSqueezy): '~36'
+- ⚠ approximate cost counted: 3DAIStudio (LemonSqueezy) '~36'
 - ⚠ cost unknown: KlingAI
 - ⚠ cost unknown: Hyper3D (Deemos)
 - ⚠ cost unknown: Substack
@@ -100,6 +100,8 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 
 | repo | latest_audit | latest_drift |
 |---|---|---|
+| 3rdrider | audit-2026-07-10.md | drift-2026-07-11.md |
+| MedSim-Game | audit-2026-07-11.md | never |
 | strandworks-ops | never | never |
 
 ## Models & compute

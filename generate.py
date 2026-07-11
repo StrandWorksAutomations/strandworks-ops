@@ -50,8 +50,13 @@ def main():
         cost = (s.get("cost_monthly_usd") or "").strip()
         status = (s.get("status") or "").strip()
         if cost:
+            # accept approximations like "~12", "5.99+", "$36" — count the number,
+            # keep a flag so approximate figures stay visible
+            cleaned = cost.strip().lstrip("~$").rstrip("+")
             try:
-                known_cost += float(cost)
+                known_cost += float(cleaned)
+                if cleaned != cost:
+                    flags.append(f"approximate cost counted: {s['service']} '{cost}'")
             except ValueError:
                 flags.append(f"subscriptions: unparseable cost for {s['service']}: '{cost}'")
         elif status not in ("owned", "canceled"):
