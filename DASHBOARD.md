@@ -92,7 +92,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 | RunPod | 3 stopped pods (command-station CPU / medsim-blender-migration 4090 x2) + 2 network volumes (medsim-blender 120GB / command-station 150GB) | MedSim-Game + command-station | episodic | pods stopped; volumes bill $18.90/mo against prepaid balance; also candidate for SnapML detector training + big-LLM batch |
 | GitHub | StrandWorksAutomations org repos | all | infrastructure | 3rdrider/haptic-mirror/liaison-dashboard/MedSim-Game/ai-governance-kit/strandworks-portfolio/strandworks-ops |
 | unknown-host | MedSim waitlist-landing app | MedSim-Game | unknown | found .env.example in repo — where is it deployed? |
-| Namecheap | 34 domains: strandautomationworks .com/.me/.net/.org | strandworks .me/.net/.org/.to | strandworksai .com/.us | strandworksglobal .com/.me/.net/.org | peptiq .me/.net/.org | whatarepeptides .me/.net/.org | peptide-planet .com/.net | peptidelean.net | nano-banana .fit/.it.com/.to | banananano .it.com/.org | emberandvellum.com | thekineticmedic.com | tenetrix.org | trendmechanic.com | orientation-tracker.com | simcenter-development.com | mixed (brand + Ember&Vellum + kinetic-medic + tenetrix + speculative) | registrar | all ACTIVE w/ privacy ON (except strandworksai.us no privacy); expirations staggered Aug 2026 – Jan 2028 |
+| Namecheap | 34 domains: strandautomationworks .com/.me/.net/.org / strandworks .me/.net/.org/.to / strandworksai .com/.us / strandworksglobal .com/.me/.net/.org / peptiq .me/.net/.org / whatarepeptides .me/.net/.org / peptide-planet .com/.net / peptidelean.net / nano-banana .fit/.it.com/.to / banananano .it.com/.org / emberandvellum.com / thekineticmedic.com / tenetrix.org / trendmechanic.com / orientation-tracker.com / simcenter-development.com | mixed (brand + Ember&Vellum + kinetic-medic + tenetrix + speculative) | registrar | all ACTIVE w/ privacy ON (except strandworksai.us no privacy); expirations staggered Aug 2026 – Jan 2028 |
 | DigitalOcean | droplet claude-ops (2GB/50GB NYC3, 165.227.115.42, scouts 24/7 + Drive→R2 mirror) + App Platform app strand-automation-works (project Carousel, NYC1, healthy) + 1 reserved IP | ops + company site | production | app deployed 4 months ago — check if superseded by Vercel www.strandautomationworks.com |
 | Schwab checking ...124 (payment hub) | nearly all service billing runs through Visa debit ...8774 or ACH on this account | all | banking | bank sweep 2026-07-11 covered Feb 19 - Jul 11 (2 txns Feb 1-18 unreachable behind Schwab 200-row render cap); RunPod prepaid top-ups $150 on Jun 4 AND Jun 9 |
 
@@ -107,7 +107,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 | name | kind | where | cost_model | notes |
 |---|---|---|---|---|
 | Claude (Max) | frontier LLM | cloud | subscription | orchestrator + dev sessions; primary |
-| Gemini (Ultra) | frontier LLM | cloud | subscription | media-gen / large-context lane |
+| Gemini (AI Plus) | frontier LLM | cloud | subscription | CORRECTED 2026-07-11: no Ultra sub exists — Google AI Plus $4.99/mo is the only Google AI plan |
 | Codex | frontier LLM | cloud | subscription | cancel-candidate per owner assessment |
 | Haiku 4.5 | frontier LLM (API) | via Supabase Edge Function | usage | powers sim patient dialogue — the quiet biller |
 | RunPod 4090 | GPU host | cloud (paused) | usage | can run 30-70B local models episodically |
