@@ -1,0 +1,7 @@
+system,account,machines_with_access,key_location,notes
+GitHub,StrandWorksAutomations,VAIO + Mac JB-1272,~/.ssh/github_ed25519 on each,VAIO key added 2026-05-12; Mac key added 2026-07-11
+Vercel,,Mac browser,,CLI not installed on VAIO
+Supabase,,Mac browser,,same
+DigitalOcean,,Mac browser,,same
+RunPod,,Mac browser,,same
+gh CLI,StrandWorksAutomations,VAIO (token DEAD since May),~/.config/gh,repo creation done via web instead

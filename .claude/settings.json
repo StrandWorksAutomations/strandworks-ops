@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./_quarantine/files/**)",
+      "Edit(./_quarantine/files/**)",
+      "Write(./_quarantine/files/**)",
+      "Edit(./VISION.md)",
+      "Write(./VISION.md)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f HALTED ] && echo \"GOVERNANCE: repo is HALTED ($(head -c 200 HALTED)). All rituals blocked until the owner clears it.\"; d=$(date +%F); [ -f \"_governance/reports/drift-$d.md\" ] || echo 'GOVERNANCE: no drift report today — run /drift-check'; find _governance/reports -name 'audit-*.md' -mtime -7 2>/dev/null | grep -q . || echo 'GOVERNANCE: last audit >7 days old — run /audit'"
+          }
+        ]
+      }
+    ]
+  }
+}

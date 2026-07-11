@@ -1,0 +1,5 @@
+asset,type,location,size,hash,project,canonical,notes
+ml-models collection,model checkpoints,SSD,~794MB per old notes,,3rdrider/MedSim,no,partially in Google Drive — needs manifest sweep
+datasets collection,training data,SSD,~1GB per old notes,,3rdrider/MedSim,no,partially in Google Drive
+Lens-scenes project,Lens Studio scenes,old Mac PROJECTS folder,~156MB,,3rdrider,yes-only-copy,NOT in git (binaries); single copy risk
+MedSim game assets,engine/art assets,MedSim-Game repo,~700MB+,,MedSim-Game,yes,in git

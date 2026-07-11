@@ -1,0 +1,7 @@
+name,kind,where,cost_model,notes
+Claude (Max),frontier LLM,cloud,subscription,orchestrator + dev sessions; primary
+Gemini (Ultra),frontier LLM,cloud,subscription,media-gen / large-context lane
+Codex,frontier LLM,cloud,subscription,cancel-candidate per owner assessment
+Haiku 4.5,frontier LLM (API),via Supabase Edge Function,usage,powers sim patient dialogue — the quiet biller
+RunPod 4090,GPU host,cloud (paused),usage,can run 30-70B local models episodically
+worker VM (~$37/mo),proposed,not yet purchased,subscription,pending infrastructure charter — 7-14B local model + CI/grind

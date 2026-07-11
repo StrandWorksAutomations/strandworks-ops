@@ -1,0 +1,12 @@
+service,plan,cost_monthly_usd,billing_cadence,renewal_date,payment_last4,status,notes
+RunPod,RTX 4090 pod,,usage-based,,,paused,confirm storage charges while paused
+Supabase,,,monthly,,,active,UNEXAMINED $67 bill — get line items; hypothesis: haptic-mirror sim Edge Function + AI usage since May
+Vercel,,,monthly,,,active,hosts haptic-mirror-sim.vercel.app
+Namecheap,,,annual,,,active,domains — enumerate which
+DigitalOcean,,,monthly,,,active,what droplets exist?
+ShadowVM,,,monthly,,,active,role unclear — candidate for worker-VM consolidation
+Cascadeur,annual,,annual,,,refund-requested,accidental 1-yr sub; refund email sent 2026-07-11
+Character Creator 5,,,one-time?,,,owned,license type + machine it lives on
+Claude,Max,,monthly,,,active,primary LLM
+Gemini,Ultra,,monthly,,,active,speed/media-gen/large context
+Codex,,,monthly,,,active,owner: cheap unremarkable — cancel-candidate?
