@@ -4,7 +4,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 
 ## Money
 
-- Known recurring spend: **$431.88/mo** — **INCOMPLETE: 1 subscriptions have no cost on record**
+- Known recurring spend: **$760.00/mo** — **INCOMPLETE: 12 subscriptions have no cost on record**
 
 ### Subscriptions
 
@@ -21,11 +21,52 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 | Claude | Max 20x | 212.00 | 2026-08-07 | active | Max 20x $212/mo w/ tax (was $106 Max 5x Jan-May, upgraded Jun). PLUS usage-credit top-ups $47.70 each (2x in Jul, 1x Apr) — Jul total $307.40. Credit balance -$0.01, auto-reload OFF. Primary LLM/orchestrator |
 | Google One / Gemini | Google AI Plus (400GB) | 4.99 | 2026-08-08 | active | CORRECTED 2026-07-11: register said Ultra but account shows Google AI Plus $4.99/mo (billed via Google Play, next 2026-08-08). No Ultra sub active on jonathanbouren@gmail.com — either downgraded or memory was stale. Only sub on Google Play |
 | ChatGPT (Codex) | Plus | 21.20 | 2026-08-04 | active | ChatGPT Plus $21.20/mo w/ tax (Jun + Jul paid), auto-renews 2026-08-04, billing email jonathanbouren@gmail.com. Owner already called it cheap/unremarkable — CANCEL-CANDIDATE (flag only) |
+| Apple iCloud+ | 2TB storage | 9.99 | 2026-07-15 | active | via Apple ID jonathanbouren@gmail.com; renews monthly on the 15th |
+| Watchful (Apple) | Watchful Pro annual | 3.33 | 2027-04-29 | active | $39.99/yr via Apple; = $3.33/mo equiv |
+| Apple subs — expiring (no action needed) | Grammarly annual / Grok SuperGrok / Nomorobo / Polycam Basic yearly / Quizlet Plus / Robokiller Pro | — | — | cancelled-expiring | all 6 already set to not renew (expire Aug 2026 – Mar 2027); inactive history incl YouTube Premium & ChatGPT-via-Apple & Suno & Pimsleur & AppleCare One & Saunders NCLEX |
+| ElevenLabs | — | 23.32 | 2026-08-08 | active-HIDDEN | voice AI; was $11.66 in Apr then upgraded; charges Apr 8 / May 8 / Jun 8 / Jul 8. Not in any register before bank sweep |
+| Suno | — | 31.80 | 2026-08-07 | active-HIDDEN | music gen, bills via ACH; Apr ($21.31+$10.60) / May 7 / Jun 8 / Jul 7. Old Apple-billed Suno sub expired Dec 2025 — this is a direct sub |
+| Meshy | base+usage | 5.99+ | — | active-HIDDEN | $5.99 base Feb 28 / Mar 31 / May 1 + top-ups $46.93 May 25 & $32+$96 Jun 15-16 & $60 Jun 25 — ~$100/mo real spend in June |
+| Runway | Unlimited | 80.56 | — | active-HIDDEN | $80.56 Feb 19 / May 7 + $25.44 May 25; not seen Jun-Jul — may have lapsed or annualized; owner verify |
+| Google Workspace (strandworks) | 2 subscriptions | 47.79 | 2026-08-01 | active-HIDDEN | TWO Workspace charges every month: $18.08 constant + variable $29.71-90.41 (Apr was $90.41). Why two? owner review |
+| Google Cloud | pay-as-you-go | ~12 | — | active-HIDDEN | small GCP: $0.01 Mar / $0.13 May / $12.60 Jun — growing |
+| OpenAI API | prepaid credits | — | — | active-HIDDEN | separate from ChatGPT Plus: $106 May 29 + $53 May 31 API credit buys |
+| Expo (EAS) | — | 19.00 | 2026-08-02 | active-HIDDEN | 650 Industries; Mar 2 / Apr 4 / May 2 / Jun 2 / Jul 2 — mobile builds (Toddler Cards / BadgeMedia?) |
+| Linear | — | — | — | active-HIDDEN | $127.20 on May 11 only — annual Basic or team monthly? owner check Linear billing page |
+| Rocket Money | Premium | 11.66 | — | active-HIDDEN | subscription-tracker service $11.66 Mar 2 (ACH) — redundant with this audit; cancel-candidate |
+| Shopify | — | 41.34 | — | active-HIDDEN | $1.06 Feb 22 (trial?) then $41.34 Mar 24; not seen since — verify store status/which store |
+| Anything World | — | 50.00 | 2026-07-30 | active-HIDDEN | $50 May 30 + Jun 30 — animation/3D AI service; recurring |
+| 3DAIStudio (LemonSqueezy) | — | ~36 | 2026-08-15 | active-HIDDEN | $30.74 May 15 + $41.34 Jun 15 |
+| KlingAI | — | — | — | review | $32.56 Feb 25 only — video gen; single charge in window |
+| Hyper3D (Deemos) | — | — | — | review | $30 May 15 only — Rodin 3D gen (used by Blender MCP) |
+| Substack | — | — | — | review | $50 Jun 9 — single charge; likely an annual writer sub |
+| Patreon | — | 5.00 | — | active-HIDDEN | $5 Jun 17 |
+| Dark Reader | — | — | — | review | $9.99 Jun 18 |
+| Walmart+ | Member 2026 | 4.33 | 2027-06-22 | active | $51.94/yr Jun 22 |
+| Corporate Filings LLC | registered agent | — | — | active-HIDDEN | $9 Mar 11 — registered-agent service; ties to the untracked Strandworks LLC filing dates in calendar.csv |
+| Character Creator 5 (Reallusion) | perpetual license | — | — | owned-CONFIRMED | purchases 2026-07-07: $168.72 + $99.00 (CC5 + addon?); Reallusion account page blocked to agent — license/device details still owner-supplied |
+| PERSONAL recurring (out of biz scope) | grouped | — | — | fyi | T-Mobile $140-190 / Metro Fibernet $73-83 / USAA $240-363 / Freedom Mtg $1927.69 / Freedom Life $883-923 / Bridgecrest $349 / NFCU $356 / Prudential $42 / SallieMae $25 / Ascent $20 / Astera $46 / AmericanConsume $560 / Embrace pet $30-36 / WhiteGreerMaggard dental $145.46 / Hims&Hers $165 / Spotify $7.41 + Spotify USA $27.45 (TWO Spotify?) / Tello $7.36 / WasteConnection $68.50 / Revco $155.59 / CarePayment var / AppleCard+Amex+CreditOne var |
+| UNRECOGNIZED merchants | — | — | — | owner-review | EPOCH.COM *SwearlLLC $95.40 Jun 17; Google One multiple sizes ($5.29/$8.54/$10.59/$105.99/$156.58/$169.59 across May-Jul — more than the single $4.99 AI Plus sub explains; possible Ultra-era charges + storage on 2nd account); 7x APPLE.COM/BILL $20.89 same day Feb 19 |
 
 ## Flags (owner attention)
 
 - ⚠ cost unknown: Namecheap
 - ⚠ owner decision pending: Cascadeur (refund-requested)
+- ⚠ cost unknown: Apple subs — expiring (no action needed)
+- ⚠ subscriptions: unparseable cost for Meshy: '5.99+'
+- ⚠ subscriptions: unparseable cost for Google Cloud: '~12'
+- ⚠ cost unknown: OpenAI API
+- ⚠ cost unknown: Linear
+- ⚠ owner decision pending: Rocket Money (active-HIDDEN)
+- ⚠ subscriptions: unparseable cost for 3DAIStudio (LemonSqueezy): '~36'
+- ⚠ cost unknown: KlingAI
+- ⚠ cost unknown: Hyper3D (Deemos)
+- ⚠ cost unknown: Substack
+- ⚠ cost unknown: Dark Reader
+- ⚠ cost unknown: Corporate Filings LLC
+- ⚠ cost unknown: Character Creator 5 (Reallusion)
+- ⚠ cost unknown: PERSONAL recurring (out of biz scope)
+- ⚠ cost unknown: UNRECOGNIZED merchants
 - ⚠ SINGLE-COPY ASSET RISK: Lens-scenes project at old Mac PROJECTS folder
 
 ## Calendar — action needed
@@ -51,6 +92,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 | unknown-host | MedSim waitlist-landing app | MedSim-Game | unknown | found .env.example in repo — where is it deployed? |
 | Namecheap | 34 domains: strandautomationworks .com/.me/.net/.org | strandworks .me/.net/.org/.to | strandworksai .com/.us | strandworksglobal .com/.me/.net/.org | peptiq .me/.net/.org | whatarepeptides .me/.net/.org | peptide-planet .com/.net | peptidelean.net | nano-banana .fit/.it.com/.to | banananano .it.com/.org | emberandvellum.com | thekineticmedic.com | tenetrix.org | trendmechanic.com | orientation-tracker.com | simcenter-development.com | mixed (brand + Ember&Vellum + kinetic-medic + tenetrix + speculative) | registrar | all ACTIVE w/ privacy ON (except strandworksai.us no privacy); expirations staggered Aug 2026 – Jan 2028 |
 | DigitalOcean | droplet claude-ops (2GB/50GB NYC3, 165.227.115.42, scouts 24/7 + Drive→R2 mirror) + App Platform app strand-automation-works (project Carousel, NYC1, healthy) + 1 reserved IP | ops + company site | production | app deployed 4 months ago — check if superseded by Vercel www.strandautomationworks.com |
+| Schwab checking ...124 (payment hub) | nearly all service billing runs through Visa debit ...8774 or ACH on this account | all | banking | bank sweep 2026-07-11 covered Feb 19 - Jul 11 (2 txns Feb 1-18 unreachable behind Schwab 200-row render cap); RunPod prepaid top-ups $150 on Jun 4 AND Jun 9 |
 
 ## Governance scouts (per repo)
 
