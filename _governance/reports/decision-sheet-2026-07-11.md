@@ -30,7 +30,7 @@ word per repo rules. Reply in any format ("kill 1,2,5; keep 3; check 4 later").
 
 | # | Item | Question | How |
 |---|---|---|---|
-| 1 | Linear ($127.20 May 11) | Annual Basic or monthly team? Is ANYONE using it? (haptic residue says the workspace was never built — yet money moved) | Linear billing page, 1 min |
+| 1 | Linear ($127.20 May 11) | ANSWERED 2026-07-11: actively used — haptic-mirror's real tree (283 commits on GitHub) runs STR-### tickets + a Linear auto-sync CI workflow. Remaining question is only tier/cadence (annual Basic?) | Linear billing page, 1 min — likely KEEP |
 | 2 | DO droplet `claude-ops` + app `strand-automation-works` | What are these actually running? Something of yours is live there | DO dashboard → check each |
 | 3 | PayPal autopay list | Extension couldn't read it | PayPal → Settings → Payments → Automatic payments |
 | 4 | OpenAI API + Google Cloud (~$12) | Usage-based — what's calling them? Dead keys should be revoked | Billing dashboards |
