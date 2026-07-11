@@ -1,6 +1,6 @@
 service,plan,cost_monthly_usd,billing_cadence,renewal_date,payment_last4,status,notes
 RunPod,RTX 4090 pod,,usage-based,,,paused,confirm storage charges while paused
-Supabase,,,monthly,,,active,UNEXAMINED $67 bill — get line items; hypothesis: haptic-mirror sim Edge Function + AI usage since May
+Supabase,Pro,67.18,monthly,2026-08-11,8774,active,SOLVED 2026-07-11: $67.18 = $25 Pro + ~3605 Micro Compute hrs (5 always-on projects × ~720h) − $10 credit. NOT Edge Fn/AI (35.5k invocations; 2M free). Projected next cycle $68.68. Spend cap ON. FLAG: pausing unused projects cuts ~$10/mo each
 Vercel,,,monthly,,,active,hosts haptic-mirror-sim.vercel.app
 Namecheap,,,annual,,,active,domains — enumerate which
 DigitalOcean,,,monthly,,,active,what droplets exist?
