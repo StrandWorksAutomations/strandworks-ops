@@ -3,7 +3,7 @@ RunPod,prepaid credit,18.90,usage-based,,,paused-but-billing,CONFIRMED 2026-07-1
 Supabase,Pro,67.18,monthly,2026-08-11,8774,active,SOLVED 2026-07-11: $67.18 = $25 Pro + ~3605 Micro Compute hrs (5 always-on projects × ~720h) − $10 credit. NOT Edge Fn/AI (35.5k invocations; 2M free). Projected next cycle $68.68. Spend cap ON. FLAG: pausing unused projects cuts ~$10/mo each
 Vercel,Pro (team strandworks),20.00,monthly,2026-07-28,8774,active,Visa debit ****8774; usage $0.41 of $20 included credit (near zero); + prepaid $5 AI Gateway credit (auto-reload off). FLAG: Pro at $20/mo w/ hobby-scale usage — Hobby tier is free unless team features/domains needed
 Namecheap,34 domains,,annual,staggered — 10 renew 2026-08-29/30,,active,ENUMERATED 2026-07-11 (see services.csv); per-domain renewal prices not shown on list page — est $400-500/yr if all auto-renew. Auto-renew ON on all visible rows; account badge says 1 expiring/expired. FLAG: 9 peptide + 5 nano-banana + several brand-variant domains look speculative — owner review before the Aug 29-30 renewal cluster hits
-DigitalOcean,,,monthly,,,active,what droplets exist?
+DigitalOcean,pay-as-you-go,22,monthly,2026-08-01,8774,active,MTD Jul 1-11 = $7.87 (≈$22/mo): droplet claude-ops $4.29 + App Platform strand-automation-works $1.79 + Reserved IP $1.79. PayPal backup method (peptiq@proton.me). FLAG: Reserved IP bills only while UNATTACHED — likely orphaned ~$5/mo; FLAG: DO app strand-automation-works may duplicate the Vercel site on www.strandautomationworks.com
 ShadowVM,,,monthly,,,active,role unclear — candidate for worker-VM consolidation
 Cascadeur,annual,,annual,,,refund-requested,accidental 1-yr sub; refund email sent 2026-07-11
 Character Creator 5,,,one-time?,,,owned,license type + machine it lives on
