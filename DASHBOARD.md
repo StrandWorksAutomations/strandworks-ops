@@ -4,7 +4,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 
 ## Money
 
-- Known recurring spend: **$760.00/mo** — **INCOMPLETE: 12 subscriptions have no cost on record**
+- Known recurring spend: **$760.00/mo** — **INCOMPLETE: 13 subscriptions have no cost on record**
 
 ### Subscriptions
 
@@ -47,6 +47,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 | Character Creator 5 (Reallusion) | perpetual license | — | — | owned-CONFIRMED | purchases 2026-07-07: $168.72 + $99.00 (CC5 + addon?); Reallusion account page blocked to agent — license/device details still owner-supplied |
 | PERSONAL recurring (out of biz scope) | grouped | — | — | fyi | T-Mobile $140-190 / Metro Fibernet $73-83 / USAA $240-363 / Freedom Mtg $1927.69 / Freedom Life $883-923 / Bridgecrest $349 / NFCU $356 / Prudential $42 / SallieMae $25 / Ascent $20 / Astera $46 / AmericanConsume $560 / Embrace pet $30-36 / WhiteGreerMaggard dental $145.46 / Hims&Hers $165 / Spotify $7.41 + Spotify USA $27.45 (TWO Spotify?) / Tello $7.36 / WasteConnection $68.50 / Revco $155.59 / CarePayment var / AppleCard+Amex+CreditOne var |
 | UNRECOGNIZED merchants | — | — | — | owner-review | EPOCH.COM *SwearlLLC $95.40 Jun 17; Google One multiple sizes ($5.29/$8.54/$10.59/$105.99/$156.58/$169.59 across May-Jul — more than the single $4.99 AI Plus sub explains; possible Ultra-era charges + storage on 2nd account); 7x APPLE.COM/BILL $20.89 same day Feb 19 |
+| PayPal autopay | — | — | — | UNSWEPT | browser extension is permission-blocked on paypal.com/myaccount (read+screenshot denied) — owner should eyeball Settings→Payments→Automatic payments; bank shows PayPal used as DO backup + PAYPAL INST XFER $16 Mar 30 + one-off PayPal merchants (Dauria LLC $77.43 / Jerrybaba $5) |
 
 ## Flags (owner attention)
 
@@ -67,6 +68,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 - ⚠ cost unknown: Character Creator 5 (Reallusion)
 - ⚠ cost unknown: PERSONAL recurring (out of biz scope)
 - ⚠ cost unknown: UNRECOGNIZED merchants
+- ⚠ cost unknown: PayPal autopay
 - ⚠ SINGLE-COPY ASSET RISK: Lens-scenes project at old Mac PROJECTS folder
 
 ## Calendar — action needed
