@@ -97,15 +97,12 @@ Generated 2026-07-12 by generate.py — edit registers/, never this file.
 | Namecheap | 34 domains: strandautomationworks .com/.me/.net/.org / strandworks .me/.net/.org/.to / strandworksai .com/.us / strandworksglobal .com/.me/.net/.org / peptiq .me/.net/.org / whatarepeptides .me/.net/.org / peptide-planet .com/.net / peptidelean.net / nano-banana .fit/.it.com/.to / banananano .it.com/.org / emberandvellum.com / thekineticmedic.com / tenetrix.org / trendmechanic.com / orientation-tracker.com / simcenter-development.com | mixed (brand + Ember&Vellum + kinetic-medic + tenetrix + speculative) | registrar | all ACTIVE w/ privacy ON (except strandworksai.us no privacy); expirations staggered Aug 2026 – Jan 2028 |
 | DigitalOcean | droplet claude-ops (2GB/50GB NYC3, 165.227.115.42, scouts 24/7 + Drive→R2 mirror) + App Platform app strand-automation-works (project Carousel, NYC1, healthy) + 1 reserved IP | ops + company site | production | app deployed 4 months ago — check if superseded by Vercel www.strandautomationworks.com |
 | Schwab checking ...124 (payment hub) | nearly all service billing runs through Visa debit ...8774 or ACH on this account | all | banking | bank sweep 2026-07-11 covered Feb 19 - Jul 11 (2 txns Feb 1-18 unreachable behind Schwab 200-row render cap); RunPod prepaid top-ups $150 on Jun 4 AND Jun 9 |
+| Vercel | strandworks-cockpit (dashboard.strandautomationworks.com) — owner-only ops cockpit | strandworks-ops | production | deployed 2026-07-12; passkey-gated; rulings commit direct to main via GitHub API |
 
 ## Governance scouts (per repo)
 
 | repo | latest_audit | latest_drift |
 |---|---|---|
-| 3rdrider | audit-2026-07-10.md | drift-2026-07-11.md |
-| MedSim-Game | audit-2026-07-11.md | never |
-| haptic-mirror | audit-2026-07-11.md | never |
-| liaison-dashboard | audit-2026-07-11.md | never |
 | strandworks-ops | never | never |
 
 ## Models & compute
@@ -138,3 +135,6 @@ Generated 2026-07-12 by generate.py — edit registers/, never this file.
 | DigitalOcean | — | Mac browser | — | same |
 | RunPod | — | Mac browser | — | same |
 | gh CLI | StrandWorksAutomations | VAIO (token DEAD since May) | ~/.config/gh | repo creation done via web instead |
+| GitHub fine-grained token (cockpit rulings) | StrandWorksAutomations | Vercel project strandworks-cockpit only | Vercel env GITHUB_TOKEN (production) | created 2026-07-12; scope: strandworks-ops repo only / Contents R+W; rotate via GitHub Developer settings |
+| Cockpit session secret | strandworks (Vercel team) | Vercel project strandworks-cockpit only | Vercel env SESSION_SECRET (production) | created 2026-07-12; signs owner session cookies; rotating it just logs the owner out |
+| Cockpit owner passkey | jonathanbouren (iCloud Keychain) | owner iPhone + synced Apple devices | Vercel env OWNER_PASSKEY (public key; secret half lives in iCloud Keychain) | enrolled 2026-07-12; recovery: clear env + set fresh SETUP_CODE + re-enroll per cockpit/README.md |

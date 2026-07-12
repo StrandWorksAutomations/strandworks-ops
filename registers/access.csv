@@ -5,3 +5,6 @@ Supabase,,Mac browser,,same
 DigitalOcean,,Mac browser,,same
 RunPod,,Mac browser,,same
 gh CLI,StrandWorksAutomations,VAIO (token DEAD since May),~/.config/gh,repo creation done via web instead
+GitHub fine-grained token (cockpit rulings),StrandWorksAutomations,Vercel project strandworks-cockpit only,Vercel env GITHUB_TOKEN (production),created 2026-07-12; scope: strandworks-ops repo only / Contents R+W; rotate via GitHub Developer settings
+Cockpit session secret,strandworks (Vercel team),Vercel project strandworks-cockpit only,Vercel env SESSION_SECRET (production),created 2026-07-12; signs owner session cookies; rotating it just logs the owner out
+Cockpit owner passkey,jonathanbouren (iCloud Keychain),owner iPhone + synced Apple devices,Vercel env OWNER_PASSKEY (public key; secret half lives in iCloud Keychain),enrolled 2026-07-12; recovery: clear env + set fresh SETUP_CODE + re-enroll per cockpit/README.md
