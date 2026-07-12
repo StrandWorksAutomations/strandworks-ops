@@ -3,7 +3,9 @@ id: 2026-07-12-push-medsim-game-governance
 filed: 2026-07-12
 filed-by: orchestrator (VAIO session)
 question: Push MedSim-Game's 7 local governance commits to GitHub?
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-12T15:32:27.264Z
+source: cockpit
 ---
 
 **Context:** `~/work/MedSim-Game` sits 7 commits ahead of origin/main:
