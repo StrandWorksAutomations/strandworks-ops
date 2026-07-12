@@ -3,7 +3,9 @@ id: 2026-07-12-spec-intake-haptic-mirror
 filed: 2026-07-12
 filed-by: orchestrator (VAIO session)
 question: APPROVE SPEC v1.0.0 for haptic-mirror (field mode), translated from the VISION blessed 2026-07-12?
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-12T15:32:36.892Z
+source: cockpit
 ---
 
 **Proposed SPEC v1.0.0 — workstreams** (full text written into the repo +
