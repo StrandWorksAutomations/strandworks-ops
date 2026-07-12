@@ -15,8 +15,13 @@ tailnet only**.
   WebSocket bridges the browser to a `tmux attach-session` running in a pty
   (node-pty). Closing the page detaches; the session keeps running.
 - **Binding guard (security floor).** On startup the broker resolves its bind
-  address via `tailscale ip -4`, falling back to a `tailscale0` interface
-  scan. It binds ONLY that tailnet address. If no tailnet interface exists it
+  address by cross-checking TWO signals: `tailscale ip -4` (invoked only via
+  an absolute-path allowlist — `/usr/bin/tailscale`, `/usr/sbin/tailscale` —
+  never PATH, which could be shimmed) and the OS interface table (a CGNAT
+  address on an interface strictly named `tailscale<N>`). It binds ONLY when
+  both signals agree on the same address; CLI-only, interface-only, or
+  disagreeing signals refuse to start (100.64.0.0/10 alone proves nothing —
+  it is also carrier CGNAT space). If no verified tailnet exists it
   **refuses to start**, unless `BROKER_DEV_LOCALHOST=1` explicitly downgrades
   to `127.0.0.1`. A `0.0.0.0` / `::` bind is rejected unconditionally, even
   via `BROKER_HOST`. Terminals are therefore unreachable at the network layer
@@ -32,7 +37,9 @@ tailnet only**.
 
 - Node.js >= 23.6 (runs TypeScript directly via type stripping; VAIO has 24.x)
 - tmux (3.x)
-- Tailscale up (`tailscale ip -4` returns an address)
+- Tailscale up, installed at `/usr/bin/tailscale` or `/usr/sbin/tailscale`
+  (the broker never resolves the binary via PATH), with its interface named
+  `tailscale<N>` (the Linux default, e.g. `tailscale0`)
 - Build essentials for the `node-pty` native module (`gcc`, `make`, Python)
 
 ## Run

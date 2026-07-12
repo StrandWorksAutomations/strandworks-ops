@@ -36,6 +36,12 @@
   #newbar { display: flex; gap: 8px; padding: 8px 12px 20px; }
   #newbar button { flex: 1; padding: 12px; }
   #empty { color: #7d8590; text-align: center; padding: 24px; }
+  #offline {
+    margin: 8px 12px 0; padding: 10px 14px; border-radius: 10px;
+    background: #3d1d1f; border: 1px solid #f85149; color: #ffb3ad;
+    font-size: 14px;
+  }
+  body.offline #list, body.offline #empty { opacity: 0.4; }
   /* Terminal overlay */
   #term-view {
     position: fixed; inset: 0; background: #0d1117; display: none;
@@ -57,6 +63,7 @@
   <h1>Session Broker</h1>
   <div class="sub" id="broker-info">tailnet-only &middot; sessions live in tmux</div>
 </header>
+<div id="offline" hidden role="alert">Broker unreachable &mdash; retrying&hellip;</div>
 <div id="list"></div>
 <div id="empty" hidden>No sessions. Start one below.</div>
 <div id="newbar">
@@ -80,6 +87,8 @@
   "use strict";
   var listEl = document.getElementById("list");
   var emptyEl = document.getElementById("empty");
+  var offlineEl = document.getElementById("offline");
+  var lastOkAt = null;
   var view = document.getElementById("term-view");
   var titleEl = document.getElementById("term-title");
   var host = document.getElementById("term-host");
@@ -92,8 +101,26 @@
     return Math.floor(s / 86400) + "d " + Math.floor((s % 86400) / 3600) + "h";
   }
 
+  function setOffline(offline) {
+    if (offline) {
+      offlineEl.textContent = "Broker unreachable — session list is stale" +
+        (lastOkAt ? " (last update " + lastOkAt.toLocaleTimeString() + ")" : "") +
+        ". Retrying…";
+      offlineEl.hidden = false;
+      document.body.classList.add("offline");
+    } else {
+      offlineEl.hidden = true;
+      document.body.classList.remove("offline");
+    }
+  }
+
   function refresh() {
-    fetch("/api/status").then(function (r) { return r.json(); }).then(function (data) {
+    fetch("/api/status").then(function (r) {
+      if (!r.ok) throw new Error("status " + r.status);
+      return r.json();
+    }).then(function (data) {
+      lastOkAt = new Date();
+      setOffline(false);
       listEl.innerHTML = "";
       var ss = data.sessions || [];
       emptyEl.hidden = ss.length > 0;
@@ -119,7 +146,11 @@
         card.appendChild(kill);
         listEl.appendChild(card);
       });
-    }).catch(function () { /* broker offline; keep last render */ });
+    }).catch(function () {
+      // Say so honestly: mark the view offline instead of silently keeping
+      // the last render (VISION: "says so honestly when one isn't" reachable).
+      setOffline(true);
+    });
   }
 
   function killSession(name) {

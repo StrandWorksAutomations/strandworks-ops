@@ -8,6 +8,7 @@ import {
 } from "../src/bind.ts";
 
 const TS_IP = "100.75.203.127";
+const OTHER_CGNAT = "100.99.1.2";
 
 function deps(overrides: Partial<BindDeps> = {}): BindDeps {
   return {
@@ -16,6 +17,18 @@ function deps(overrides: Partial<BindDeps> = {}): BindDeps {
     interfaces: () => ({}),
     ...overrides,
   };
+}
+
+/** Interfaces map with TS_IP on a strictly-named tailscale interface. */
+function tsIfaces(ip: string = TS_IP): BindDeps["interfaces"] {
+  return () => ({
+    lo: [{ address: "127.0.0.1", family: "IPv4" }],
+    eth0: [{ address: "192.168.1.20", family: "IPv4" }],
+    tailscale0: [
+      { address: "fd7a:115c::1", family: "IPv6" },
+      { address: ip, family: "IPv4" },
+    ],
+  });
 }
 
 describe("assertNeverPublic", () => {
@@ -31,31 +44,101 @@ describe("assertNeverPublic", () => {
   });
 });
 
-describe("resolveBindHost — tailnet detection", () => {
-  test("uses `tailscale ip -4` output when available", async () => {
-    const r = await resolveBindHost(deps({ tailscaleIp: async () => `${TS_IP}\n` }));
-    assert.deepEqual(r, { host: TS_IP, mode: "tailnet", source: "tailscale-cli" });
+describe("resolveBindHost — cross-checked tailnet detection", () => {
+  test("AGREE: CLI address confirmed by a tailscale0 interface is bound", async () => {
+    const r = await resolveBindHost(
+      deps({ tailscaleIp: async () => `${TS_IP}\n`, interfaces: tsIfaces() }),
+    );
+    assert.deepEqual(r, { host: TS_IP, mode: "tailnet", source: "tailscale-verified" });
   });
 
-  test("takes the first address when the CLI prints several", async () => {
-    const r = await resolveBindHost(deps({ tailscaleIp: async () => `${TS_IP}\n100.99.1.2\n` }));
+  test("AGREE: takes the first CLI address when several are printed, if confirmed", async () => {
+    const r = await resolveBindHost(
+      deps({ tailscaleIp: async () => `${TS_IP}\n${OTHER_CGNAT}\n`, interfaces: tsIfaces() }),
+    );
     assert.equal(r.host, TS_IP);
   });
 
-  test("falls back to a tailscale0 interface address when the CLI is missing", async () => {
+  test("CLI-only: refuses when no interface carries the CLI-reported address", async () => {
+    await assert.rejects(
+      () => resolveBindHost(deps({ tailscaleIp: async () => `${TS_IP}\n` })),
+      (err: unknown) => {
+        assert.ok(err instanceof BindRefusedError);
+        assert.match(err.message, /no local interface/);
+        return true;
+      },
+    );
+  });
+
+  test("iface-only: refuses a tailscale0 CGNAT address the CLI did not confirm", async () => {
+    await assert.rejects(
+      () => resolveBindHost(deps({ interfaces: tsIfaces() })),
+      (err: unknown) => {
+        assert.ok(err instanceof BindRefusedError);
+        assert.match(err.message, /CLI did not confirm/);
+        return true;
+      },
+    );
+  });
+
+  test("DISAGREE: refuses when CLI and interface report different addresses", async () => {
+    await assert.rejects(
+      () =>
+        resolveBindHost(
+          deps({ tailscaleIp: async () => `${OTHER_CGNAT}\n`, interfaces: tsIfaces(TS_IP) }),
+        ),
+      (err: unknown) => {
+        assert.ok(err instanceof BindRefusedError);
+        assert.match(err.message, /disagree/);
+        return true;
+      },
+    );
+  });
+
+  test("loose ts* interface names are NOT trusted (strict tailscale<N> only)", async () => {
+    await assert.rejects(
+      () =>
+        resolveBindHost(
+          deps({
+            tailscaleIp: async () => `${TS_IP}\n`,
+            interfaces: () => ({ ts0: [{ address: TS_IP, family: "IPv4" }] }),
+          }),
+        ),
+      BindRefusedError,
+    );
+    await assert.rejects(
+      () =>
+        resolveBindHost(
+          deps({
+            tailscaleIp: async () => `${TS_IP}\n`,
+            interfaces: () => ({ tsomething: [{ address: TS_IP, family: "IPv4" }] }),
+          }),
+        ),
+      BindRefusedError,
+    );
+  });
+
+  test("bare 'tailscale' (no digits) interface name is NOT trusted", async () => {
+    await assert.rejects(
+      () =>
+        resolveBindHost(
+          deps({
+            tailscaleIp: async () => `${TS_IP}\n`,
+            interfaces: () => ({ tailscale: [{ address: TS_IP, family: "IPv4" }] }),
+          }),
+        ),
+      BindRefusedError,
+    );
+  });
+
+  test("tailscale1 (higher index) is trusted when it confirms the CLI", async () => {
     const r = await resolveBindHost(
       deps({
-        interfaces: () => ({
-          lo: [{ address: "127.0.0.1", family: "IPv4" }],
-          eth0: [{ address: "192.168.1.20", family: "IPv4" }],
-          tailscale0: [
-            { address: "fd7a:115c::1", family: "IPv6" },
-            { address: TS_IP, family: "IPv4" },
-          ],
-        }),
+        tailscaleIp: async () => `${TS_IP}\n`,
+        interfaces: () => ({ tailscale1: [{ address: TS_IP, family: "IPv4" }] }),
       }),
     );
-    assert.deepEqual(r, { host: TS_IP, mode: "tailnet", source: "tailscale-iface" });
+    assert.deepEqual(r, { host: TS_IP, mode: "tailnet", source: "tailscale-verified" });
   });
 
   test("ignores non-CGNAT addresses even on a tailscale-named interface", async () => {
@@ -70,7 +153,7 @@ describe("resolveBindHost — tailnet detection", () => {
 
   test("ignores a CLI result that is not a tailnet CGNAT address", async () => {
     await assert.rejects(
-      () => resolveBindHost(deps({ tailscaleIp: async () => "0.0.0.0\n" })),
+      () => resolveBindHost(deps({ tailscaleIp: async () => "0.0.0.0\n", interfaces: tsIfaces() })),
       BindRefusedError,
     );
   });
@@ -107,12 +190,26 @@ describe("resolveBindHost — refusal and dev override", () => {
     );
   });
 
-  test("tailnet wins over the dev override when both are present", async () => {
+  test("verified tailnet wins over the dev override when both are present", async () => {
     const r = await resolveBindHost(
-      deps({ env: { BROKER_DEV_LOCALHOST: "1" }, tailscaleIp: async () => TS_IP }),
+      deps({
+        env: { BROKER_DEV_LOCALHOST: "1" },
+        tailscaleIp: async () => TS_IP,
+        interfaces: tsIfaces(),
+      }),
     );
     assert.equal(r.mode, "tailnet");
     assert.equal(r.host, TS_IP);
+  });
+
+  test("dev override still yields localhost when detection signals are partial", async () => {
+    // Binding 127.0.0.1 is safe regardless of what spoofable signals claim,
+    // and the explicit override must stay usable on machines where the
+    // tailscale interface has a different name (e.g. macOS utun*).
+    const r = await resolveBindHost(
+      deps({ env: { BROKER_DEV_LOCALHOST: "1" }, tailscaleIp: async () => `${TS_IP}\n` }),
+    );
+    assert.deepEqual(r, { host: "127.0.0.1", mode: "localhost", source: "dev-override" });
   });
 });
 
@@ -134,18 +231,29 @@ describe("resolveBindHost — BROKER_HOST pin", () => {
     );
   });
 
-  test("pin matching the detected tailnet address is accepted", async () => {
+  test("pin matching the VERIFIED tailnet address is accepted", async () => {
     const r = await resolveBindHost(
-      deps({ env: { BROKER_HOST: TS_IP }, tailscaleIp: async () => TS_IP }),
+      deps({ env: { BROKER_HOST: TS_IP }, tailscaleIp: async () => TS_IP, interfaces: tsIfaces() }),
     );
     assert.deepEqual(r, { host: TS_IP, mode: "tailnet", source: "env-pin" });
+  });
+
+  test("pin matching an UNVERIFIED CLI-only address is refused", async () => {
+    await assert.rejects(
+      () => resolveBindHost(deps({ env: { BROKER_HOST: TS_IP }, tailscaleIp: async () => TS_IP })),
+      BindRefusedError,
+    );
   });
 
   test("pin of some other LAN address is refused", async () => {
     await assert.rejects(
       () =>
         resolveBindHost(
-          deps({ env: { BROKER_HOST: "192.168.1.20" }, tailscaleIp: async () => TS_IP }),
+          deps({
+            env: { BROKER_HOST: "192.168.1.20" },
+            tailscaleIp: async () => TS_IP,
+            interfaces: tsIfaces(),
+          }),
         ),
       BindRefusedError,
     );
