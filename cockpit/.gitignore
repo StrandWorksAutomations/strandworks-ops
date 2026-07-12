@@ -8,3 +8,4 @@ next-env.d.ts
 .env*.local
 # Local-dev owner passkey credential (public key, but device-bound; prod uses env var)
 data/owner-passkey.json
+.vercel

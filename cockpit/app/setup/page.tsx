@@ -58,7 +58,12 @@ export default function SetupPage() {
         </div>
         {envValue ? (
           <div style={{ textAlign: "left" }}>
-            <p className="ok-text">Enrolled. Credential saved locally at {savedTo}.</p>
+            <p className="ok-text">
+              Enrolled.
+              {savedTo
+                ? ` Credential saved locally at ${savedTo}.`
+                : " This server cannot store it — finish by setting the env var below."}
+            </p>
             <p style={{ fontSize: 13 }}>
               For the Vercel deployment (owner step): set env var <b>OWNER_PASSKEY</b> to:
             </p>

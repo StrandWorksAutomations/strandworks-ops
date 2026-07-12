@@ -51,14 +51,18 @@ export async function POST(req: NextRequest) {
   };
   // Exclusive-create write: if a concurrent enrollment saved first, this
   // fails with EEXIST — the check-then-save race cannot double-enroll.
-  let savedTo: string;
+  // On serverless (Vercel) the filesystem is read-only: local persistence is
+  // impossible there by design — the owner finishes enrollment by setting
+  // OWNER_PASSKEY from the returned envValue, so EROFS is not an error.
+  let savedTo: string | null = null;
   try {
     savedTo = await saveCredentialLocally(stored);
   } catch (e) {
-    if ((e as NodeJS.ErrnoException)?.code === "EEXIST") {
+    const code = (e as NodeJS.ErrnoException)?.code;
+    if (code === "EEXIST") {
       return NextResponse.json({ error: "owner already enrolled" }, { status: 409 });
     }
-    throw e;
+    if (code !== "EROFS" && code !== "EACCES" && code !== "EPERM") throw e;
   }
 
   const res = NextResponse.json({
