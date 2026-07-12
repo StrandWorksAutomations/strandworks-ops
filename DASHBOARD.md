@@ -11,18 +11,18 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 | service | plan | cost_monthly_usd | renewal_date | status | notes |
 |---|---|---|---|---|---|
 | RunPod | prepaid credit | 18.90 | — | paused-but-billing | CONFIRMED 2026-07-11: 0 pods running; balance $56.43 prepaid. Storage volumes still bill: medsim-blender 120GB $8.40/mo + command-station 150GB $10.50/mo = $18.90/mo. At this burn balance ≈ empty in ~3 months. Billing-history page white-screened — cadence unverified. FLAG: keep or dump volumes |
-| Supabase | Pro | 67.18 | 2026-08-11 | active | SOLVED 2026-07-11: $67.18 = $25 Pro + ~3605 Micro Compute hrs (5 always-on projects × ~720h) − $10 credit. NOT Edge Fn/AI (35.5k invocations; 2M free). Projected next cycle $68.68. Spend cap ON. FLAG: pausing unused projects cuts ~$10/mo each |
+| Supabase | Pro | 67.18 | 2026-08-11 | active | SOLVED 2026-07-11: $67.18 = $25 Pro + ~3605 Micro Compute hrs (5 always-on projects × ~720h) − $10 credit. NOT Edge Fn/AI (35.5k invocations; 2M free). Projected next cycle $68.68. Spend cap ON. FLAG: pausing unused projects cuts ~$10/mo each | Owner 2026-07-11: audit 5 projects, kill unneeded. Mapped so far: bniuiwbwumpymxiesyyt (haptic sim, KEEP+JWT fix), ojaykrqpzeebhcmpuxqr (liaison app, tied to app future). 3 unmapped. |
 | Vercel | Pro (team strandworks) | 20.00 | 2026-07-28 | active | Visa debit ****8774; usage $0.41 of $20 included credit (near zero); + prepaid $5 AI Gateway credit (auto-reload off). FLAG: Pro at $20/mo w/ hobby-scale usage — Hobby tier is free unless team features/domains needed |
 | Namecheap | 34 domains | — | staggered — 10 renew 2026-08-29/30 | active | ENUMERATED 2026-07-11 (see services.csv); per-domain renewal prices not shown on list page — est $400-500/yr if all auto-renew. Auto-renew ON on all visible rows; account badge says 1 expiring/expired. FLAG: 9 peptide + 5 nano-banana + several brand-variant domains look speculative — owner review before the Aug 29-30 renewal cluster hits |
-| DigitalOcean | pay-as-you-go | 22 | 2026-08-01 | active | MTD Jul 1-11 = $7.87 (≈$22/mo): droplet claude-ops $4.29 + App Platform strand-automation-works $1.79 + Reserved IP $1.79. PayPal backup method (peptiq@proton.me). FLAG: Reserved IP bills only while UNATTACHED — likely orphaned ~$5/mo; FLAG: DO app strand-automation-works may duplicate the Vercel site on www.strandautomationworks.com |
-| ShadowVM | Shadow PC (1 VM) | 39.41 | 2026-08-04 | active | 1 Shadow PC (VM created ~2026-07-04, status Ready to Launch = not running); single invoice Jul 4 2026 $39.41 paid — subscription is NEW this month. FLAG: role unclear + RunPod/DO overlap — worker-VM consolidation candidate |
+| DigitalOcean | pay-as-you-go | 22 | 2026-08-01 | active | MTD Jul 1-11 = $7.87 (≈$22/mo): droplet claude-ops $4.29 + App Platform strand-automation-works $1.79 + Reserved IP $1.79. PayPal backup method (peptiq@proton.me). FLAG: Reserved IP bills only while UNATTACHED — likely orphaned ~$5/mo; FLAG: DO app strand-automation-works may duplicate the Vercel site on www.strandautomationworks.com | Owner leans Shadow; DO = shrink candidate PENDING investigation of droplet claude-ops + app strand-automation-works |
+| ShadowVM | Shadow PC (1 VM) | 39.41 | 2026-08-04 | active-keep | 1 Shadow PC (VM created ~2026-07-04, status Ready to Launch = not running); Owner ruling 2026-07-11: KEEP — preferred over DO, easier/more intuitive. Becomes the worker-VM tier. Launch it. |
 | Cascadeur | Yearly Pro | 26.20 | 2027-07-08 | refund-requested | CONFIRMED 2026-07-11: charged $314.40 on 2026-07-08 (accidental annual = $26.20/mo equiv); sub STILL ACTIVE, renews 2027-07-08 at $419.76 w/ taxes. Refund email sent 2026-07-11 — not yet refunded; escalate via customer portal if no reply by 2026-07-18. Payment method not shown on Cascadeur page (Paddle-style portal) — cross-check bank |
 | Character Creator 5 | — | — | — | owned | license type + machine it lives on |
 | Claude | Max 20x | 212.00 | 2026-08-07 | active | Max 20x $212/mo w/ tax (was $106 Max 5x Jan-May, upgraded Jun). PLUS usage-credit top-ups $47.70 each (2x in Jul, 1x Apr) — Jul total $307.40. Credit balance -$0.01, auto-reload OFF. Primary LLM/orchestrator |
 | Google One / Gemini | Google AI Plus (400GB) | 4.99 | 2026-08-08 | active | CORRECTED 2026-07-11: register said Ultra but account shows Google AI Plus $4.99/mo (billed via Google Play, next 2026-08-08). No Ultra sub active on jonathanbouren@gmail.com — either downgraded or memory was stale. Only sub on Google Play |
-| ChatGPT (Codex) | Plus | 21.20 | 2026-08-04 | active | ChatGPT Plus $21.20/mo w/ tax (Jun + Jul paid), auto-renews 2026-08-04, billing email jonathanbouren@gmail.com. Owner already called it cheap/unremarkable — CANCEL-CANDIDATE (flag only) |
+| ChatGPT (Codex) | Plus | 21.20 | 2026-08-04 | active-keep | Owner ruling 2026-07-11: KEEP — extra hands for tasks. Cancel-candidate flag removed. |
 | Apple iCloud+ | 2TB storage | 9.99 | 2026-07-15 | active | via Apple ID jonathanbouren@gmail.com; renews monthly on the 15th |
-| Watchful (Apple) | Watchful Pro annual | 3.33 | 2027-04-29 | active | $39.99/yr via Apple; = $3.33/mo equiv |
+| Watchful (Apple) | Watchful Pro annual | 3.33 | 2027-04-29 | do-not-renew | Owner ruling 2026-07-11: will NOT renew ($39.99/yr). ACTION: cancel in iPhone Settings > [name] > Subscriptions NOW so it lapses at term instead of auto-renewing. |
 | Apple subs — expiring (no action needed) | Grammarly annual / Grok SuperGrok / Nomorobo / Polycam Basic yearly / Quizlet Plus / Robokiller Pro | — | — | cancelled-expiring | all 6 already set to not renew (expire Aug 2026 – Mar 2027); inactive history incl YouTube Premium & ChatGPT-via-Apple & Suno & Pimsleur & AppleCare One & Saunders NCLEX |
 | ElevenLabs | — | 23.32 | 2026-08-08 | active-HIDDEN | voice AI; was $11.66 in Apr then upgraded; charges Apr 8 / May 8 / Jun 8 / Jul 8. Not in any register before bank sweep |
 | Suno | — | 31.80 | 2026-08-07 | active-HIDDEN | music gen, bills via ACH; Apr ($21.31+$10.60) / May 7 / Jun 8 / Jul 7. Old Apple-billed Suno sub expired Dec 2025 — this is a direct sub |
@@ -33,7 +33,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 | OpenAI API | prepaid credits | — | — | active-HIDDEN | separate from ChatGPT Plus: $106 May 29 + $53 May 31 API credit buys |
 | Expo (EAS) | — | 19.00 | 2026-08-02 | active-HIDDEN | 650 Industries; Mar 2 / Apr 4 / May 2 / Jun 2 / Jul 2 — mobile builds (Toddler Cards / BadgeMedia?) |
 | Linear | — | — | — | active-HIDDEN | $127.20 on May 11 only — annual Basic or team monthly? owner check Linear billing page |
-| Rocket Money | Premium | 11.66 | — | active-HIDDEN | subscription-tracker service $11.66 Mar 2 (ACH) — redundant with this audit; cancel-candidate |
+| Rocket Money | Premium | 11.66 | — | presumed-dead | Owner: already canceled. Last observed payment $11.66 ACH on 2026-03-02 (bank sweep); no later charge seen. VERIFY: search statements after Mar 2 for Rocket/RocketMoney; if clean, mark dead. |
 | Shopify | — | 41.34 | — | active-HIDDEN | $1.06 Feb 22 (trial?) then $41.34 Mar 24; not seen since — verify store status/which store |
 | Anything World | — | 50.00 | 2026-07-30 | active-HIDDEN | $50 May 30 + Jun 30 — animation/3D AI service; recurring |
 | 3DAIStudio (LemonSqueezy) | — | ~36 | 2026-08-15 | active-HIDDEN | $30.74 May 15 + $41.34 Jun 15 |
@@ -58,7 +58,6 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 - ⚠ approximate cost counted: Google Cloud '~12'
 - ⚠ cost unknown: OpenAI API
 - ⚠ cost unknown: Linear
-- ⚠ owner decision pending: Rocket Money (active-HIDDEN)
 - ⚠ approximate cost counted: 3DAIStudio (LemonSqueezy) '~36'
 - ⚠ cost unknown: KlingAI
 - ⚠ cost unknown: Hyper3D (Deemos)
@@ -82,6 +81,9 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 | 2026-08-04 | ChatGPT Plus renews $21.20 | billing | owner decision: cancel-candidate per own assessment |
 | 2026-08-04 | ShadowVM renews $39.41 | billing | owner decision: consolidation candidate — VM idle since creation |
 | 2026-08-29 | Namecheap renewal cluster (10 domains Aug 29-30) | billing | owner review speculative domains before auto-renew fires |
+| 2026-07-12 | Cancel Watchful auto-renew in Apple subscriptions | billing | owner: Settings > Subscriptions > Watchful > Cancel (lapses at term) |
+| 2026-07-12 | Verify Rocket Money truly dead (no charges after Mar 2) | billing | owner or Mac sweep: statement search |
+| 2026-07-12 | Supabase 5-project audit: name + purpose + kill list | billing | owner reads project list from dashboard; 2 of 5 mapped |
 
 ## Services → projects
 
@@ -102,6 +104,8 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 |---|---|---|
 | 3rdrider | audit-2026-07-10.md | drift-2026-07-11.md |
 | MedSim-Game | audit-2026-07-11.md | never |
+| haptic-mirror | audit-2026-07-11.md | never |
+| liaison-dashboard | audit-2026-07-11.md | never |
 | strandworks-ops | never | never |
 
 ## Models & compute

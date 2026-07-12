@@ -7,3 +7,6 @@ date,item,type,action_needed
 2026-08-07,Claude Max 20x renews $212,billing,
 2026-08-04,ShadowVM renews $39.41,billing,owner decision: consolidation candidate — VM idle since creation
 2026-08-29,Namecheap renewal cluster (10 domains Aug 29-30),billing,owner review speculative domains before auto-renew fires
+2026-07-12,Cancel Watchful auto-renew in Apple subscriptions,billing,owner: Settings > Subscriptions > Watchful > Cancel (lapses at term)
+2026-07-12,Verify Rocket Money truly dead (no charges after Mar 2),billing,owner or Mac sweep: statement search
+2026-07-12,Supabase 5-project audit: name + purpose + kill list,billing,owner reads project list from dashboard; 2 of 5 mapped
