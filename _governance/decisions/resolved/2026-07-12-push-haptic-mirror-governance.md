@@ -3,7 +3,9 @@ id: 2026-07-12-push-haptic-mirror-governance
 filed: 2026-07-12
 filed-by: orchestrator (VAIO session)
 question: Push haptic-mirror's 6 local governance commits to GitHub?
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-12T15:32:21.800Z
+source: cockpit
 ---
 
 **Context:** `~/work/haptic-mirror` sits 6 commits ahead of origin/main:
