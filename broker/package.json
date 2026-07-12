@@ -1,0 +1,26 @@
+{
+  "name": "strandworks-session-broker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tailnet-only session broker: start/list/attach/stop AI terminal sessions (tmux) from a phone browser. SPEC v1.0.0 slice 2 item 6.",
+  "type": "module",
+  "engines": {
+    "node": ">=23.6"
+  },
+  "scripts": {
+    "start": "node src/index.ts",
+    "test": "node --test \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "0.11.0",
+    "@xterm/xterm": "6.0.0",
+    "node-pty": "1.1.0",
+    "ws": "8.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@types/ws": "8.18.1",
+    "typescript": "5.9.3"
+  }
+}

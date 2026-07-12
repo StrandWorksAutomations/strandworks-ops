@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Strandworks Session Broker</title>
+<link rel="stylesheet" href="/vendor/xterm.css">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #0d1117; color: #e6edf3;
+    font: 16px/1.5 system-ui, -apple-system, sans-serif;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  header { padding: 14px 16px 6px; }
+  header h1 { font-size: 18px; margin: 0; }
+  header .sub { color: #7d8590; font-size: 12px; }
+  #list { padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .card .meta { flex: 1; min-width: 0; }
+  .card .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+  .card .info { font-size: 12px; color: #7d8590; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .dot.attached { background: #3fb950; }
+  .dot.detached { background: #d29922; }
+  button {
+    font: inherit; border: 1px solid #30363d; border-radius: 8px;
+    background: #21262d; color: #e6edf3; padding: 8px 14px; cursor: pointer;
+  }
+  button.primary { background: #1f6feb; border-color: #1f6feb; }
+  button.danger { color: #f85149; }
+  #newbar { display: flex; gap: 8px; padding: 8px 12px 20px; }
+  #newbar button { flex: 1; padding: 12px; }
+  #empty { color: #7d8590; text-align: center; padding: 24px; }
+  #offline {
+    margin: 8px 12px 0; padding: 10px 14px; border-radius: 10px;
+    background: #3d1d1f; border: 1px solid #f85149; color: #ffb3ad;
+    font-size: 14px;
+  }
+  body.offline #list, body.offline #empty { opacity: 0.4; }
+  /* Terminal overlay */
+  #term-view {
+    position: fixed; inset: 0; background: #0d1117; display: none;
+    flex-direction: column; z-index: 10;
+  }
+  #term-view.open { display: flex; }
+  #term-bar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    padding-top: max(8px, env(safe-area-inset-top)); background: #161b22;
+    border-bottom: 1px solid #30363d;
+  }
+  #term-title { flex: 1; font-weight: 600; font-size: 14px; }
+  #term-host { flex: 1; min-height: 0; padding: 4px; }
+  #term-host .terminal { height: 100%; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Session Broker</h1>
+  <div class="sub" id="broker-info">tailnet-only &middot; sessions live in tmux</div>
+</header>
+<div id="offline" hidden role="alert">Broker unreachable &mdash; retrying&hellip;</div>
+<div id="list"></div>
+<div id="empty" hidden>No sessions. Start one below.</div>
+<div id="newbar">
+  <button class="primary" data-kind="claude">+ Claude session</button>
+  <button data-kind="shell">+ Shell</button>
+</div>
+
+<div id="term-view">
+  <div id="term-bar">
+    <button id="term-back">&#8592; Back</button>
+    <div id="term-title"></div>
+    <button id="term-kill" class="danger">Kill</button>
+  </div>
+  <div id="term-host"></div>
+</div>
+
+<script src="/vendor/xterm.js"></script>
+<script src="/vendor/addon-fit.js"></script>
+<script>
+(function () {
+  "use strict";
+  var listEl = document.getElementById("list");
+  var emptyEl = document.getElementById("empty");
+  var offlineEl = document.getElementById("offline");
+  var lastOkAt = null;
+  var view = document.getElementById("term-view");
+  var titleEl = document.getElementById("term-title");
+  var host = document.getElementById("term-host");
+  var current = null; // { name, term, fit, ws, ro }
+
+  function fmtAge(s) {
+    if (s < 60) return s + "s";
+    if (s < 3600) return Math.floor(s / 60) + "m";
+    if (s < 86400) return Math.floor(s / 3600) + "h " + Math.floor((s % 3600) / 60) + "m";
+    return Math.floor(s / 86400) + "d " + Math.floor((s % 86400) / 3600) + "h";
+  }
+
+  function setOffline(offline) {
+    if (offline) {
+      offlineEl.textContent = "Broker unreachable — session list is stale" +
+        (lastOkAt ? " (last update " + lastOkAt.toLocaleTimeString() + ")" : "") +
+        ". Retrying…";
+      offlineEl.hidden = false;
+      document.body.classList.add("offline");
+    } else {
+      offlineEl.hidden = true;
+      document.body.classList.remove("offline");
+    }
+  }
+
+  function refresh() {
+    fetch("/api/status").then(function (r) {
+      if (!r.ok) throw new Error("status " + r.status);
+      return r.json();
+    }).then(function (data) {
+      lastOkAt = new Date();
+      setOffline(false);
+      listEl.innerHTML = "";
+      var ss = data.sessions || [];
+      emptyEl.hidden = ss.length > 0;
+      ss.forEach(function (s) {
+        var card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML =
+          '<span class="dot ' + s.status + '"></span>' +
+          '<div class="meta"><div class="name"></div>' +
+          '<div class="info">' + s.status + " &middot; up " + fmtAge(s.ageSeconds) + "</div></div>";
+        card.querySelector(".name").textContent = s.name;
+        var open = document.createElement("button");
+        open.className = "primary";
+        open.textContent = "Open";
+        open.onclick = function () { attach(s.name); };
+        var kill = document.createElement("button");
+        kill.className = "danger";
+        kill.textContent = "Kill";
+        kill.onclick = function () {
+          if (confirm("Kill session '" + s.name + "'?")) killSession(s.name);
+        };
+        card.appendChild(open);
+        card.appendChild(kill);
+        listEl.appendChild(card);
+      });
+    }).catch(function () {
+      // Say so honestly: mark the view offline instead of silently keeping
+      // the last render (VISION: "says so honestly when one isn't" reachable).
+      setOffline(true);
+    });
+  }
+
+  function killSession(name) {
+    fetch("/api/sessions/" + encodeURIComponent(name), { method: "DELETE" })
+      .then(refresh);
+  }
+
+  document.querySelectorAll("#newbar button").forEach(function (btn) {
+    btn.onclick = function () {
+      var kind = btn.dataset.kind;
+      var def = kind + "-" + new Date().toISOString().slice(5, 10).replace("-", "");
+      var name = prompt("Session name:", def);
+      if (!name) return;
+      fetch("/api/sessions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: name, kind: kind })
+      }).then(function (r) {
+        if (r.ok) { refresh(); attach(name); }
+        else r.json().then(function (e) { alert(e.error || "failed"); });
+      });
+    };
+  });
+
+  function attach(name) {
+    detach();
+    titleEl.textContent = name;
+    view.classList.add("open");
+    var term = new Terminal({
+      cursorBlink: true,
+      fontSize: 14,
+      theme: { background: "#0d1117" },
+      allowProposedApi: true
+    });
+    var fit = new FitAddon.FitAddon();
+    term.loadAddon(fit);
+    term.open(host);
+    fit.fit();
+    var proto = location.protocol === "https:" ? "wss:" : "ws:";
+    var ws = new WebSocket(proto + "//" + location.host + "/ws/attach?session=" +
+      encodeURIComponent(name) + "&cols=" + term.cols + "&rows=" + term.rows);
+    ws.onmessage = function (ev) {
+      var msg = JSON.parse(ev.data);
+      if (msg.t === "o") term.write(msg.d);
+      else if (msg.t === "err") { term.writeln("\r\n[broker] " + msg.d); }
+    };
+    ws.onclose = function () {
+      if (current && current.name === name) term.writeln("\r\n[broker] detached");
+    };
+    term.onData(function (d) {
+      if (ws.readyState === 1) ws.send(JSON.stringify({ t: "i", d: d }));
+    });
+    var ro = new ResizeObserver(function () {
+      fit.fit();
+      if (ws.readyState === 1)
+        ws.send(JSON.stringify({ t: "r", cols: term.cols, rows: term.rows }));
+    });
+    ro.observe(host);
+    current = { name: name, term: term, fit: fit, ws: ws, ro: ro };
+    term.focus();
+  }
+
+  function detach() {
+    if (!current) return;
+    current.ro.disconnect();
+    try { current.ws.close(); } catch (e) {}
+    current.term.dispose();
+    host.innerHTML = "";
+    current = null;
+  }
+
+  document.getElementById("term-back").onclick = function () {
+    detach();
+    view.classList.remove("open");
+    refresh();
+  };
+  document.getElementById("term-kill").onclick = function () {
+    if (!current) return;
+    var name = current.name;
+    if (!confirm("Kill session '" + name + "'?")) return;
+    detach();
+    view.classList.remove("open");
+    killSession(name);
+  };
+
+  refresh();
+  setInterval(function () {
+    if (!view.classList.contains("open")) refresh();
+  }, 5000);
+})();
+</script>
+</body>
+</html>
