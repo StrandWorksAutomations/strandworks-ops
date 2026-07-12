@@ -57,3 +57,14 @@ dev fallback secret string still exists but is unreachable when
 NODE_ENV=production, which is the sole production detector for all gates;
 (3) route-level wiring of gate 1 verified by reading, unit tests cover the
 helpers. Orchestrator ruling: REVISE conditions satisfied → merge.
+
+## Post-hoc review — hotfix dadd132 (direct to main, 2026-07-12)
+Pushed to main WITHOUT pre-merge review during live deployment (enrollment
+500'd on Vercel: EROFS saving the credential locally after a successful
+passkey ceremony). Orchestrator reviewed post-hoc: change treats
+EROFS/EACCES/EPERM as the documented serverless path (persistence via
+OWNER_PASSKEY env), EEXIST 409 gate and SETUP_CODE gate unchanged, UI text
+clarified, `.vercel` ignored. VERDICT: sane and minimal; no security gate
+weakened. PROCESS FLAG: deploy-unblocking hotfixes should land on a branch
+with fast review when any orchestrator is available; direct-to-main is
+logged here so the audit trail stays honest.
