@@ -1,0 +1,102 @@
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --border: #2d333b;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+  --good: #3fb950;
+  --warn: #d29922;
+  --bad: #f85149;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+
+.shell { max-width: 720px; margin: 0 auto; padding: 0 12px 96px; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 4px; background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.topbar h1 { font-size: 17px; margin: 0; }
+.topbar .sub { color: var(--muted); font-size: 12px; }
+
+.nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+  display: flex; justify-content: space-around;
+  background: var(--panel); border-top: 1px solid var(--border);
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+}
+.nav a { color: var(--muted); font-size: 12px; text-align: center; padding: 4px 10px; border-radius: 8px; }
+.nav a.active { color: var(--text); background: var(--border); }
+
+.card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px; margin: 10px 0;
+}
+.card h3 { margin: 0 0 4px; font-size: 15px; }
+.card .meta { color: var(--muted); font-size: 12.5px; }
+.card dl { margin: 8px 0 0; }
+.card dt { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 8px; }
+.card dd { margin: 1px 0 0; font-size: 13.5px; overflow-wrap: anywhere; }
+
+.badge {
+  display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--muted); margin-left: 6px; vertical-align: middle;
+}
+.badge.good { color: var(--good); border-color: var(--good); }
+.badge.warn { color: var(--warn); border-color: var(--warn); }
+.badge.bad { color: var(--bad); border-color: var(--bad); }
+
+.cost { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.tile { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.tile .big { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tile .label { color: var(--muted); font-size: 12px; }
+
+.tokens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.token-btn {
+  padding: 12px 0; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); font-weight: 700; font-size: 13px;
+  letter-spacing: 0.05em; cursor: pointer;
+}
+.token-btn:active { transform: scale(0.97); }
+.token-btn.approve { border-color: var(--good); color: var(--good); }
+.token-btn.blessed { border-color: var(--accent); color: var(--accent); }
+.token-btn.halt { border-color: var(--bad); color: var(--bad); }
+.token-btn:disabled { opacity: 0.4; cursor: default; }
+
+.confirm-row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+.confirm-row .token-btn { flex: 1; }
+
+.prose { font-size: 14px; }
+.prose table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+.prose th, .prose td { border: 1px solid var(--border); padding: 5px 7px; text-align: left; vertical-align: top; }
+.prose th { background: var(--panel); }
+.prose pre { overflow-x: auto; background: var(--panel); padding: 10px; border-radius: 8px; }
+.prose h1 { font-size: 19px; } .prose h2 { font-size: 16px; } .prose h3 { font-size: 14.5px; }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+.btn-primary {
+  display: block; width: 100%; padding: 14px; border-radius: 12px; border: none;
+  background: var(--accent); color: #04121f; font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.center-screen { min-height: 80vh; display: flex; flex-direction: column; justify-content: center; gap: 16px; text-align: center; }
+.error-text { color: var(--bad); font-size: 13px; }
+.ok-text { color: var(--good); font-size: 13px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; overflow-wrap: anywhere; }
