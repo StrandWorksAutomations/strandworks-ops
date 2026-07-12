@@ -102,7 +102,11 @@ Generated 2026-07-12 by generate.py — edit registers/, never this file.
 
 | repo | latest_audit | latest_drift |
 |---|---|---|
-| ops-main-wt | never | never |
+| 3rdrider | audit-2026-07-10.md | drift-2026-07-11.md |
+| MedSim-Game | audit-2026-07-11.md | never |
+| haptic-mirror | audit-2026-07-11.md | never |
+| liaison-dashboard | audit-2026-07-11.md | never |
+| strandworks-ops | never | never |
 
 ## Models & compute
 
