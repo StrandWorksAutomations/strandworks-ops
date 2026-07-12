@@ -1,6 +1,6 @@
 # STRANDWORKS — OPERATIONS DASHBOARD
 
-Generated 2026-07-11 by generate.py — edit registers/, never this file.
+Generated 2026-07-12 by generate.py — edit registers/, never this file.
 
 ## Money
 
@@ -68,7 +68,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 - ⚠ cost unknown: PERSONAL recurring (out of biz scope)
 - ⚠ cost unknown: UNRECOGNIZED merchants
 - ⚠ cost unknown: PayPal autopay
-- ⚠ SINGLE-COPY ASSET RISK: Lens-scenes project at old Mac PROJECTS folder
+- ⚠ SINGLE-COPY ASSET RISK: Lens-scenes project at Mac JB-1272 PROJECTS folder
 
 ## Calendar — action needed
 
@@ -102,6 +102,10 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 
 | repo | latest_audit | latest_drift |
 |---|---|---|
+| 3rdrider | audit-2026-07-10.md | drift-2026-07-11.md |
+| MedSim-Game | audit-2026-07-11.md | never |
+| haptic-mirror | audit-2026-07-11.md | never |
+| liaison-dashboard | audit-2026-07-11.md | never |
 | strandworks-ops | never | never |
 
 ## Models & compute
@@ -121,7 +125,7 @@ Generated 2026-07-11 by generate.py — edit registers/, never this file.
 |---|---|---|---|---|---|---|
 | ml-models collection | model checkpoints | SSD | ~794MB per old notes | 3rdrider/MedSim | no | partially in Google Drive — needs manifest sweep |
 | datasets collection | training data | SSD | ~1GB per old notes | 3rdrider/MedSim | no | partially in Google Drive |
-| Lens-scenes project | Lens Studio scenes | old Mac PROJECTS folder | ~156MB | 3rdrider | yes-only-copy | NOT in git (binaries); single copy risk |
+| Lens-scenes project | Lens Studio scenes | Mac JB-1272 PROJECTS folder | ~156MB | 3rdrider | yes-only-copy | NOT in git (binaries); single copy risk — back up |
 | MedSim game assets | engine/art assets | MedSim-Game repo | ~700MB+ | MedSim-Game | yes | in git |
 
 ## Access map
