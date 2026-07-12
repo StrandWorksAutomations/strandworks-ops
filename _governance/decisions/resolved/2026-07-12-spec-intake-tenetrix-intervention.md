@@ -3,7 +3,9 @@ id: 2026-07-12-spec-intake-tenetrix-intervention
 filed: 2026-07-12
 filed-by: orchestrator (VAIO session)
 question: APPROVE SPEC v1.0.0 for Tenetrix Intervention (MedSim-Game repo, game mode), translated from the VISION blessed 2026-07-12?
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-12T15:32:44.503Z
+source: cockpit
 ---
 
 **Proposed SPEC v1.0.0 — workstreams** (full text written into the repo +
