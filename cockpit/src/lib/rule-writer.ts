@@ -5,8 +5,11 @@
 //
 // Modes:
 //  - "github": real commit to COCKPIT_WRITE_BRANCH (default main).
-//  - "dry-run": local dev / no token — applies the move on the local
+//  - "dry-run": OUTSIDE production only — applies the move on the local
 //    checkout so the flow is fully testable without touching GitHub.
+//    Production never runs dry-run (review 2026-07-12, flag 2): with no
+//    GITHUB_TOKEN, a production ruling refuses with a clear error instead
+//    of degrading to non-commit writes.
 import fs from "node:fs/promises";
 import path from "node:path";
 import { applyRuling, type OwnerToken } from "./decisions";
@@ -22,9 +25,21 @@ export type RuleResult = {
 };
 
 export function writeMode(): "github" | "dry-run" {
-  if (process.env.COCKPIT_WRITE_MODE === "dry-run") return "dry-run";
-  if (process.env.COCKPIT_WRITE_MODE === "github") return "github";
-  return process.env.GITHUB_TOKEN ? "github" : "dry-run";
+  const production = process.env.NODE_ENV === "production";
+  const mode =
+    process.env.COCKPIT_WRITE_MODE === "dry-run"
+      ? "dry-run"
+      : process.env.COCKPIT_WRITE_MODE === "github"
+        ? "github"
+        : process.env.GITHUB_TOKEN
+          ? "github"
+          : "dry-run";
+  if (production && mode === "dry-run") {
+    throw new Error(
+      "rulings refused: production requires GITHUB_TOKEN — all cockpit writes are commits, dry-run is not allowed in production"
+    );
+  }
+  return mode;
 }
 
 export async function commitRuling(

@@ -40,10 +40,19 @@ export async function loadCredential(): Promise<StoredCredential | null> {
 }
 
 // Local-dev persistence only; on Vercel the owner sets OWNER_PASSKEY instead.
-export async function saveCredentialLocally(cred: StoredCredential): Promise<string> {
-  await fs.mkdir(path.dirname(LOCAL_PATH), { recursive: true });
-  await fs.writeFile(LOCAL_PATH, JSON.stringify(cred, null, 2) + "\n", "utf-8");
-  return LOCAL_PATH;
+// The "wx" flag makes the write exclusive-create: it closes the
+// check-then-save race — a concurrent enrollment that lost the race fails
+// with EEXIST instead of silently overwriting the winner's credential.
+export async function saveCredentialLocally(
+  cred: StoredCredential,
+  filePath: string = LOCAL_PATH
+): Promise<string> {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, JSON.stringify(cred, null, 2) + "\n", {
+    encoding: "utf-8",
+    flag: "wx",
+  });
+  return filePath;
 }
 
 export function credentialToEnvValue(cred: StoredCredential): string {

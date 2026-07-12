@@ -7,6 +7,7 @@ import {
   saveCredentialLocally,
   type StoredCredential,
 } from "@/lib/passkey";
+import { isSetupCodeValid, SETUP_CODE_HEADER } from "@/lib/setup-code";
 import {
   cookieNames,
   createSessionToken,
@@ -15,6 +16,9 @@ import {
 } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
+  if (!isSetupCodeValid(req.headers.get(SETUP_CODE_HEADER))) {
+    return NextResponse.json({ error: "setup code missing or invalid" }, { status: 403 });
+  }
   if (await loadCredential()) {
     return NextResponse.json({ error: "owner already enrolled" }, { status: 409 });
   }
@@ -45,7 +49,17 @@ export async function POST(req: NextRequest) {
     counter: info.credential.counter,
     transports: info.credential.transports,
   };
-  const savedTo = await saveCredentialLocally(stored);
+  // Exclusive-create write: if a concurrent enrollment saved first, this
+  // fails with EEXIST — the check-then-save race cannot double-enroll.
+  let savedTo: string;
+  try {
+    savedTo = await saveCredentialLocally(stored);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException)?.code === "EEXIST") {
+      return NextResponse.json({ error: "owner already enrolled" }, { status: 409 });
+    }
+    throw e;
+  }
 
   const res = NextResponse.json({
     ok: true,

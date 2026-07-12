@@ -10,9 +10,13 @@ const CHALLENGE_TTL_SECONDS = 5 * 60;
 function secret(): string {
   const s = process.env.SESSION_SECRET;
   if (s && s.length >= 16) return s;
-  if (process.env.VERCEL) throw new Error("SESSION_SECRET must be set in production");
-  // Dev fallback: fixed only for the local process lifetime is overkill —
-  // a static dev secret is fine because the app is on localhost only.
+  // Review 2026-07-12, flag 3: ANY production run hard-fails without the
+  // secret, regardless of platform — no fallback string in production.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET (>=16 chars) must be set in any production run");
+  }
+  // Dev-only fallback: a static dev secret is fine because the app is on
+  // localhost only.
   return "dev-only-secret-not-for-production";
 }
 
