@@ -62,7 +62,8 @@ export async function POST(req: NextRequest) {
     if (code === "EEXIST") {
       return NextResponse.json({ error: "owner already enrolled" }, { status: 409 });
     }
-    if (code !== "EROFS" && code !== "EACCES" && code !== "EPERM") throw e;
+    // Vercel surfaces the read-only root as ENOENT on mkdir, not EROFS.
+    if (code !== "EROFS" && code !== "EACCES" && code !== "EPERM" && code !== "ENOENT") throw e;
   }
 
   const res = NextResponse.json({
