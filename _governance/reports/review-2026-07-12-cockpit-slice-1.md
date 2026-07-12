@@ -41,3 +41,19 @@ SPEC.md, the sprint diff only. Independent verification on a second machine:
   owner: harmless).
 - Sibling-repo governance reports appear only via DASHBOARD.md rendering —
   candidate for a v1.x intake, not a slice-1 gap.
+
+## Delta re-review (revise commit fcc5f64) — 2026-07-12
+Fresh reviewer, delta only. VERDICT: FLAGS (residual notes, no violations).
+All three ruled fixes DELIVERED: SETUP_CODE gate on both enrollment routes
+(constant-time compare, never logged/echoed) + exclusive-create close of the
+TOCTOU; production refuses rulings without GITHUB_TOKEN (dry-run impossible
+in prod, even if forced); SESSION_SECRET hard-fails any production run,
+fail-closed through every auth path. Scope: 9 files, all under cockpit/,
+canon untouched, test literals clearly fake. Independently verified 35/35
+tests, tsc clean. Residual notes for the record: (1) exclusive-create is
+per-instance — cross-instance concurrent enrollment on serverless remains
+theoretically possible but requires the SETUP_CODE on every path; (2) the
+dev fallback secret string still exists but is unreachable when
+NODE_ENV=production, which is the sole production detector for all gates;
+(3) route-level wiring of gate 1 verified by reading, unit tests cover the
+helpers. Orchestrator ruling: REVISE conditions satisfied → merge.
