@@ -3,7 +3,9 @@ id: 2026-07-12-broker-owner-auth-layer
 filed: 2026-07-12
 filed-by: orchestrator (pure review of cockpit-slice-2-vaio)
 question: Is tailnet membership alone enough auth for the terminal broker, or must it also verify YOU specifically?
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-12T21:09:00.813Z
+source: cockpit
 ---
 
 **Context:** Both reviewers flagged a VISION/SPEC ambiguity. VISION security
