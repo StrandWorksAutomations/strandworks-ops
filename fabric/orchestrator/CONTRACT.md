@@ -97,6 +97,34 @@ spawn coder on a branch  →  adversarial review  →  revise (bounded)  →  me
   Pushing and deploying are out of the loop — they stay a human-or-higher step
   (Autonomy Floor #2).
 
+### Graduated oversight — pre-sprint alerts (SPEC WS-C)
+
+Before a sprint runs, the orchestrator FILES a pre-sprint alert as a decision
+card in `_governance/decisions/` (`YYYY-MM-DD-presprint-<slug>.md`): what / why
+/ scope / risk, a **mechanical hero-vs-internal classification**, and a proposed
+oversight level. The owner RULES the card; the dispatch loop reads the ruling
+and gates on it. Agents never rule.
+
+- **Classification is mechanical, not a judgment call.** It derives from the
+  work-order's `audience:` field. Internal (reversible plumbing) ONLY when the
+  field is present and names a known internal value; **every other case — field
+  missing, unrecognized, or hero — classifies HERO.** Classification failure
+  therefore always defaults toward *more* oversight, never less.
+- **Proposed level follows the hero axis:** hero → HIGH (eyes-on, checkpointed),
+  internal → LOW (autorun under the review gate).
+- **The owner sets the level** with an owner ruling: a direct `HIGH` / `LOW` /
+  `HALT` token, or the cockpit's existing generic card mechanism (it renders the
+  card's lettered options A/B/C as one-tap buttons — A=HIGH, B=LOW, C=HALT — and
+  HALT is also a native owner-token button).
+- **The invariant — silence on hero work HOLDS.** An un-set alert on hero work
+  makes the loop refuse to start (non-zero exit, logged). An un-set alert on
+  internal work proceeds at its LOW default; that proceed-on-silence event is
+  logged in the audit JSONL and noted on the card (documented, owner-overridable).
+- **HIGH pauses for owner checkpoints** — after the coder finishes and after the
+  review — exiting with a distinct code each time; the owner resumes each stage
+  explicitly (`--resume-stage`). **HALT** refuses to run. **LOW** runs to
+  completion under the (unchanged, non-optional) review gate.
+
 ### The review gate is NON-OPTIONAL — for every coder, identically
 There is no code path that merges without a passing review. The gate applies to
 **every** coder occupant the same way — Claude, GLM, or any successor — because

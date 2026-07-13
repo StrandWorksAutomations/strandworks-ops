@@ -22,11 +22,24 @@ import { join, resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { loadConfig, buildCommand, type OrchestratorConfig } from "./config.ts";
-import { parseWorkOrder, type WorkOrder } from "./workorder.ts";
+import { parseWorkOrder, classifyAudience, type WorkOrder, type Classification } from "./workorder.ts";
 import { parseVerdict, type Verdict } from "./verdict.ts";
 import { appendAudit, runFilePath, type AuditEntry } from "./audit.ts";
 import { fileRevisionExhaustedCard } from "./decision-card.ts";
 import { checkoutWorkBranch, branchDiff, mergeBranchToBase } from "./git.ts";
+import {
+  filePresprintAlert,
+  readOversight,
+  notePresprintCard,
+  type OversightLevel,
+} from "./presprint.ts";
+import {
+  readCheckpoint,
+  writeCheckpoint,
+  clearCheckpoint,
+  checkpointPath,
+  type ResumeStage,
+} from "./checkpoint.ts";
 
 // ---- occupant invocation (injectable so the loop is testable without spawning) ----
 
@@ -81,6 +94,10 @@ export interface RunDispatchOptions {
   now?: Date;
   /** where to write throwaway prompt/diff files (default: a fresh os tmpdir) */
   workDir?: string;
+  /** WS-C: file the pre-sprint alert card and exit, running no work. */
+  fileAlertOnly?: boolean;
+  /** WS-C: resume a HIGH (checkpointed) run at the named stage. */
+  resumeStage?: ResumeStage;
 }
 
 export type Outcome =
@@ -88,7 +105,12 @@ export type Outcome =
   | "flags-exhausted"
   | "halted"
   | "dry-run"
-  | "error";
+  | "error"
+  // WS-C outcomes:
+  | "alert-filed" // --file-alert-only: the pre-sprint card was written
+  | "presprint-hold" // silence on hero work (or a non-level ruling): refuse to start
+  | "halt-ruled" // owner ruled HALT on the pre-sprint card
+  | "checkpoint"; // HIGH run paused at an owner checkpoint (resume to continue)
 
 export interface DispatchResult {
   outcome: Outcome;
@@ -102,9 +124,22 @@ export interface DispatchResult {
   /** dry-run only: the exact commands that WOULD run */
   plannedCommands?: { role: string; argv: string[] }[];
   message?: string;
+  // WS-C context:
+  classification?: Classification;
+  oversight?: OversightLevel;
+  /** which checkpoint a HIGH run paused at / the stage that just ran */
+  stage?: ResumeStage;
 }
 
 const HALTED_MARKER = "HALTED";
+
+// Exit codes. Distinct so a shell caller (or the orchestrator) can branch on the
+// outcome. 0/1/2/3 are the WS-A codes; 4/5/6 are the WS-C oversight codes.
+const EXIT_HALTED = 2;
+const EXIT_FLAGS_EXHAUSTED = 3;
+const EXIT_PRESPRINT_HOLD = 4; // hero silence / non-level ruling: held, not started
+const EXIT_PRESPRINT_HALT = 5; // owner ruled HALT
+const EXIT_CHECKPOINT = 6; // HIGH run paused for an owner checkpoint
 
 function isoNow(now: Date): string {
   return now.toISOString();
@@ -185,7 +220,7 @@ export function runDispatch(opts: RunDispatchOptions): DispatchResult {
   // 1. HALTED marker → refuse to run at all (fail closed).
   if (existsSync(join(repoRoot, HALTED_MARKER))) {
     const msg = `HALTED marker present at ${repoRoot}; refusing to dispatch (fail closed).`;
-    return { outcome: "halted", exitCode: 2, coderRuns: 0, reviews: 0, message: msg };
+    return { outcome: "halted", exitCode: EXIT_HALTED, coderRuns: 0, reviews: 0, message: msg };
   }
 
   // 2. Load config + work-order.
@@ -199,6 +234,33 @@ export function runDispatch(opts: RunDispatchOptions): DispatchResult {
     );
   }
   const base = cfg.baseBranch;
+
+  const date = dateStamp(now);
+  const classification = classifyAudience(wo.audience).classification;
+
+  // 2b. WS-C --file-alert-only: file the pre-sprint alert card and exit, so
+  // alerts can PRECEDE their sprints in time. No branch, no coder, no run log.
+  if (opts.fileAlertOnly) {
+    const card = filePresprintAlert({
+      decisionsDir,
+      date,
+      slug: wo.slug,
+      branch,
+      audience: wo.audience,
+      title: wo.title,
+    });
+    return {
+      outcome: "alert-filed",
+      exitCode: 0,
+      branch,
+      coderRuns: 0,
+      reviews: 0,
+      decisionCardPath: card.path,
+      classification,
+      oversight: readOversight(decisionsDir, wo.slug).level,
+      message: `filed pre-sprint alert ${card.id} (classification: ${classification})`,
+    };
+  }
 
   const workDir = opts.workDir ?? mkdtempSync(join(tmpdir(), "orch-"));
   const coderPromptFile = join(workDir, "coder-prompt.txt");
@@ -219,9 +281,14 @@ export function runDispatch(opts: RunDispatchOptions): DispatchResult {
       { role: "coder", argv: buildCommand("coder", cfg, subsCoder) },
       { role: "reviewer", argv: buildCommand("reviewer", cfg, subsReview) },
     ];
+    const oversightPreview = readOversight(decisionsDir, wo.slug);
     const out =
       `# dry-run for work-order ${opts.workOrderPath}\n` +
       `# branch: ${branch}  base: ${base}  maxReviseCycles: ${cfg.maxReviseCycles}\n` +
+      `# WS-C oversight: classification=${classification}  ` +
+      `pre-sprint ruling=${oversightPreview.ruled ? oversightPreview.level : "UNSET"}` +
+      ` (a real run resolves the gate: hero+unset HOLDS, internal+unset runs LOW, ` +
+      `HIGH checkpoints, HALT refuses)\n` +
       `git checkout -B ${branch} ${base}\n` +
       planned
         .map((p) => `[${p.role}] ${p.argv.join(" ")}   (prompt piped on stdin)`)
@@ -236,11 +303,11 @@ export function runDispatch(opts: RunDispatchOptions): DispatchResult {
       coderRuns: 0,
       reviews: 0,
       plannedCommands: planned,
+      classification,
     };
   }
 
   // 4. Real run. Establish the run file + branch.
-  const date = dateStamp(now);
   const runFile = runFilePath(runsDir, date, wo.slug);
   audit(runFile, {
     ts: isoNow(now),
@@ -249,15 +316,14 @@ export function runDispatch(opts: RunDispatchOptions): DispatchResult {
     note: `branch=${branch} base=${base} maxReviseCycles=${cfg.maxReviseCycles}`,
   });
 
-  checkoutWorkBranch(repoRoot, branch, base);
-
   const N = cfg.maxReviseCycles;
   let coderRuns = 0;
   let reviews = 0;
   let lastFindings = "";
   let finalVerdict: Verdict = "FLAGS";
 
-  // Initial coder run (findings undefined).
+  // ---- coder + review step helpers (shared by the LOW loop and the HIGH machine) ----
+
   const runCoder = (findings: string | undefined, cycle: number): void => {
     const prompt = coderPrompt(wo, findings);
     writeFileSync(coderPromptFile, prompt);
@@ -285,10 +351,7 @@ export function runDispatch(opts: RunDispatchOptions): DispatchResult {
     }
   };
 
-  runCoder(undefined, 0);
-
-  // Review, then optionally revise, bounded by N revise cycles.
-  for (let round = 0; round <= N; round++) {
+  const runReview = (round: number): Verdict => {
     writeFileSync(diffFile, branchDiff(repoRoot, base, branch));
     const rprompt = reviewPrompt(wo, diffFile, canonPointers);
     writeFileSync(reviewPromptFile, rprompt);
@@ -320,31 +383,236 @@ export function runDispatch(opts: RunDispatchOptions): DispatchResult {
       verdict: v.malformed ? "FLAGS(malformed)" : v.verdict,
       cycle: round,
     });
+    return v.verdict;
+  };
 
-    if (v.verdict === "ALIGNED") {
-      const message = `orchestrator: merge ${branch} (VERDICT: ALIGNED after ${round} revise ${round === 1 ? "cycle" : "cycles"})`;
-      mergeBranchToBase(repoRoot, base, branch, message);
-      audit(runFile, {
-        ts: isoNow(now),
-        run: wo.slug,
-        step: "merge",
-        note: `merged ${branch} into ${base} (local, no push)`,
-      });
-      audit(runFile, { ts: isoNow(now), run: wo.slug, step: "done", note: "merged" });
+  const mergeAndReturn = (message: string, extra: Partial<DispatchResult>): DispatchResult => {
+    mergeBranchToBase(repoRoot, base, branch, message);
+    audit(runFile, {
+      ts: isoNow(now),
+      run: wo.slug,
+      step: "merge",
+      note: `merged ${branch} into ${base} (local, no push)`,
+    });
+    audit(runFile, { ts: isoNow(now), run: wo.slug, step: "done", note: "merged" });
+    return { outcome: "merged", exitCode: 0, branch, coderRuns, reviews, finalVerdict, runFile, ...extra };
+  };
+
+  // ---- WS-C oversight gate: read the pre-sprint alert's ruling and act on it ----
+  //
+  // Invariants (SPEC WS-C): silence on hero work HOLDS (refuse to start); an
+  // unset internal alert PROCEEDS at its LOW default (logged + noted, owner-
+  // overridable); classification failure already defaulted to HERO upstream.
+
+  const ov = readOversight(decisionsDir, wo.slug);
+  const iso = isoNow(now);
+  let cardPath = ov.cardPath;
+  const ensureCard = (): string => {
+    if (!cardPath) {
+      cardPath = filePresprintAlert({
+        decisionsDir,
+        date,
+        slug: wo.slug,
+        branch,
+        audience: wo.audience,
+        title: wo.title,
+      }).path;
+    }
+    return cardPath;
+  };
+  const oversightHold = (note: string): DispatchResult => {
+    notePresprintCard(ensureCard(), iso, note);
+    audit(runFile, { ts: iso, run: wo.slug, step: "oversight", note: `presprint-hold: ${note}` });
+    audit(runFile, { ts: iso, run: wo.slug, step: "done", note: "presprint-hold" });
+    return {
+      outcome: "presprint-hold",
+      exitCode: EXIT_PRESPRINT_HOLD,
+      branch,
+      coderRuns: 0,
+      reviews: 0,
+      runFile,
+      decisionCardPath: cardPath,
+      classification,
+      oversight: ov.level,
+    };
+  };
+
+  // Ruled HALT → refuse to run at all (non-zero exit).
+  if (ov.level === "HALT") {
+    const note = "HALT ruling on the pre-sprint alert — dispatch refused to run this sprint.";
+    if (cardPath) notePresprintCard(cardPath, iso, note);
+    audit(runFile, { ts: iso, run: wo.slug, step: "oversight", note: `halt-ruled: ${note}` });
+    audit(runFile, { ts: iso, run: wo.slug, step: "done", note: "halt-ruled" });
+    return {
+      outcome: "halt-ruled",
+      exitCode: EXIT_PRESPRINT_HALT,
+      branch,
+      coderRuns: 0,
+      reviews: 0,
+      runFile,
+      decisionCardPath: cardPath,
+      classification,
+      oversight: "HALT",
+    };
+  }
+
+  // Resolve the effective proceed level (or hold).
+  let effective: OversightLevel;
+  if (ov.level === "HIGH" || ov.level === "LOW") {
+    effective = ov.level;
+  } else if (ov.ruled) {
+    // The owner ruled, but not with an oversight level (e.g. REVISE) → hold and
+    // ask for a level. Fail toward more oversight; never guess.
+    return oversightHold(
+      `Ruling "${ov.rawRuling}" is not an oversight level — held. Rule HIGH / LOW / HALT to proceed.`,
+    );
+  } else if (classification === "hero") {
+    // Silence on hero work HOLDS (SPEC WS-C, verbatim).
+    return oversightHold(
+      "Hero (human-/client-facing) work with no oversight ruling — HELD (silence on hero work holds). Rule HIGH / LOW / HALT to proceed.",
+    );
+  } else {
+    // Silence on internal work → proceed at the LOW default, logged + noted.
+    effective = "LOW";
+    const note =
+      "Internal / reversible work with no oversight ruling — PROCEEDED at the LOW default (documented, owner-overridable). Rule HIGH / HALT to change this.";
+    notePresprintCard(ensureCard(), iso, note);
+    audit(runFile, { ts: iso, run: wo.slug, step: "oversight", note: `proceed-on-silence: ${note}` });
+  }
+
+  // From here we proceed. Establish the work branch (never before this point —
+  // a held/halted sprint must not even create its branch).
+  checkoutWorkBranch(repoRoot, branch, base);
+
+  // ---- HIGH: checkpointed run (pauses for owner checkpoints; --resume-stage resumes) ----
+  if (effective === "HIGH") {
+    const cpPath = checkpointPath(runsDir, date, wo.slug);
+    const existing = readCheckpoint(cpPath);
+    const requested = opts.resumeStage;
+    const highCard = ensureCard();
+
+    const checkpointPause = (stage: ResumeStage, note: string, extra: Partial<DispatchResult>): DispatchResult => {
+      notePresprintCard(highCard, iso, note);
+      audit(runFile, { ts: iso, run: wo.slug, step: "checkpoint", note: `${stage}: ${note}` });
       return {
-        outcome: "merged",
-        exitCode: 0,
+        outcome: "checkpoint",
+        exitCode: EXIT_CHECKPOINT,
+        branch,
+        coderRuns,
+        reviews,
+        runFile,
+        decisionCardPath: highCard,
+        classification,
+        oversight: "HIGH",
+        stage,
+        ...extra,
+      };
+    };
+
+    if (!requested) {
+      // Stage 1 (start): run the coder once, then pause for the owner.
+      if (existing) {
+        throw new Error(
+          `a HIGH run is already paused at stage "${existing.stage}"; resume with --resume-stage ${existing.stage} rather than restarting`,
+        );
+      }
+      runCoder(undefined, 0);
+      writeCheckpoint(cpPath, { slug: wo.slug, branch, base, stage: "after-coder", coderRuns, reviews });
+      return checkpointPause(
+        "after-coder",
+        "HIGH checkpoint 1/2 — coder finished. Review the branch, then resume with `--resume-stage after-coder` to run the adversarial review.",
+        {},
+      );
+    }
+
+    if (requested === "after-coder") {
+      // Stage 2: run the review once, then pause again with the verdict.
+      if (!existing || existing.stage !== "after-coder") {
+        throw new Error(
+          `--resume-stage after-coder, but no run is paused there (checkpoint stage: ${existing?.stage ?? "none"})`,
+        );
+      }
+      coderRuns = existing.coderRuns;
+      reviews = existing.reviews;
+      const verdict = runReview(0);
+      writeCheckpoint(cpPath, {
+        slug: wo.slug,
+        branch,
+        base,
+        stage: "after-review",
+        lastVerdict: verdict,
+        lastFindings,
+        coderRuns,
+        reviews,
+      });
+      return checkpointPause(
+        "after-review",
+        `HIGH checkpoint 2/2 — review VERDICT: ${verdict}. Resume with \`--resume-stage after-review\` to ${
+          verdict === "ALIGNED" ? "merge" : "finalize (FLAGS → NOT merged; the findings are recorded here)"
+        }.`,
+        { finalVerdict: verdict },
+      );
+    }
+
+    if (requested === "after-review") {
+      // Stage 3 (finalize): merge on ALIGNED; otherwise stop without merging.
+      if (!existing || existing.stage !== "after-review") {
+        throw new Error(
+          `--resume-stage after-review, but no run is paused there (checkpoint stage: ${existing?.stage ?? "none"})`,
+        );
+      }
+      coderRuns = existing.coderRuns;
+      reviews = existing.reviews;
+      finalVerdict = existing.lastVerdict ?? "FLAGS";
+      if (finalVerdict === "ALIGNED") {
+        clearCheckpoint(cpPath);
+        notePresprintCard(highCard, iso, "HIGH complete — branch merged after the owner's checkpoints.");
+        return mergeAndReturn(
+          `orchestrator: merge ${branch} (HIGH oversight, owner-checkpointed, VERDICT: ALIGNED)`,
+          { decisionCardPath: highCard, classification, oversight: "HIGH", stage: "after-review" },
+        );
+      }
+      clearCheckpoint(cpPath);
+      const findings = existing.lastFindings?.trim() || "(see run log)";
+      notePresprintCard(
+        highCard,
+        iso,
+        `HIGH review returned FLAGS — NOT merged. Findings: ${findings}. Re-dispatch after addressing them.`,
+      );
+      audit(runFile, { ts: iso, run: wo.slug, step: "done", note: "flags-exhausted (HIGH, no merge)" });
+      return {
+        outcome: "flags-exhausted",
+        exitCode: EXIT_FLAGS_EXHAUSTED,
         branch,
         coderRuns,
         reviews,
         finalVerdict,
         runFile,
+        decisionCardPath: highCard,
+        classification,
+        oversight: "HIGH",
+        stage: "after-review",
       };
+    }
+
+    throw new Error(`unknown --resume-stage "${String(requested)}" (expected after-coder | after-review)`);
+  }
+
+  // ---- LOW: run to completion under the existing review gate (unchanged behavior) ----
+  runCoder(undefined, 0);
+
+  // Review, then optionally revise, bounded by N revise cycles.
+  for (let round = 0; round <= N; round++) {
+    const verdict = runReview(round);
+
+    if (verdict === "ALIGNED") {
+      const message = `orchestrator: merge ${branch} (VERDICT: ALIGNED after ${round} revise ${round === 1 ? "cycle" : "cycles"})`;
+      return mergeAndReturn(message, { classification, oversight: "LOW" });
     }
 
     // FLAGS. Revise if budget remains; else file a card and stop (never merge).
     if (round < N) {
-      runCoder(v.findings, round + 1);
+      runCoder(lastFindings, round + 1);
     } else {
       const card = fileRevisionExhaustedCard({
         decisionsDir,
@@ -364,13 +632,15 @@ export function runDispatch(opts: RunDispatchOptions): DispatchResult {
       audit(runFile, { ts: isoNow(now), run: wo.slug, step: "done", note: "flags-exhausted" });
       return {
         outcome: "flags-exhausted",
-        exitCode: 3,
+        exitCode: EXIT_FLAGS_EXHAUSTED,
         branch,
         coderRuns,
         reviews,
         finalVerdict,
         decisionCardPath: card.path,
         runFile,
+        classification,
+        oversight: "LOW",
       };
     }
   }
@@ -411,9 +681,22 @@ function usage(): void {
       `Usage:\n` +
       `  node fabric/orchestrator/dispatch.ts <work-order.md> [--dry-run]\n` +
       `       [--repo-root <dir>] [--config <file>] [--runs <dir>]\n` +
-      `       [--decisions <dir>] [--branch <name>]\n\n` +
-      `Exit codes: 0 merged, 3 flags-exhausted (card filed), 2 HALTED, 1 usage/error.\n`,
+      `       [--decisions <dir>] [--branch <name>]\n` +
+      `       [--file-alert-only] [--resume-stage after-coder|after-review]\n\n` +
+      `Pre-sprint alerts (WS-C): --file-alert-only files the pre-sprint alert card\n` +
+      `and exits. A normal run reads that card's ruling and gates on it: silence on\n` +
+      `hero work HOLDS; unset internal work runs LOW; HIGH pauses for owner\n` +
+      `checkpoints (resume each with --resume-stage); HALT refuses to run.\n\n` +
+      `Exit codes: 0 merged / dry-run / alert-filed, 3 flags-exhausted (card filed),\n` +
+      `2 HALTED marker, 4 pre-sprint hold (hero silence), 5 owner ruled HALT,\n` +
+      `6 checkpoint pause (resume to continue), 1 usage/error.\n`,
   );
+}
+
+function parseResumeStage(v: string | boolean | undefined): ResumeStage | undefined {
+  if (v === "after-coder" || v === "after-review") return v;
+  if (v === undefined) return undefined;
+  throw new Error(`--resume-stage must be "after-coder" or "after-review" (got "${String(v)}")`);
 }
 
 function main(): number {
@@ -436,6 +719,8 @@ function main(): number {
       decisionsDir: typeof flags.decisions === "string" ? resolve(flags.decisions) : undefined,
       branchOverride: typeof flags.branch === "string" ? flags.branch : undefined,
       dryRun: flags["dry-run"] === true,
+      fileAlertOnly: flags["file-alert-only"] === true,
+      resumeStage: parseResumeStage(flags["resume-stage"]),
     });
     if (!flags["dry-run"]) {
       process.stdout.write(

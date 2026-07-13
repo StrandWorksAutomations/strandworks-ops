@@ -21,6 +21,8 @@ export interface AuditEntry {
     | "merge"
     | "decision-card"
     | "halt-refused"
+    | "oversight" // WS-C: a pre-sprint oversight gate event (hold / halt / proceed-on-silence)
+    | "checkpoint" // WS-C: a HIGH run paused for an owner checkpoint
     | "done"
     | "error";
   role?: string;
