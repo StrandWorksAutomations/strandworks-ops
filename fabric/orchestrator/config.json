@@ -1,0 +1,56 @@
+{
+  "_about": "Role occupants for the Orchestration Fabric (SPEC WS-A). The occupant of every role is DATA here, never code. Swapping a vendor = editing this file; no module changes. NO SECRETS in this file — credentials live outside the repo; the access register records only where they live. Command templates are argv arrays; the dispatch loop substitutes {REPO} {BRANCH} {BASE} {PROMPT_FILE} {DIFF_FILE} into each arg and pipes the prompt on stdin.",
+  "maxReviseCycles": 3,
+  "baseBranch": "main",
+  "roles": {
+    "orchestrator": {
+      "provider": "anthropic-claude-cli",
+      "occupant": "Claude Fable 5 (current)",
+      "command": ["claude", "-p", "--permission-mode", "plan", "--add-dir", "{REPO}"]
+    },
+    "coder": {
+      "provider": "anthropic-claude-cli",
+      "occupant": "Claude Fable 5 (current) — GLM 5.2 slot documented in alternates.coder (WS-D)",
+      "command": ["claude", "-p", "--permission-mode", "acceptEdits", "--add-dir", "{REPO}"]
+    },
+    "reviewer": {
+      "provider": "anthropic-claude-cli",
+      "occupant": "Claude Fable 5 (current)",
+      "command": ["claude", "-p", "--permission-mode", "plan", "--add-dir", "{REPO}"]
+    },
+    "research": {
+      "provider": "anthropic-claude-cli",
+      "occupant": "Claude Fable 5 (current)",
+      "command": ["claude", "-p", "--permission-mode", "plan", "--add-dir", "{REPO}"]
+    },
+    "front-end": {
+      "provider": "anthropic-claude-cli",
+      "occupant": "Claude Fable 5 (current)",
+      "command": ["claude", "-p", "--permission-mode", "acceptEdits", "--add-dir", "{REPO}"]
+    },
+    "back-end": {
+      "provider": "anthropic-claude-cli",
+      "occupant": "Claude Fable 5 (current)",
+      "command": ["claude", "-p", "--permission-mode", "acceptEdits", "--add-dir", "{REPO}"]
+    },
+    "content": {
+      "provider": "anthropic-claude-cli",
+      "occupant": "Claude Fable 5 (current)",
+      "command": ["claude", "-p", "--permission-mode", "plan", "--add-dir", "{REPO}"]
+    },
+    "business": {
+      "provider": "anthropic-claude-cli",
+      "occupant": "Claude Fable 5 (current)",
+      "command": ["claude", "-p", "--permission-mode", "plan", "--add-dir", "{REPO}"]
+    }
+  },
+  "alternates": {
+    "coder": {
+      "_doc": "WS-D fills this slot: GLM 5.2 as a standing coder on the Shadow VM, running constantly. Shape only — enabled=false until WS-D provisions it and documents the sub-agent adapter. When enabled, WS-D swaps this object into roles.coder. The adversarial review gate applies to this occupant IDENTICALLY to any other (VISION / SPEC WS-D, non-negotiable). Adjust the argv/placeholders to GLM's real CLI harness at provisioning time.",
+      "provider": "zhipu-glm-cli",
+      "occupant": "GLM 5.2 (Shadow VM)",
+      "enabled": false,
+      "command": ["glm-code", "run", "--prompt-file", "{PROMPT_FILE}", "--repo", "{REPO}", "--branch", "{BRANCH}"]
+    }
+  }
+}

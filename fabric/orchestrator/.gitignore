@@ -1,0 +1,6 @@
+# Operational run logs — the dispatch loop's per-run JSONL audit trail. These are
+# LOCAL audit records, deliberately NOT committed: the loop switches branches and
+# merges, and a committed (or coder-`git add -A`-swept) run log would both dirty
+# the working tree mid-switch and contaminate feature-branch diffs. Keep them out
+# of the tracked surface.
+runs/
