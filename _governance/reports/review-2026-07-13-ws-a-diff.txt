@@ -1,0 +1,1735 @@
+diff --git a/fabric/orchestrator/.gitignore b/fabric/orchestrator/.gitignore
+new file mode 100644
+index 0000000..d2cde1e
+--- /dev/null
++++ b/fabric/orchestrator/.gitignore
+@@ -0,0 +1,6 @@
++# Operational run logs — the dispatch loop's per-run JSONL audit trail. These are
++# LOCAL audit records, deliberately NOT committed: the loop switches branches and
++# merges, and a committed (or coder-`git add -A`-swept) run log would both dirty
++# the working tree mid-switch and contaminate feature-branch diffs. Keep them out
++# of the tracked surface.
++runs/
+diff --git a/fabric/orchestrator/CONTRACT.md b/fabric/orchestrator/CONTRACT.md
+new file mode 100644
+index 0000000..371eaf1
+--- /dev/null
++++ b/fabric/orchestrator/CONTRACT.md
+@@ -0,0 +1,142 @@
++# fabric/orchestrator — the Orchestrator Role Contract (SPEC WS-A)
++
++The orchestrator is a **role**, not a vendor. This document specifies that role
++as an interface any capable top-tier LLM can fill. The occupant of the seat is
++recorded only in `config.json`; nothing in this contract, in the dispatch loop
++(`dispatch.ts` and its modules), or in any prompt names a vendor. Swapping the
++occupant — because access is restricted, or a better model appears — is a
++`config.json` edit, not an architectural change. (Factual note, per SPEC WS-A:
++Fable 5 is the current occupant. That fact lives here as prose and in
++`config.json` as data; it is never hard-coded into the loop.)
++
++This contract governs Layer 1 of `strandworks-ops` (the Orchestration Fabric)
++under VISION.md, which is itself under PORTFOLIO.md. Where they conflict, the
++higher layer wins: **PORTFOLIO.md → VISION.md → SPEC.md → this contract.**
++
++---
++
++## 1. Inputs (what the role-holder reads)
++
++The occupant reads, never rewrites, all of the following. Authority descends in
++this order; a lower layer never overrides a higher one.
++
++1. **Canon, in authority order:**
++   - `~/work/PORTFOLIO.md` — company canon; wins all conflicts.
++   - `VISION.md` — this repo's blessed vision (Orchestration Fabric + Cockpit).
++   - `SPEC.md` — the engineering law derived from VISION; changes only via the
++     Intake skill with an `_governance/intake-log.md` entry.
++2. **The registers** (`registers/`) — the single source of truth for spend,
++   subscriptions, services, assets, access *locations* (never keys), models,
++   and per-project footprint. The orchestrator reads these; it never reasons
++   about spend by eye (see §6).
++3. **Per-project state:**
++   - **git** — branches, diffs, last-touched, merge state, the `HALTED` marker.
++   - **Linear** — team `Strandautomationworks` (`STR`); the project-status
++     tracker of record. Issues, milestones, status.
++
++The occupant holds the macro view: the grand company vision, every project's
++vision, and cross-project state. It plans and reviews at that level and parses
++work out to the sub-agent layer (§3).
++
++## 2. Outputs (what the role-holder produces)
++
++1. **Dispatch decisions** — which sub-agent layer a unit of work goes to, on
++   which branch, under what acceptance criteria (the work-order).
++2. **Review verdicts** — the mechanical `VERDICT: ALIGNED` / `VERDICT: FLAGS`
++   line the dispatch loop parses (§5). The orchestrator commissions the review;
++   the reviewer occupant emits the verdict.
++3. **Pre-sprint alerts / decision cards** — written into
++   `_governance/decisions/` as one file per decision, same card conventions as
++   the spend gate's over-ceiling cards (frontmatter `id / filed / filed-by /
++   question / ruling: PENDING`, then context + owner-token options). These are
++   the only way the fabric asks the owner for something.
++4. **Ledger reads** — the orchestrator reads the committed spend total **through
++   the WS-B spend gate** (`fabric/spend-gate`). It performs **no per-item spend
++   judgment of its own**; all spend questions are answered by the gate's
++   mechanical cumulative sum (§6).
++
++## 3. The sub-agent layer map
++
++The orchestrator delegates to six standing layers. Each is a role slot in
++`config.json`; each is filled by capability-matched delegation.
++
++| Layer | Handles |
++|---|---|
++| **research** | fact-finding, spikes, source-gathering, unknowns |
++| **code** | implementation on a branch (the standing coder tier) |
++| **front-end** | UI / client surfaces |
++| **back-end** | services, data, infra management |
++| **content** | social / content / copy |
++| **business** | numbers, LLC/ops, register upkeep |
++
++**Capability-matched delegation — the hero axis.** Work that a human or a
++client will see or touch ("hero" work) goes to the most capable available
++occupant, or is *framed by a lighter occupant and polished by a higher one*.
++Internal, reversible plumbing may use a lighter occupant. The axis is a
++property of the *work*, set per item; it is not tied to any vendor's name.
++
++## 4. The dispatch + monitor loop
++
++For every unit of work the role runs the same proven loop that shipped 9
++sprints on 2026-07-12:
++
++```
++spawn coder on a branch  →  adversarial review  →  revise (bounded)  →  merge
++```
++
++- **Spawn.** The CODER occupant is invoked with the work-order as its prompt,
++  on the work-order's branch.
++- **Adversarial review.** The REVIEWER occupant is invoked with the branch diff
++  and pointers to canon (PORTFOLIO → VISION → SPEC) and must emit a machine-
++  parseable verdict line.
++- **Revise.** On `FLAGS`, the findings are fed back to the coder, bounded by
++  `maxReviseCycles` (config, default 3). Exhausting the budget stops the loop,
++  files a decision card, and exits non-zero. **The branch is never merged on
++  exhausted revisions.**
++- **Merge.** On `ALIGNED`, the branch is merged into `main` **locally only**.
++  Pushing and deploying are out of the loop — they stay a human-or-higher step
++  (Autonomy Floor #2).
++
++### The review gate is NON-OPTIONAL — for every coder, identically
++There is no code path that merges without a passing review. The gate applies to
++**every** coder occupant the same way — Claude, GLM, or any successor — because
++the review gate is the thing that makes autonomous output trustworthy (VISION:
++"The review gate is never traded for speed"). A missing or malformed verdict is
++**fail-closed**: treated as `FLAGS`, never as a pass.
++
++## 5. Failover (the occupant is config, never contract)
++
++- The role-holder is named **only in `config.json`**. This contract, the loop
++  code, and every generated prompt are vendor-neutral by construction.
++- Swapping occupants = editing `config.json` (a provider label + an argv command
++  template). No module changes, no contract change.
++- One top-tier ("Max/Pro/Ultra") seat is sufficient for the orchestrator +
++  reviewer roles; the coder slot is a standing tier that can be a different
++  (lighter, constantly-running) occupant — WS-D fills it with GLM 5.2, documented
++  as the `alternates.coder` shape in `config.json`.
++- An adversarial invariant is regression-locked in the tests: the loop source
++  (`*.ts`, excluding tests) contains **no vendor string**. Occupants come only
++  from config.
++
++## 6. Hard limits — the Autonomy Floor (restated, never crossed on its own)
++
++Even at full autonomy inside blessed scope, three things ALWAYS require an owner
++token from the authenticated owner. The orchestrator never presses the owner's
++buttons and never self-approves past this floor.
++
++1. **Spend above the ceiling — mechanical, never judgment.** The orchestrator
++   does not assess "is this under budget?" It routes every proposed charge
++   through `fabric/spend-gate`, which reads the committed month-to-date total
++   from the ledger, adds the proposed charge, and compares the **cumulative
++   sum** against the ceiling. Over the line → the gate refuses and files an
++   owner card. Per-item "this one's cheap" reasoning is structurally impossible.
++2. **Anything the outside world sees or that bills externally** — production
++   deploys, client-facing surfaces, social/content publishing, outbound email,
++   purchases. The loop merges locally and stops; it never pushes or deploys.
++3. **Any canon change** — PORTFOLIO / VISION / SPEC. Only the owner, only via
++   the sanctioned skills (vision-update / intake), only with an owner token.
++
++Owner tokens are BLESSED / APPROVE / REVISE / PARK / HALT / CLEAR, and come only
++from the authenticated owner (a typed token or a cockpit button tap). No plain-
++English paraphrase is approval. If the `HALTED` marker exists at repo root, the
++loop refuses to run at all (fail closed).
+diff --git a/fabric/orchestrator/README.md b/fabric/orchestrator/README.md
+new file mode 100644
+index 0000000..32b922b
+--- /dev/null
++++ b/fabric/orchestrator/README.md
+@@ -0,0 +1,83 @@
++# fabric/orchestrator — config-driven dispatch loop (SPEC WS-A slice 1)
++
++The orchestrator that runs the build loop for the Orchestration Fabric. It drives
++the proven pattern that shipped 9 sprints on 2026-07-12:
++
++```
++spawn coder on a branch → adversarial review → revise (bounded) → merge
++```
++
++## The one invariant
++
++**The review gate is never skippable, and the occupant is config, not code.**
++
++- Every branch passes an adversarial review before it can merge. A missing or
++  malformed verdict is fail-closed to `FLAGS` — never a pass. When the revise
++  budget is exhausted the loop files an owner decision card and exits non-zero
++  **without merging.**
++- The LLM filling each role (orchestrator / coder / reviewer / the six layers)
++  is named ONLY in `config.json`. Swapping a vendor is a config edit — no change
++  to the loop, the contract, or any prompt. A test greps the loop source for
++  vendor strings and requires it clean.
++
++See `CONTRACT.md` for the full role interface (inputs, outputs, sub-agent map,
++failover, and the Autonomy Floor).
++
++## What it does
++
++Given a work-order markdown file (goal, scope, branch, acceptance):
++
++1. **Refuses to run if a `HALTED` marker exists at repo root** (fail closed, exit 2).
++2. Checks out the work-order's branch (creating it from `main` if new).
++3. Invokes the **coder** occupant (from config) with the work-order as its prompt.
++4. Invokes the **reviewer** occupant with the branch diff + canon pointers
++   (PORTFOLIO → VISION → SPEC), and parses one mechanical verdict line:
++   `VERDICT: ALIGNED` or `VERDICT: FLAGS` + findings.
++5. On `FLAGS`: feeds the findings back to the coder and re-reviews, bounded by
++   `maxReviseCycles` (config, default 3). Exhausted → file a decision card in
++   `_governance/decisions/`, exit 3, **never merge.**
++6. On `ALIGNED`: merge the branch into `main` **locally** (`--no-ff`, no push —
++   pushing/deploying stays a human-or-higher step), exit 0.
++7. Appends a JSONL audit line per step to `runs/<date>-<slug>.jsonl` (timestamps,
++   role, exact command argv, exit code, verdict). No secrets are ever logged;
++   run logs are local and gitignored (they must not enter a feature-branch diff
++   or dirty the tree across the merge's branch switch).
++
++## How to run
++
++```
++node fabric/orchestrator/dispatch.ts <work-order.md> [--dry-run]
++     [--repo-root <dir>] [--config <file>] [--runs <dir>]
++     [--decisions <dir>] [--branch <name>]
++```
++
++`--dry-run` prints the exact commands (occupant argv, with placeholders
++substituted) without executing anything. Exit codes: `0` merged, `3`
++flags-exhausted (card filed), `2` HALTED refusal, `1` usage/error.
++
++A work-order declares its branch with a `branch:` line or `**Branch:** <name>`
++(or pass `--branch`).
++
++### Config (`config.json`)
++
++Role occupants are data. Each role has a `provider` label and a `command` argv
++template; the loop substitutes `{REPO} {BRANCH} {BASE} {PROMPT_FILE} {DIFF_FILE}`
++and pipes the prompt on stdin. Current occupants: orchestrator/reviewer/coder =
++the Anthropic Claude CLI (`claude -p …`). The GLM coder slot (WS-D) is documented,
++disabled, under `alternates.coder`. **No secrets in this file** — credentials
++live outside the repo; the access register records only where they live.
++
++## How to test
++
++```
++node --test "fabric/orchestrator/dispatch.test.ts"
++```
++
++Zero dependencies — TypeScript runs directly under Node's native type stripping,
++no build step, exactly like `fabric/spend-gate`. Coverage: verdict parsing
++(ALIGNED / FLAGS / malformed / ambiguous → fail closed), HALTED refusal, the
++revise bound + decision-card filing on exhaustion, no-merge-on-flags, coder-crash
++fail-closed, config-driven command construction, the adversarial **no-vendor-string**
++grep of the loop source, dry-run shape, audit-log append, and a regression lock
++for the in-repo run-log branch-switch bug. Filesystem tests use temp git repos;
++they never touch the real `_governance/decisions` or `runs/`.
+diff --git a/fabric/orchestrator/audit.ts b/fabric/orchestrator/audit.ts
+new file mode 100644
+index 0000000..e21eeb9
+--- /dev/null
++++ b/fabric/orchestrator/audit.ts
+@@ -0,0 +1,43 @@
++// audit.ts — append-only JSONL audit trail, one line per dispatch step.
++//
++// Every run writes fabric/orchestrator/runs/<date>-<slug>.jsonl. Each step
++// (start, coder, reviewer, revise, merge, decision-card, halt-refused, done)
++// appends one JSON line: timestamps, role, the exact command argv, exit code,
++// and verdict. NO SECRETS are ever logged — the command argv comes from
++// config.json (which holds no secrets), and we never log prompt bodies, diffs,
++// or reviewer output text. This is the tamper-evident record the cockpit reads.
++
++import { appendFileSync, mkdirSync } from "node:fs";
++import { dirname, join } from "node:path";
++
++export interface AuditEntry {
++  ts: string; // ISO timestamp
++  run: string; // run slug
++  step:
++    | "start"
++    | "coder"
++    | "reviewer"
++    | "revise"
++    | "merge"
++    | "decision-card"
++    | "halt-refused"
++    | "done"
++    | "error";
++  role?: string;
++  command?: string[];
++  exitCode?: number;
++  verdict?: string;
++  cycle?: number;
++  note?: string;
++}
++
++/** runs/<date>-<slug>.jsonl */
++export function runFilePath(runsDir: string, date: string, slug: string): string {
++  return join(runsDir, `${date}-${slug}.jsonl`);
++}
++
++/** Append one audit line. Creates the runs dir if needed. */
++export function appendAudit(runFile: string, entry: AuditEntry): void {
++  mkdirSync(dirname(runFile), { recursive: true });
++  appendFileSync(runFile, JSON.stringify(entry) + "\n");
++}
+diff --git a/fabric/orchestrator/config.json b/fabric/orchestrator/config.json
+new file mode 100644
+index 0000000..1786d05
+--- /dev/null
++++ b/fabric/orchestrator/config.json
+@@ -0,0 +1,56 @@
++{
++  "_about": "Role occupants for the Orchestration Fabric (SPEC WS-A). The occupant of every role is DATA here, never code. Swapping a vendor = editing this file; no module changes. NO SECRETS in this file — credentials live outside the repo; the access register records only where they live. Command templates are argv arrays; the dispatch loop substitutes {REPO} {BRANCH} {BASE} {PROMPT_FILE} {DIFF_FILE} into each arg and pipes the prompt on stdin.",
++  "maxReviseCycles": 3,
++  "baseBranch": "main",
++  "roles": {
++    "orchestrator": {
++      "provider": "anthropic-claude-cli",
++      "occupant": "Claude Fable 5 (current)",
++      "command": ["claude", "-p", "--permission-mode", "plan", "--add-dir", "{REPO}"]
++    },
++    "coder": {
++      "provider": "anthropic-claude-cli",
++      "occupant": "Claude Fable 5 (current) — GLM 5.2 slot documented in alternates.coder (WS-D)",
++      "command": ["claude", "-p", "--permission-mode", "acceptEdits", "--add-dir", "{REPO}"]
++    },
++    "reviewer": {
++      "provider": "anthropic-claude-cli",
++      "occupant": "Claude Fable 5 (current)",
++      "command": ["claude", "-p", "--permission-mode", "plan", "--add-dir", "{REPO}"]
++    },
++    "research": {
++      "provider": "anthropic-claude-cli",
++      "occupant": "Claude Fable 5 (current)",
++      "command": ["claude", "-p", "--permission-mode", "plan", "--add-dir", "{REPO}"]
++    },
++    "front-end": {
++      "provider": "anthropic-claude-cli",
++      "occupant": "Claude Fable 5 (current)",
++      "command": ["claude", "-p", "--permission-mode", "acceptEdits", "--add-dir", "{REPO}"]
++    },
++    "back-end": {
++      "provider": "anthropic-claude-cli",
++      "occupant": "Claude Fable 5 (current)",
++      "command": ["claude", "-p", "--permission-mode", "acceptEdits", "--add-dir", "{REPO}"]
++    },
++    "content": {
++      "provider": "anthropic-claude-cli",
++      "occupant": "Claude Fable 5 (current)",
++      "command": ["claude", "-p", "--permission-mode", "plan", "--add-dir", "{REPO}"]
++    },
++    "business": {
++      "provider": "anthropic-claude-cli",
++      "occupant": "Claude Fable 5 (current)",
++      "command": ["claude", "-p", "--permission-mode", "plan", "--add-dir", "{REPO}"]
++    }
++  },
++  "alternates": {
++    "coder": {
++      "_doc": "WS-D fills this slot: GLM 5.2 as a standing coder on the Shadow VM, running constantly. Shape only — enabled=false until WS-D provisions it and documents the sub-agent adapter. When enabled, WS-D swaps this object into roles.coder. The adversarial review gate applies to this occupant IDENTICALLY to any other (VISION / SPEC WS-D, non-negotiable). Adjust the argv/placeholders to GLM's real CLI harness at provisioning time.",
++      "provider": "zhipu-glm-cli",
++      "occupant": "GLM 5.2 (Shadow VM)",
++      "enabled": false,
++      "command": ["glm-code", "run", "--prompt-file", "{PROMPT_FILE}", "--repo", "{REPO}", "--branch", "{BRANCH}"]
++    }
++  }
++}
+diff --git a/fabric/orchestrator/config.ts b/fabric/orchestrator/config.ts
+new file mode 100644
+index 0000000..cb62e1e
+--- /dev/null
++++ b/fabric/orchestrator/config.ts
+@@ -0,0 +1,143 @@
++// config.ts — load and validate the role-occupant config, and build a concrete
++// argv from a role's command template.
++//
++// THE INVARIANT THIS FILE PROTECTS: occupants are DATA, never code. This module
++// contains no vendor name. It reads config.json (which is the only place an
++// occupant is named) and turns a role's argv template into a concrete command by
++// substituting placeholders. Failover = editing config.json; nothing here
++// changes. If the role or its command template is missing/ill-typed, we THROW
++// (fail closed) — the loop must never run an occupant it cannot construct.
++
++import { readFileSync } from "node:fs";
++
++export interface RoleConfig {
++  provider: string;
++  occupant?: string;
++  command: string[];
++  enabled?: boolean;
++}
++
++export interface OrchestratorConfig {
++  maxReviseCycles: number;
++  baseBranch: string;
++  roles: Record<string, RoleConfig>;
++  alternates?: Record<string, RoleConfig>;
++}
++
++/** Placeholder substitutions the loop supplies when building a command. */
++export interface Substitutions {
++  REPO?: string;
++  BRANCH?: string;
++  BASE?: string;
++  PROMPT_FILE?: string;
++  DIFF_FILE?: string;
++}
++
++export const DEFAULT_MAX_REVISE_CYCLES = 3;
++
++function validateRole(role: string, rc: unknown): RoleConfig {
++  if (typeof rc !== "object" || rc === null) {
++    throw new Error(`config role "${role}" is not an object`);
++  }
++  const r = rc as Record<string, unknown>;
++  if (typeof r.provider !== "string" || r.provider.length === 0) {
++    throw new Error(`config role "${role}" missing string "provider"`);
++  }
++  if (
++    !Array.isArray(r.command) ||
++    r.command.length === 0 ||
++    !r.command.every((a) => typeof a === "string")
++  ) {
++    throw new Error(
++      `config role "${role}" must have a non-empty "command" array of strings`,
++    );
++  }
++  return {
++    provider: r.provider,
++    occupant: typeof r.occupant === "string" ? r.occupant : undefined,
++    command: r.command as string[],
++    enabled: typeof r.enabled === "boolean" ? r.enabled : undefined,
++  };
++}
++
++/** Load + validate config.json. Throws (fail closed) on any malformed input. */
++export function loadConfig(path: string): OrchestratorConfig {
++  const raw = readFileSync(path, "utf8");
++  let parsed: unknown;
++  try {
++    parsed = JSON.parse(raw);
++  } catch (err) {
++    throw new Error(`orchestrator config ${path} is not valid JSON: ${String(err)}`);
++  }
++  if (typeof parsed !== "object" || parsed === null) {
++    throw new Error(`orchestrator config ${path} is not an object`);
++  }
++  const cfg = parsed as Record<string, unknown>;
++
++  const maxReviseCycles =
++    cfg.maxReviseCycles === undefined
++      ? DEFAULT_MAX_REVISE_CYCLES
++      : cfg.maxReviseCycles;
++  if (
++    typeof maxReviseCycles !== "number" ||
++    !Number.isInteger(maxReviseCycles) ||
++    maxReviseCycles < 0
++  ) {
++    throw new Error(
++      `orchestrator config "maxReviseCycles" must be a non-negative integer`,
++    );
++  }
++
++  const baseBranch =
++    typeof cfg.baseBranch === "string" && cfg.baseBranch.length > 0
++      ? cfg.baseBranch
++      : "main";
++
++  if (typeof cfg.roles !== "object" || cfg.roles === null) {
++    throw new Error(`orchestrator config ${path} missing "roles" object`);
++  }
++  const rolesIn = cfg.roles as Record<string, unknown>;
++  const roles: Record<string, RoleConfig> = {};
++  for (const [name, rc] of Object.entries(rolesIn)) {
++    roles[name] = validateRole(name, rc);
++  }
++  // The dispatch loop needs at least these two occupants.
++  for (const required of ["coder", "reviewer"]) {
++    if (!roles[required]) {
++      throw new Error(`orchestrator config ${path} missing required role "${required}"`);
++    }
++  }
++
++  let alternates: Record<string, RoleConfig> | undefined;
++  if (typeof cfg.alternates === "object" && cfg.alternates !== null) {
++    alternates = {};
++    for (const [name, rc] of Object.entries(cfg.alternates as Record<string, unknown>)) {
++      alternates[name] = validateRole(`alternates.${name}`, rc);
++    }
++  }
++
++  return { maxReviseCycles, baseBranch, roles, alternates };
++}
++
++/** Substitute {TOKEN} placeholders in one arg. Unknown tokens are left intact. */
++function substitute(arg: string, subs: Substitutions): string {
++  return arg.replace(/\{([A-Z_]+)\}/g, (whole, key: string) => {
++    const v = (subs as Record<string, string | undefined>)[key];
++    return v === undefined ? whole : v;
++  });
++}
++
++/**
++ * Build the concrete argv for a role from config, substituting placeholders.
++ * The occupant is entirely determined by config[role].command — this function
++ * never names one. Throws if the role is absent (fail closed).
++ */
++export function buildCommand(
++  role: string,
++  cfg: OrchestratorConfig,
++  subs: Substitutions,
++): string[] {
++  const rc = cfg.roles[role];
++  if (!rc) throw new Error(`no role "${role}" in orchestrator config`);
++  return rc.command.map((arg) => substitute(arg, subs));
++}
+diff --git a/fabric/orchestrator/decision-card.ts b/fabric/orchestrator/decision-card.ts
+new file mode 100644
+index 0000000..7c14392
+--- /dev/null
++++ b/fabric/orchestrator/decision-card.ts
+@@ -0,0 +1,86 @@
++// decision-card.ts — file an owner alert when the revise loop is exhausted.
++//
++// When the adversarial review keeps returning FLAGS through the whole revise
++// budget, the loop STOPS and never merges. It files a decision card into
++// _governance/decisions/ so the owner sees it in the cockpit queue — same card
++// conventions as the spend gate's over-ceiling cards (frontmatter id / filed /
++// filed-by / question / ruling: PENDING, then context + owner-token options).
++// Agents FILE; only the owner RULES.
++
++import { writeFileSync, existsSync, mkdirSync } from "node:fs";
++import { join } from "node:path";
++
++export interface RevisionExhaustedInput {
++  decisionsDir: string; // absolute path to _governance/decisions/
++  date: string; // YYYY-MM-DD
++  branch: string;
++  slug: string;
++  reviseCycles: number; // the budget that was exhausted
++  runFile: string; // path to the run's audit JSONL, for the owner to inspect
++  lastFindings: string; // the reviewer's final findings
++}
++
++export interface FiledCard {
++  id: string;
++  path: string;
++}
++
++/**
++ * Write the review-exhausted decision card. Returns its id + path. A numeric
++ * suffix is added if a same-id card already exists, so a pending decision is
++ * never clobbered.
++ */
++export function fileRevisionExhaustedCard(input: RevisionExhaustedInput): FiledCard {
++  const { decisionsDir, date, branch, slug, reviseCycles, runFile, lastFindings } =
++    input;
++
++  mkdirSync(decisionsDir, { recursive: true });
++
++  let id = `${date}-review-exhausted-${slug}`;
++  let path = join(decisionsDir, `${id}.md`);
++  let n = 2;
++  while (existsSync(path)) {
++    id = `${date}-review-exhausted-${slug}-${n}`;
++    path = join(decisionsDir, `${id}.md`);
++    n++;
++  }
++
++  const findings = lastFindings.trim().length > 0
++    ? lastFindings.trim()
++    : "(reviewer returned no findings text — treated as FLAGS by fail-closed rule)";
++
++  const body = `---
++id: ${id}
++filed: ${date}
++filed-by: orchestrator (fabric, dispatch loop)
++question: Branch "${branch}" failed adversarial review after ${reviseCycles} revise ${reviseCycles === 1 ? "cycle" : "cycles"}. It was NOT merged. How should it proceed?
++ruling: PENDING
++---
++
++**The dispatch loop stopped without merging.** The coder revised
++${reviseCycles} ${reviseCycles === 1 ? "time" : "times"} and the adversarial
++review still returned \`VERDICT: FLAGS\` (or an unparseable verdict, which is
++fail-closed to FLAGS). The review gate is non-optional, so the branch was left
++unmerged.
++
++- **Branch:** ${branch}
++- **Revise cycles exhausted:** ${reviseCycles}
++- **Audit trail:** ${runFile}
++
++**Final reviewer findings:**
++
++${findings}
++
++**Options:**
++- **APPROVE** — merge this branch despite the flags (a one-off owner override;
++  re-run or merge manually after approving).
++- **REVISE** — the findings need a different approach or a corrected work-order;
++  adjust and re-dispatch.
++- **PARK** — do not merge; hold the branch as-is.
++
++Reply APPROVE / REVISE / PARK.
++`;
++
++  writeFileSync(path, body);
++  return { id, path };
++}
+diff --git a/fabric/orchestrator/dispatch.test.ts b/fabric/orchestrator/dispatch.test.ts
+new file mode 100644
+index 0000000..0788d33
+--- /dev/null
++++ b/fabric/orchestrator/dispatch.test.ts
+@@ -0,0 +1,451 @@
++// dispatch.test.ts — the orchestrator dispatch loop, verdict parsing, fail-closed
++// guarantees, revise-bound + card filing, config-driven (vendor-free) command
++// construction, dry-run shape, and audit-log append.
++//
++// Filesystem tests use temp dirs (real git repos in os tmp); nothing here ever
++// touches the real _governance/decisions or the real runs/ directory.
++//
++// Run:  node --test "fabric/orchestrator/dispatch.test.ts"
++
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { spawnSync } from "node:child_process";
++import {
++  mkdtempSync,
++  mkdirSync,
++  writeFileSync,
++  readFileSync,
++  existsSync,
++  readdirSync,
++} from "node:fs";
++import { tmpdir } from "node:os";
++import { join, dirname } from "node:path";
++import { fileURLToPath } from "node:url";
++
++import { parseVerdict } from "./verdict.ts";
++import { loadConfig, buildCommand } from "./config.ts";
++import {
++  runDispatch,
++  type OccupantRunner,
++  type RunnerResult,
++} from "./dispatch.ts";
++
++const HERE = dirname(fileURLToPath(import.meta.url));
++
++// ---- helpers ----
++
++function tmp(prefix: string): string {
++  return mkdtempSync(join(tmpdir(), prefix));
++}
++
++function git(repo: string, args: string[]): { code: number; stdout: string } {
++  const r = spawnSync("git", args, { cwd: repo, encoding: "utf8" });
++  return { code: r.status === null ? 1 : r.status, stdout: r.stdout ?? "" };
++}
++
++/** Fresh git repo on branch `main` with one commit. */
++function initRepo(): string {
++  const repo = tmp("orch-repo-");
++  assert.equal(git(repo, ["init", "-b", "main"]).code, 0);
++  git(repo, ["config", "user.email", "test@example.com"]);
++  git(repo, ["config", "user.name", "Test"]);
++  writeFileSync(join(repo, "README.md"), "seed\n");
++  git(repo, ["add", "-A"]);
++  assert.equal(git(repo, ["commit", "-m", "seed"]).code, 0);
++  return repo;
++}
++
++/** Write a work-order that declares a branch. */
++function writeWorkOrder(dir: string, branch: string): string {
++  const p = join(dir, "work-order.md");
++  writeFileSync(
++    p,
++    `# Test work order\n\nbranch: ${branch}\n\nGoal: make impl.txt.\nAcceptance: file exists.\n`,
++  );
++  return p;
++}
++
++/** A vendor-free test config (placeholder-rich commands). */
++function writeTestConfig(dir: string, maxReviseCycles: number): string {
++  const p = join(dir, "config.json");
++  writeFileSync(
++    p,
++    JSON.stringify({
++      maxReviseCycles,
++      baseBranch: "main",
++      roles: {
++        coder: {
++          provider: "test-provider",
++          command: ["run-coder", "--repo", "{REPO}", "--branch", "{BRANCH}", "--prompt", "{PROMPT_FILE}"],
++        },
++        reviewer: {
++          provider: "test-provider",
++          command: ["run-review", "--repo", "{REPO}", "--diff", "{DIFF_FILE}"],
++        },
++      },
++    }),
++  );
++  return p;
++}
++
++/**
++ * A runner that: on "coder" makes a real commit on the current branch (so a
++ * diff exists), and on "reviewer" returns the next scripted stdout. Tracks call
++ * counts.
++ */
++function scriptedRunner(repo: string, reviewerOutputs: string[]) {
++  const calls: { role: string; argv: string[] }[] = [];
++  let coderCycle = 0;
++  let reviewIdx = 0;
++  const runner: OccupantRunner = (inv): RunnerResult => {
++    calls.push({ role: inv.role, argv: inv.argv });
++    if (inv.role === "coder") {
++      writeFileSync(join(repo, "impl.txt"), `work cycle ${coderCycle}\n`);
++      coderCycle++;
++      git(repo, ["add", "-A"]);
++      git(repo, ["commit", "-m", `coder cycle ${coderCycle}`]);
++      return { stdout: "", stderr: "", code: 0 };
++    }
++    const out = reviewerOutputs[Math.min(reviewIdx, reviewerOutputs.length - 1)];
++    reviewIdx++;
++    return { stdout: out, stderr: "", code: 0 };
++  };
++  return { runner, calls };
++}
++
++function currentBranchOf(repo: string): string {
++  return git(repo, ["rev-parse", "--abbrev-ref", "HEAD"]).stdout.trim();
++}
++
++function baseHasImpl(repo: string): boolean {
++  return git(repo, ["cat-file", "-e", "main:impl.txt"]).code === 0;
++}
++
++// ---- verdict parsing (fail closed) ----
++
++test("parseVerdict: clean ALIGNED merges", () => {
++  const r = parseVerdict("Looks good.\nVERDICT: ALIGNED\n");
++  assert.equal(r.verdict, "ALIGNED");
++  assert.equal(r.malformed, false);
++});
++
++test("parseVerdict: FLAGS captures findings after the line", () => {
++  const r = parseVerdict("VERDICT: FLAGS\n- missing test\n- spec drift\n");
++  assert.equal(r.verdict, "FLAGS");
++  assert.equal(r.malformed, false);
++  assert.match(r.findings, /missing test/);
++  assert.match(r.findings, /spec drift/);
++});
++
++test("parseVerdict: no verdict line → malformed → FLAGS (fail closed)", () => {
++  const r = parseVerdict("I think it is probably fine, ship it.");
++  assert.equal(r.verdict, "FLAGS");
++  assert.equal(r.malformed, true);
++});
++
++test("parseVerdict: ambiguous (both ALIGNED and FLAGS) → FLAGS", () => {
++  const r = parseVerdict("VERDICT: ALIGNED\n...but also\nVERDICT: FLAGS\n");
++  assert.equal(r.verdict, "FLAGS");
++  assert.equal(r.malformed, false);
++});
++
++test("parseVerdict: empty / non-string input → FLAGS malformed", () => {
++  // deliberately pass a non-string through an any-cast to prove fail-closed
++  const r = parseVerdict(undefined as unknown as string);
++  assert.equal(r.verdict, "FLAGS");
++  assert.equal(r.malformed, true);
++});
++
++// ---- HALTED refusal ----
++
++test("HALTED marker at repo root → refuse, exit 2, no occupant call, no merge", () => {
++  const repo = initRepo();
++  const cfgDir = tmp("orch-cfg-");
++  const cfg = writeTestConfig(cfgDir, 3);
++  const wo = writeWorkOrder(cfgDir, "feature/halt-test");
++  writeFileSync(join(repo, "HALTED"), "stop\n");
++
++  const { runner, calls } = scriptedRunner(repo, ["VERDICT: ALIGNED"]);
++  const res = runDispatch({
++    workOrderPath: wo,
++    repoRoot: repo,
++    configPath: cfg,
++    runsDir: join(tmp("orch-runs-"), "runs"),
++    decisionsDir: join(tmp("orch-dec-"), "decisions"),
++    runner,
++  });
++
++  assert.equal(res.outcome, "halted");
++  assert.equal(res.exitCode, 2);
++  assert.equal(calls.length, 0, "no occupant should be invoked when HALTED");
++  assert.equal(currentBranchOf(repo), "main", "branch must not have been created");
++  assert.equal(baseHasImpl(repo), false);
++});
++
++// ---- ALIGNED merges ----
++
++test("ALIGNED on first review → merges into main locally, exit 0", () => {
++  const repo = initRepo();
++  const cfgDir = tmp("orch-cfg-");
++  const cfg = writeTestConfig(cfgDir, 3);
++  const wo = writeWorkOrder(cfgDir, "feature/aligned");
++  const runsDir = join(tmp("orch-runs-"), "runs");
++  const { runner, calls } = scriptedRunner(repo, ["all good\nVERDICT: ALIGNED"]);
++
++  const res = runDispatch({
++    workOrderPath: wo,
++    repoRoot: repo,
++    configPath: cfg,
++    runsDir,
++    decisionsDir: join(tmp("orch-dec-"), "decisions"),
++    runner,
++  });
++
++  assert.equal(res.outcome, "merged");
++  assert.equal(res.exitCode, 0);
++  assert.equal(res.coderRuns, 1);
++  assert.equal(res.reviews, 1);
++  assert.equal(baseHasImpl(repo), true, "main should contain the merged work");
++  assert.equal(calls.filter((c) => c.role === "coder").length, 1);
++  assert.equal(calls.filter((c) => c.role === "reviewer").length, 1);
++});
++
++// ---- revise bound + decision card on exhaustion ----
++
++test("persistent FLAGS → bounded revises, files card, exit 3, NEVER merges", () => {
++  const repo = initRepo();
++  const cfgDir = tmp("orch-cfg-");
++  const N = 2;
++  const cfg = writeTestConfig(cfgDir, N);
++  const wo = writeWorkOrder(cfgDir, "feature/exhaust");
++  const runsDir = join(tmp("orch-runs-"), "runs");
++  const decisionsDir = join(tmp("orch-dec-"), "decisions");
++  // reviewer always FLAGS
++  const { runner, calls } = scriptedRunner(repo, ["VERDICT: FLAGS\n- still wrong"]);
++
++  const res = runDispatch({
++    workOrderPath: wo,
++    repoRoot: repo,
++    configPath: cfg,
++    runsDir,
++    decisionsDir,
++    runner,
++  });
++
++  assert.equal(res.outcome, "flags-exhausted");
++  assert.equal(res.exitCode, 3);
++  // N=2 → 1 initial + 2 revises = 3 coder runs; N+1 = 3 reviews.
++  assert.equal(res.coderRuns, 3);
++  assert.equal(res.reviews, 3);
++  assert.equal(calls.filter((c) => c.role === "coder").length, 3);
++  assert.equal(calls.filter((c) => c.role === "reviewer").length, 3);
++  assert.equal(baseHasImpl(repo), false, "must NOT merge on exhausted revisions");
++
++  // a PENDING decision card was filed
++  assert.ok(res.decisionCardPath && existsSync(res.decisionCardPath));
++  const card = readFileSync(res.decisionCardPath!, "utf8");
++  assert.match(card, /ruling: PENDING/);
++  assert.match(card, /review-exhausted/);
++  assert.match(card, /feature\/exhaust/);
++  assert.match(card, /APPROVE \/ REVISE \/ PARK/);
++});
++
++test("malformed verdict is fail-closed: N=0 garbage review → exhausted, no merge", () => {
++  const repo = initRepo();
++  const cfgDir = tmp("orch-cfg-");
++  const cfg = writeTestConfig(cfgDir, 0);
++  const wo = writeWorkOrder(cfgDir, "feature/malformed");
++  const decisionsDir = join(tmp("orch-dec-"), "decisions");
++  const { runner } = scriptedRunner(repo, ["ship it, looks fine to me"]);
++
++  const res = runDispatch({
++    workOrderPath: wo,
++    repoRoot: repo,
++    configPath: cfg,
++    runsDir: join(tmp("orch-runs-"), "runs"),
++    decisionsDir,
++    runner,
++  });
++
++  assert.equal(res.outcome, "flags-exhausted");
++  assert.equal(res.exitCode, 3);
++  assert.equal(res.reviews, 1);
++  assert.equal(baseHasImpl(repo), false);
++});
++
++test("coder non-zero exit → throws, never merges (fail closed)", () => {
++  const repo = initRepo();
++  const cfgDir = tmp("orch-cfg-");
++  const cfg = writeTestConfig(cfgDir, 3);
++  const wo = writeWorkOrder(cfgDir, "feature/coder-fail");
++  const failingRunner: OccupantRunner = (inv) =>
++    inv.role === "coder"
++      ? { stdout: "", stderr: "boom", code: 7 }
++      : { stdout: "VERDICT: ALIGNED", stderr: "", code: 0 };
++
++  assert.throws(
++    () =>
++      runDispatch({
++        workOrderPath: wo,
++        repoRoot: repo,
++        configPath: cfg,
++        runsDir: join(tmp("orch-runs-"), "runs"),
++        decisionsDir: join(tmp("orch-dec-"), "decisions"),
++        runner: failingRunner,
++      }),
++    /coder occupant exited 7/,
++  );
++  assert.equal(baseHasImpl(repo), false);
++});
++
++test("REGRESSION: run log INSIDE the repo (gitignored) does not break the merge", () => {
++  // Reproduces the live-test bug: the audit log lives under the repo
++  // (fabric/orchestrator/runs/), a coder does `git add -A`, and without the
++  // gitignore the log gets committed then dirtied, aborting `git checkout base`.
++  // The fix is fabric/orchestrator/.gitignore ignoring runs/; here we mirror it.
++  const repo = initRepo();
++  writeFileSync(join(repo, ".gitignore"), "runs/\n");
++  git(repo, ["add", "-A"]);
++  git(repo, ["commit", "-m", "ignore runs"]);
++
++  const cfgDir = tmp("orch-cfg-");
++  const cfg = writeTestConfig(cfgDir, 3);
++  const wo = writeWorkOrder(cfgDir, "feature/inrepo-runs");
++  const runsDir = join(repo, "runs"); // INSIDE the repo, on purpose
++  const { runner } = scriptedRunner(repo, ["VERDICT: ALIGNED"]);
++
++  const res = runDispatch({
++    workOrderPath: wo,
++    repoRoot: repo,
++    configPath: cfg,
++    runsDir,
++    decisionsDir: join(tmp("orch-dec-"), "decisions"),
++    runner,
++  });
++
++  assert.equal(res.outcome, "merged");
++  assert.equal(res.exitCode, 0);
++  assert.equal(baseHasImpl(repo), true);
++  // the run log exists but was never committed (ignored)
++  assert.equal(git(repo, ["ls-files", "runs/"]).stdout.trim(), "");
++});
++
++// ---- config-driven command construction (no vendor string in the loop) ----
++
++test("buildCommand substitutes placeholders from config only", () => {
++  const cfgDir = tmp("orch-cfg-");
++  const cfg = loadConfig(writeTestConfig(cfgDir, 3));
++  const argv = buildCommand("coder", cfg, {
++    REPO: "/x/repo",
++    BRANCH: "feature/z",
++    PROMPT_FILE: "/tmp/p.txt",
++  });
++  assert.deepEqual(argv, [
++    "run-coder",
++    "--repo",
++    "/x/repo",
++    "--branch",
++    "feature/z",
++    "--prompt",
++    "/tmp/p.txt",
++  ]);
++});
++
++test("ADVERSARIAL: the loop source names no vendor — occupants come only from config", () => {
++  const vendorRe = /\b(claude|anthropic|glm|zhipu|gpt|openai|gemini|fable|opus|sonnet|haiku|mistral|cohere|llama)\b/i;
++  const sources = readdirSync(HERE).filter(
++    (f) => f.endsWith(".ts") && !f.endsWith(".test.ts"),
++  );
++  assert.ok(sources.includes("dispatch.ts"));
++  for (const f of sources) {
++    const text = readFileSync(join(HERE, f), "utf8");
++    const m = text.match(vendorRe);
++    assert.equal(m, null, `${f} must contain no vendor string, found: ${m?.[0]}`);
++  }
++});
++
++test("the real config.json loads and defines the required + six layer roles", () => {
++  const cfg = loadConfig(join(HERE, "config.json"));
++  assert.ok(cfg.roles.coder && cfg.roles.reviewer && cfg.roles.orchestrator);
++  for (const layer of ["research", "front-end", "back-end", "content", "business"]) {
++    assert.ok(cfg.roles[layer], `missing layer role ${layer}`);
++  }
++  assert.equal(typeof cfg.maxReviseCycles, "number");
++  // GLM slot is documented as an alternate, disabled until WS-D.
++  assert.ok(cfg.alternates && cfg.alternates.coder);
++  assert.equal(cfg.alternates.coder.enabled, false);
++});
++
++// ---- dry-run shape ----
++
++test("--dry-run prints exact commands, mutates nothing", () => {
++  const repo = initRepo();
++  const cfgDir = tmp("orch-cfg-");
++  const cfg = writeTestConfig(cfgDir, 3);
++  const wo = writeWorkOrder(cfgDir, "feature/dry");
++  let called = 0;
++  const runner: OccupantRunner = () => {
++    called++;
++    return { stdout: "", stderr: "", code: 0 };
++  };
++
++  const res = runDispatch({
++    workOrderPath: wo,
++    repoRoot: repo,
++    configPath: cfg,
++    runsDir: join(tmp("orch-runs-"), "runs"),
++    decisionsDir: join(tmp("orch-dec-"), "decisions"),
++    dryRun: true,
++    runner,
++  });
++
++  assert.equal(res.outcome, "dry-run");
++  assert.equal(res.exitCode, 0);
++  assert.equal(called, 0, "dry-run must not invoke an occupant");
++  assert.ok(res.plannedCommands);
++  const roles = res.plannedCommands!.map((p) => p.role);
++  assert.deepEqual(roles, ["coder", "reviewer"]);
++  // {REPO} substituted to the repo path in both planned commands
++  for (const p of res.plannedCommands!) {
++    assert.ok(p.argv.includes(repo), `${p.role} argv should include repo path`);
++    assert.ok(!p.argv.join(" ").includes("{REPO}"), "no unsubstituted {REPO}");
++  }
++  // no branch created, no run file written
++  assert.equal(currentBranchOf(repo), "main");
++});
++
++// ---- audit-log append ----
++
++test("audit JSONL is appended, one parseable object per step, no secrets", () => {
++  const repo = initRepo();
++  const cfgDir = tmp("orch-cfg-");
++  const cfg = writeTestConfig(cfgDir, 3);
++  const wo = writeWorkOrder(cfgDir, "feature/audit");
++  const runsDir = join(tmp("orch-runs-"), "runs");
++  const { runner } = scriptedRunner(repo, ["VERDICT: ALIGNED"]);
++
++  const res = runDispatch({
++    workOrderPath: wo,
++    repoRoot: repo,
++    configPath: cfg,
++    runsDir,
++    decisionsDir: join(tmp("orch-dec-"), "decisions"),
++    runner,
++  });
++
++  assert.ok(res.runFile && existsSync(res.runFile));
++  const lines = readFileSync(res.runFile!, "utf8").trim().split("\n");
++  const entries = lines.map((l) => JSON.parse(l));
++  const steps = entries.map((e) => e.step);
++  assert.ok(steps.includes("start"));
++  assert.ok(steps.includes("coder"));
++  assert.ok(steps.includes("reviewer"));
++  assert.ok(steps.includes("merge"));
++  assert.ok(steps.includes("done"));
++  // every entry has ts + run; commands are argv arrays (from config, no secrets)
++  for (const e of entries) {
++    assert.equal(typeof e.ts, "string");
++    assert.equal(e.run, "feature-audit");
++    if (e.command) assert.ok(Array.isArray(e.command));
++  }
++});
+diff --git a/fabric/orchestrator/dispatch.ts b/fabric/orchestrator/dispatch.ts
+new file mode 100644
+index 0000000..d88d8cc
+--- /dev/null
++++ b/fabric/orchestrator/dispatch.ts
+@@ -0,0 +1,460 @@
++#!/usr/bin/env node
++// dispatch.ts — the orchestrator dispatch + monitor loop (SPEC WS-A slice 1).
++//
++// Drives the proven pattern:  spawn coder → adversarial review → revise → merge.
++// The occupant of every role comes ONLY from config.json; this file names no
++// vendor (an adversarial test greps this source for vendor strings and requires
++// it clean). The review gate is non-optional and fail-closed: a missing or
++// malformed verdict is treated as FLAGS, never as a pass, and an exhausted
++// revise budget files an owner decision card and exits non-zero WITHOUT merging.
++//
++//   node fabric/orchestrator/dispatch.ts <work-order.md> [--dry-run]
++//        [--repo-root <dir>] [--config <file>] [--runs <dir>]
++//        [--decisions <dir>] [--branch <name>]
++//
++// Exit codes: 0 merged (ALIGNED), 3 flags-exhausted (card filed), 2 HALTED
++// refusal, 1 usage/error. Distinct codes let a shell caller branch on outcome.
++
++import { spawnSync } from "node:child_process";
++import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join, resolve, dirname } from "node:path";
++import { fileURLToPath, pathToFileURL } from "node:url";
++
++import { loadConfig, buildCommand, type OrchestratorConfig } from "./config.ts";
++import { parseWorkOrder, type WorkOrder } from "./workorder.ts";
++import { parseVerdict, type Verdict } from "./verdict.ts";
++import { appendAudit, runFilePath, type AuditEntry } from "./audit.ts";
++import { fileRevisionExhaustedCard } from "./decision-card.ts";
++import { checkoutWorkBranch, branchDiff, mergeBranchToBase } from "./git.ts";
++
++// ---- occupant invocation (injectable so the loop is testable without spawning) ----
++
++export interface Invocation {
++  role: string;
++  argv: string[];
++  promptContent: string;
++  promptFile: string;
++  cwd: string;
++}
++
++export interface RunnerResult {
++  stdout: string;
++  stderr: string;
++  code: number;
++}
++
++export type OccupantRunner = (inv: Invocation) => RunnerResult;
++
++/**
++ * Default runner: spawn argv[0] with the rest as args, in the repo, and pipe the
++ * prompt on stdin. The occupant is entirely determined by `inv.argv` (built from
++ * config) — this function has no vendor knowledge. A null exit (signal) is
++ * reported as a failure code so the loop fails closed.
++ */
++export const defaultRunner: OccupantRunner = (inv) => {
++  const r = spawnSync(inv.argv[0], inv.argv.slice(1), {
++    cwd: inv.cwd,
++    input: inv.promptContent,
++    encoding: "utf8",
++    maxBuffer: 64 * 1024 * 1024,
++  });
++  return {
++    stdout: r.stdout ?? "",
++    stderr: r.stderr ?? "",
++    code: r.status === null ? 1 : r.status,
++  };
++};
++
++// ---- options / result ----
++
++export interface RunDispatchOptions {
++  workOrderPath: string;
++  repoRoot: string;
++  configPath?: string;
++  runsDir?: string;
++  decisionsDir?: string;
++  canonPointers?: string[];
++  branchOverride?: string;
++  dryRun?: boolean;
++  runner?: OccupantRunner;
++  now?: Date;
++  /** where to write throwaway prompt/diff files (default: a fresh os tmpdir) */
++  workDir?: string;
++}
++
++export type Outcome =
++  | "merged"
++  | "flags-exhausted"
++  | "halted"
++  | "dry-run"
++  | "error";
++
++export interface DispatchResult {
++  outcome: Outcome;
++  exitCode: number;
++  branch?: string;
++  coderRuns: number;
++  reviews: number;
++  finalVerdict?: Verdict;
++  decisionCardPath?: string;
++  runFile?: string;
++  /** dry-run only: the exact commands that WOULD run */
++  plannedCommands?: { role: string; argv: string[] }[];
++  message?: string;
++}
++
++const HALTED_MARKER = "HALTED";
++
++function isoNow(now: Date): string {
++  return now.toISOString();
++}
++
++function dateStamp(now: Date): string {
++  const y = now.getUTCFullYear();
++  const m = (now.getUTCMonth() + 1).toString().padStart(2, "0");
++  const d = now.getUTCDate().toString().padStart(2, "0");
++  return `${y}-${m}-${d}`;
++}
++
++function defaultCanonPointers(repoRoot: string): string[] {
++  // Authority order: PORTFOLIO wins, then VISION, then SPEC. PORTFOLIO lives
++  // outside the repo (~/work/PORTFOLIO.md) and is cited by path.
++  return [
++    "~/work/PORTFOLIO.md (company canon — wins all conflicts)",
++    join(repoRoot, "VISION.md"),
++    join(repoRoot, "SPEC.md"),
++  ];
++}
++
++function coderPrompt(wo: WorkOrder, findings: string | undefined): string {
++  const base =
++    `You are the CODER sub-agent. Implement the following work-order on the ` +
++    `branch it names, committing your work to that branch. Honor canon: ` +
++    `PORTFOLIO.md → VISION.md → SPEC.md (higher wins).\n\n` +
++    `----- WORK ORDER -----\n${wo.raw}\n----- END WORK ORDER -----\n`;
++  if (findings && findings.trim().length > 0) {
++    return (
++      base +
++      `\nA prior revision FAILED adversarial review. Address every finding ` +
++      `below, then commit the fixes to the same branch:\n\n` +
++      `----- REVIEWER FINDINGS -----\n${findings.trim()}\n` +
++      `----- END REVIEWER FINDINGS -----\n`
++    );
++  }
++  return base;
++}
++
++function reviewPrompt(
++  wo: WorkOrder,
++  diffFile: string,
++  canonPointers: string[],
++): string {
++  return (
++    `You are the ADVERSARIAL REVIEWER. Read the branch diff at ${diffFile} and ` +
++    `judge whether it honors canon and satisfies the work-order. Canon, in ` +
++    `authority order (higher wins):\n` +
++    canonPointers.map((p) => `  - ${p}`).join("\n") +
++    `\n\n----- WORK ORDER -----\n${wo.raw}\n----- END WORK ORDER -----\n\n` +
++    `Emit EXACTLY ONE authoritative verdict line, then your findings:\n` +
++    `  VERDICT: ALIGNED   (diff honors canon and meets acceptance — merge)\n` +
++    `  VERDICT: FLAGS     (misalignments — list every finding below the line)\n` +
++    `A missing or ambiguous verdict is treated as FLAGS. Be adversarial.\n`
++  );
++}
++
++function audit(runFile: string | undefined, entry: AuditEntry): void {
++  if (runFile) appendAudit(runFile, entry);
++}
++
++/**
++ * THE dispatch loop. Runnable and testable: pass a `runner` to drive it without
++ * spawning a real occupant, and point runsDir/decisionsDir at temp dirs.
++ */
++export function runDispatch(opts: RunDispatchOptions): DispatchResult {
++  const now = opts.now ?? new Date();
++  const repoRoot = resolve(opts.repoRoot);
++  const runner = opts.runner ?? defaultRunner;
++  const configPath =
++    opts.configPath ?? join(repoRoot, "fabric", "orchestrator", "config.json");
++  const runsDir = opts.runsDir ?? join(repoRoot, "fabric", "orchestrator", "runs");
++  const decisionsDir =
++    opts.decisionsDir ?? join(repoRoot, "_governance", "decisions");
++  const canonPointers = opts.canonPointers ?? defaultCanonPointers(repoRoot);
++
++  // 1. HALTED marker → refuse to run at all (fail closed).
++  if (existsSync(join(repoRoot, HALTED_MARKER))) {
++    const msg = `HALTED marker present at ${repoRoot}; refusing to dispatch (fail closed).`;
++    return { outcome: "halted", exitCode: 2, coderRuns: 0, reviews: 0, message: msg };
++  }
++
++  // 2. Load config + work-order.
++  const cfg: OrchestratorConfig = loadConfig(configPath);
++  const wo = parseWorkOrder(opts.workOrderPath);
++  const branch = opts.branchOverride ?? wo.branch;
++  if (!branch) {
++    throw new Error(
++      `work-order ${opts.workOrderPath} declares no branch and no --branch was given ` +
++        `(add a "branch:" line or "**Branch:** <name>")`,
++    );
++  }
++  const base = cfg.baseBranch;
++
++  const workDir = opts.workDir ?? mkdtempSync(join(tmpdir(), "orch-"));
++  const coderPromptFile = join(workDir, "coder-prompt.txt");
++  const reviewPromptFile = join(workDir, "review-prompt.txt");
++  const diffFile = join(workDir, "branch.diff");
++
++  // 3. Dry-run: print the EXACT commands, mutate nothing.
++  if (opts.dryRun) {
++    const subsCoder = { REPO: repoRoot, BRANCH: branch, BASE: base, PROMPT_FILE: coderPromptFile };
++    const subsReview = {
++      REPO: repoRoot,
++      BRANCH: branch,
++      BASE: base,
++      PROMPT_FILE: reviewPromptFile,
++      DIFF_FILE: diffFile,
++    };
++    const planned = [
++      { role: "coder", argv: buildCommand("coder", cfg, subsCoder) },
++      { role: "reviewer", argv: buildCommand("reviewer", cfg, subsReview) },
++    ];
++    const out =
++      `# dry-run for work-order ${opts.workOrderPath}\n` +
++      `# branch: ${branch}  base: ${base}  maxReviseCycles: ${cfg.maxReviseCycles}\n` +
++      `git checkout -B ${branch} ${base}\n` +
++      planned
++        .map((p) => `[${p.role}] ${p.argv.join(" ")}   (prompt piped on stdin)`)
++        .join("\n") +
++      `\n# on ALIGNED: git checkout ${base} && git merge --no-ff ${branch}\n` +
++      `# on exhausted FLAGS: file decision card in ${decisionsDir}, exit 3 (no merge)\n`;
++    process.stdout.write(out);
++    return {
++      outcome: "dry-run",
++      exitCode: 0,
++      branch,
++      coderRuns: 0,
++      reviews: 0,
++      plannedCommands: planned,
++    };
++  }
++
++  // 4. Real run. Establish the run file + branch.
++  const date = dateStamp(now);
++  const runFile = runFilePath(runsDir, date, wo.slug);
++  audit(runFile, {
++    ts: isoNow(now),
++    run: wo.slug,
++    step: "start",
++    note: `branch=${branch} base=${base} maxReviseCycles=${cfg.maxReviseCycles}`,
++  });
++
++  checkoutWorkBranch(repoRoot, branch, base);
++
++  const N = cfg.maxReviseCycles;
++  let coderRuns = 0;
++  let reviews = 0;
++  let lastFindings = "";
++  let finalVerdict: Verdict = "FLAGS";
++
++  // Initial coder run (findings undefined).
++  const runCoder = (findings: string | undefined, cycle: number): void => {
++    const prompt = coderPrompt(wo, findings);
++    writeFileSync(coderPromptFile, prompt);
++    const argv = buildCommand("coder", cfg, {
++      REPO: repoRoot,
++      BRANCH: branch,
++      BASE: base,
++      PROMPT_FILE: coderPromptFile,
++    });
++    const res = runner({ role: "coder", argv, promptContent: prompt, promptFile: coderPromptFile, cwd: repoRoot });
++    coderRuns++;
++    audit(runFile, {
++      ts: isoNow(now),
++      run: wo.slug,
++      step: cycle === 0 ? "coder" : "revise",
++      role: "coder",
++      command: argv,
++      exitCode: res.code,
++      cycle,
++    });
++    if (res.code !== 0) {
++      throw new Error(
++        `coder occupant exited ${res.code} on cycle ${cycle} (fail closed; not merging). stderr: ${res.stderr.trim().slice(0, 500)}`,
++      );
++    }
++  };
++
++  runCoder(undefined, 0);
++
++  // Review, then optionally revise, bounded by N revise cycles.
++  for (let round = 0; round <= N; round++) {
++    writeFileSync(diffFile, branchDiff(repoRoot, base, branch));
++    const rprompt = reviewPrompt(wo, diffFile, canonPointers);
++    writeFileSync(reviewPromptFile, rprompt);
++    const rargv = buildCommand("reviewer", cfg, {
++      REPO: repoRoot,
++      BRANCH: branch,
++      BASE: base,
++      PROMPT_FILE: reviewPromptFile,
++      DIFF_FILE: diffFile,
++    });
++    const rres = runner({
++      role: "reviewer",
++      argv: rargv,
++      promptContent: rprompt,
++      promptFile: reviewPromptFile,
++      cwd: repoRoot,
++    });
++    reviews++;
++    const v = parseVerdict(rres.stdout);
++    finalVerdict = v.verdict;
++    lastFindings = v.findings;
++    audit(runFile, {
++      ts: isoNow(now),
++      run: wo.slug,
++      step: "reviewer",
++      role: "reviewer",
++      command: rargv,
++      exitCode: rres.code,
++      verdict: v.malformed ? "FLAGS(malformed)" : v.verdict,
++      cycle: round,
++    });
++
++    if (v.verdict === "ALIGNED") {
++      const message = `orchestrator: merge ${branch} (VERDICT: ALIGNED after ${round} revise ${round === 1 ? "cycle" : "cycles"})`;
++      mergeBranchToBase(repoRoot, base, branch, message);
++      audit(runFile, {
++        ts: isoNow(now),
++        run: wo.slug,
++        step: "merge",
++        note: `merged ${branch} into ${base} (local, no push)`,
++      });
++      audit(runFile, { ts: isoNow(now), run: wo.slug, step: "done", note: "merged" });
++      return {
++        outcome: "merged",
++        exitCode: 0,
++        branch,
++        coderRuns,
++        reviews,
++        finalVerdict,
++        runFile,
++      };
++    }
++
++    // FLAGS. Revise if budget remains; else file a card and stop (never merge).
++    if (round < N) {
++      runCoder(v.findings, round + 1);
++    } else {
++      const card = fileRevisionExhaustedCard({
++        decisionsDir,
++        date,
++        branch,
++        slug: wo.slug,
++        reviseCycles: N,
++        runFile,
++        lastFindings,
++      });
++      audit(runFile, {
++        ts: isoNow(now),
++        run: wo.slug,
++        step: "decision-card",
++        note: `revise budget (${N}) exhausted; filed ${card.id}; NOT merged`,
++      });
++      audit(runFile, { ts: isoNow(now), run: wo.slug, step: "done", note: "flags-exhausted" });
++      return {
++        outcome: "flags-exhausted",
++        exitCode: 3,
++        branch,
++        coderRuns,
++        reviews,
++        finalVerdict,
++        decisionCardPath: card.path,
++        runFile,
++      };
++    }
++  }
++
++  // Unreachable: the loop always returns inside. Fail closed if control escapes.
++  throw new Error("dispatch loop exited without a decision (should be unreachable)");
++}
++
++// ---- CLI ----
++
++function parseCliArgs(argv: string[]): {
++  workOrderPath?: string;
++  flags: Record<string, string | boolean>;
++} {
++  const flags: Record<string, string | boolean> = {};
++  let workOrderPath: string | undefined;
++  for (let i = 0; i < argv.length; i++) {
++    const a = argv[i];
++    if (a.startsWith("--")) {
++      const key = a.slice(2);
++      const next = argv[i + 1];
++      if (next === undefined || next.startsWith("--")) {
++        flags[key] = true;
++      } else {
++        flags[key] = next;
++        i++;
++      }
++    } else if (workOrderPath === undefined) {
++      workOrderPath = a;
++    }
++  }
++  return { workOrderPath, flags };
++}
++
++function usage(): void {
++  process.stderr.write(
++    `orchestrator dispatch — spawn coder → adversarial review → revise → merge\n\n` +
++      `Usage:\n` +
++      `  node fabric/orchestrator/dispatch.ts <work-order.md> [--dry-run]\n` +
++      `       [--repo-root <dir>] [--config <file>] [--runs <dir>]\n` +
++      `       [--decisions <dir>] [--branch <name>]\n\n` +
++      `Exit codes: 0 merged, 3 flags-exhausted (card filed), 2 HALTED, 1 usage/error.\n`,
++  );
++}
++
++function main(): number {
++  const { workOrderPath, flags } = parseCliArgs(process.argv.slice(2));
++  if (!workOrderPath) {
++    usage();
++    return 1;
++  }
++  const HERE = dirname(fileURLToPath(import.meta.url));
++  const defaultRepoRoot = resolve(HERE, "..", "..");
++  const repoRoot =
++    typeof flags["repo-root"] === "string" ? resolve(flags["repo-root"]) : defaultRepoRoot;
++
++  try {
++    const res = runDispatch({
++      workOrderPath: resolve(workOrderPath),
++      repoRoot,
++      configPath: typeof flags.config === "string" ? resolve(flags.config) : undefined,
++      runsDir: typeof flags.runs === "string" ? resolve(flags.runs) : undefined,
++      decisionsDir: typeof flags.decisions === "string" ? resolve(flags.decisions) : undefined,
++      branchOverride: typeof flags.branch === "string" ? flags.branch : undefined,
++      dryRun: flags["dry-run"] === true,
++    });
++    if (!flags["dry-run"]) {
++      process.stdout.write(
++        `${res.outcome.toUpperCase()}  branch=${res.branch ?? "-"}  ` +
++          `coderRuns=${res.coderRuns} reviews=${res.reviews}` +
++          (res.decisionCardPath ? `\n  decision card: ${res.decisionCardPath}` : "") +
++          (res.runFile ? `\n  audit: ${res.runFile}` : "") +
++          (res.message ? `\n  ${res.message}` : "") +
++          `\n`,
++      );
++    }
++    return res.exitCode;
++  } catch (err) {
++    process.stderr.write(`dispatch error: ${err instanceof Error ? err.message : String(err)}\n`);
++    return 1;
++  }
++}
++
++// Run only when invoked directly (not when imported by tests).
++if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
++  process.exit(main());
++}
+diff --git a/fabric/orchestrator/git.ts b/fabric/orchestrator/git.ts
+new file mode 100644
+index 0000000..2f9d864
+--- /dev/null
++++ b/fabric/orchestrator/git.ts
+@@ -0,0 +1,65 @@
++// git.ts — the git operations the dispatch loop needs, via `git` subprocess.
++//
++// No dependency; just spawnSync. Every helper fails loud (throws) on a non-zero
++// git exit so the loop can fail closed. The loop merges into the base branch
++// LOCALLY ONLY — there is intentionally NO push helper here (pushing/deploying
++// stays a human-or-higher step, VISION Autonomy Floor #2).
++
++import { spawnSync } from "node:child_process";
++
++function git(repo: string, args: string[]): { code: number; stdout: string; stderr: string } {
++  const r = spawnSync("git", args, { cwd: repo, encoding: "utf8" });
++  return {
++    code: r.status === null ? 1 : r.status,
++    stdout: r.stdout ?? "",
++    stderr: r.stderr ?? "",
++  };
++}
++
++function gitOrThrow(repo: string, args: string[]): string {
++  const r = git(repo, args);
++  if (r.code !== 0) {
++    throw new Error(`git ${args.join(" ")} failed (${r.code}): ${r.stderr.trim()}`);
++  }
++  return r.stdout;
++}
++
++export function currentBranch(repo: string): string {
++  return gitOrThrow(repo, ["rev-parse", "--abbrev-ref", "HEAD"]).trim();
++}
++
++export function branchExists(repo: string, branch: string): boolean {
++  return git(repo, ["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`]).code === 0;
++}
++
++/**
++ * Check out the work-order's branch, creating it from `base` if it does not
++ * exist. Existing branches are checked out as-is (never reset — that would
++ * discard prior work).
++ */
++export function checkoutWorkBranch(repo: string, branch: string, base: string): void {
++  if (branchExists(repo, branch)) {
++    gitOrThrow(repo, ["checkout", branch]);
++  } else {
++    gitOrThrow(repo, ["checkout", "-b", branch, base]);
++  }
++}
++
++/** The diff a reviewer sees: what `branch` adds on top of the merge-base with base. */
++export function branchDiff(repo: string, base: string, branch: string): string {
++  return gitOrThrow(repo, ["diff", `${base}...${branch}`]);
++}
++
++/**
++ * Merge `branch` into `base` LOCALLY (no push). Uses --no-ff so the merge is an
++ * explicit, revertible commit. Throws on conflict/failure (fail closed).
++ */
++export function mergeBranchToBase(
++  repo: string,
++  base: string,
++  branch: string,
++  message: string,
++): void {
++  gitOrThrow(repo, ["checkout", base]);
++  gitOrThrow(repo, ["merge", "--no-ff", branch, "-m", message]);
++}
+diff --git a/fabric/orchestrator/verdict.ts b/fabric/orchestrator/verdict.ts
+new file mode 100644
+index 0000000..b39b54a
+--- /dev/null
++++ b/fabric/orchestrator/verdict.ts
+@@ -0,0 +1,62 @@
++// verdict.ts — parse the reviewer occupant's machine-readable verdict.
++//
++// The adversarial review gate emits exactly one authoritative verdict line:
++//
++//     VERDICT: ALIGNED     (the diff honors canon — merge)
++//     VERDICT: FLAGS       (misalignments found — findings follow, revise)
++//
++// FAIL CLOSED is the whole point: anything we cannot read as a clean ALIGNED is
++// FLAGS. A missing line, garbage, or an ambiguous both-appear output is never a
++// pass. Only an unambiguous ALIGNED (at least one ALIGNED line and no FLAGS line)
++// merges. This mirrors VISION: "The review gate is never traded for speed."
++
++export type Verdict = "ALIGNED" | "FLAGS";
++
++export interface VerdictResult {
++  verdict: Verdict;
++  /** true when no parseable VERDICT line was found at all */
++  malformed: boolean;
++  /** reviewer findings (text after the first verdict line), for the revise prompt */
++  findings: string;
++}
++
++const VERDICT_LINE = /^[ \t>*_-]*VERDICT:[ \t]*(ALIGNED|FLAGS)\b/gim;
++
++export function parseVerdict(text: string): VerdictResult {
++  const src = typeof text === "string" ? text : "";
++  const matches = [...src.matchAll(VERDICT_LINE)];
++
++  if (matches.length === 0) {
++    return {
++      verdict: "FLAGS",
++      malformed: true,
++      findings:
++        "No parseable 'VERDICT: ALIGNED|FLAGS' line in reviewer output. " +
++        "Fail closed → treated as FLAGS (never a pass).",
++    };
++  }
++
++  const hasFlags = matches.some((m) => m[1].toUpperCase() === "FLAGS");
++  const hasAligned = matches.some((m) => m[1].toUpperCase() === "ALIGNED");
++
++  // Merge ONLY on an unambiguous ALIGNED. Any FLAGS present (even alongside an
++  // ALIGNED) is fail-closed to FLAGS.
++  if (hasAligned && !hasFlags) {
++    return { verdict: "ALIGNED", malformed: false, findings: "" };
++  }
++
++  return {
++    verdict: "FLAGS",
++    malformed: false,
++    findings: extractFindings(src),
++  };
++}
++
++/** Everything after the first verdict line, trimmed; whole text as fallback. */
++function extractFindings(text: string): string {
++  const idx = text.search(/^[ \t>*_-]*VERDICT:[ \t]*(ALIGNED|FLAGS)\b/im);
++  if (idx < 0) return text.trim();
++  const afterLine = text.slice(idx).replace(/^.*(?:\r?\n|$)/, "");
++  const trimmed = afterLine.trim();
++  return trimmed.length > 0 ? trimmed : text.trim();
++}
+diff --git a/fabric/orchestrator/workorder.ts b/fabric/orchestrator/workorder.ts
+new file mode 100644
+index 0000000..c255c9a
+--- /dev/null
++++ b/fabric/orchestrator/workorder.ts
+@@ -0,0 +1,58 @@
++// workorder.ts — parse a sprint work-order markdown file.
++//
++// A work-order is the orchestrator's dispatch instruction: goal, scope, the
++// branch to work on, and acceptance criteria. The one field the loop MUST have
++// is the branch — it declares where the coder works and what gets reviewed and
++// merged. We accept a few common ways to write it (frontmatter or a body line);
++// if none is present and no --branch override was given, the caller fails closed.
++
++import { readFileSync } from "node:fs";
++import { basename } from "node:path";
++
++export interface WorkOrder {
++  path: string;
++  raw: string;
++  branch: string | undefined;
++  slug: string;
++  title: string | undefined;
++}
++
++const BRANCH_PATTERNS: RegExp[] = [
++  // frontmatter or plain line:  branch: feature/foo   /   branch = feature/foo
++  /(?:^|\n)[ \t]*branch[ \t]*[:=][ \t]*[`"']?([^\s`"'\n]+)/i,
++  // markdown emphasis / list:   **Branch:** feature/foo   /   - Branch: feature/foo
++  /(?:^|\n)[ \t]*(?:[-*][ \t]*)?\*\*branch\*\*[ \t]*[:=]?[ \t]*[`"']?([^\s`"'\n]+)/i,
++];
++
++function extractBranch(raw: string): string | undefined {
++  for (const re of BRANCH_PATTERNS) {
++    const m = raw.match(re);
++    if (m && m[1]) return m[1];
++  }
++  return undefined;
++}
++
++function extractTitle(raw: string): string | undefined {
++  const m = raw.match(/^[ \t]*#[ \t]+(.+)$/m);
++  return m ? m[1].trim() : undefined;
++}
++
++/** Filesystem-safe slug (shared shape with the spend gate's slugify). */
++export function slugify(text: string): string {
++  const s = text
++    .toLowerCase()
++    .replace(/[^a-z0-9]+/g, "-")
++    .replace(/^-+|-+$/g, "")
++    .slice(0, 40)
++    .replace(/-+$/g, "");
++  return s.length > 0 ? s : "work-order";
++}
++
++export function parseWorkOrder(path: string): WorkOrder {
++  const raw = readFileSync(path, "utf8");
++  const branch = extractBranch(raw);
++  const title = extractTitle(raw);
++  // Slug preference: branch (stable, unique) → title → filename.
++  const slugSource = branch ?? title ?? basename(path).replace(/\.md$/i, "");
++  return { path, raw, branch, slug: slugify(slugSource), title };
++}
+diff --git a/registers/checks.csv b/registers/checks.csv
+index 7ec037b..5f24bf1 100644
+--- a/registers/checks.csv
++++ b/registers/checks.csv
+@@ -1,2 +1,3 @@
+ date,project,source,kind,status,summary,link
+ 2026-07-13,strandworks-ops,cockpit-session,progress,ok,Cockpit command-center redesign + editable money + decide answers built on feature/cockpit-command-center; pure-review ALIGNED-WITH-FLAGS; awaiting owner merge + deploy,
++2026-07-13,strandworks-ops,cockpit-session,deploy,ok,Command-center cockpit deployed to dashboard.strandautomationworks.com (merge 78ec277): redesign + editable money + checks register + decide answers,
