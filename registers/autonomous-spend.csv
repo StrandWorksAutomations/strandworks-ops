@@ -1,1 +1,2 @@
 date,month,amount_usd,project,purpose,status,requested_by
+2026-07-13,2026-07,25.00,strandworks-ops,"governance scouts on claude-ops droplet: daily drift-check + weekly audit via Anthropic API (sonnet), conservative monthly estimate",allowed,orchestrator-session 2026-07-13
