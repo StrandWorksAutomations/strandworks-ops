@@ -49,11 +49,15 @@ export type MoneyItem = {
   costRaw: string; // the register's own cost text ("5.99+", "~12", "")
   costApprox: boolean; // register marked the figure approximate (~, +)
   cadence: string;
+  oneTime: boolean; // cadence says one-time ⇒ excluded from monthly burn
   renewalIso: string | null; // first YYYY-MM-DD found in renewal_date
   renewalRaw: string;
   status: string;
   cls: SpendClass;
   notes: string;
+  verdict: string; // owner ruling: approved | pending-cancel | cancel | ""
+  trialEnd: string | null; // YYYY-MM-DD ⇒ this is a trial
+  discount: string; // owner note: student / small-business / …
 };
 
 export type MoneyView = {
@@ -65,6 +69,8 @@ export type MoneyView = {
   byClass: Record<SpendClass, { totalUsd: number; count: number; uncosted: number }>;
   topBurns: MoneyItem[]; // costed recurring items, largest first
   renewals: MoneyItem[]; // items with a parseable renewal date, soonest first
+  cancelMarkedUsd: number; // costed burn the owner marked pending-cancel/cancel
+  trials: MoneyItem[]; // items with a trial_end date, soonest first
 };
 
 // Classes whose costs count toward the recurring-burn floor. Ending/owned are
@@ -89,18 +95,25 @@ export function buildMoneyView(csvText: string | null): MoneyView {
 
   const items: MoneyItem[] = rows.map((r) => {
     const { n, approx } = parseCost(r["cost_monthly_usd"] ?? "");
+    const cadence = r["billing_cadence"] ?? "";
     return {
       service: r["service"] || "(unnamed)",
       plan: r["plan"] ?? "",
       costUsd: n,
       costRaw: (r["cost_monthly_usd"] ?? "").trim(),
       costApprox: approx,
-      cadence: r["billing_cadence"] ?? "",
+      cadence,
+      oneTime: /one[- ]?time/i.test(cadence),
       renewalIso: parseRenewal(r["renewal_date"] ?? ""),
       renewalRaw: r["renewal_date"] ?? "",
       status: r["status"] ?? "",
       cls: classifyStatus(r["status"] ?? ""),
       notes: r["notes"] ?? "",
+      verdict: r["verdict"] ?? "",
+      trialEnd: /^\d{4}-\d{2}-\d{2}$/.test((r["trial_end"] ?? "").trim())
+        ? (r["trial_end"] ?? "").trim()
+        : null,
+      discount: r["discount"] ?? "",
     };
   });
 
@@ -110,18 +123,20 @@ export function buildMoneyView(csvText: string | null): MoneyView {
   let known = 0;
   let uncosted = 0;
   let approxCount = 0;
+  let cancelMarked = 0;
   for (const it of items) {
     const bucket = byClass[it.cls];
     bucket.count++;
-    if (it.costUsd !== null) {
+    if (it.costUsd !== null && !it.oneTime) {
       bucket.totalUsd = Math.round((bucket.totalUsd + it.costUsd) * 100) / 100;
-    } else {
+    } else if (it.costUsd === null) {
       bucket.uncosted++;
     }
-    if (BURN_CLASSES.includes(it.cls)) {
+    if (BURN_CLASSES.includes(it.cls) && !it.oneTime) {
       if (it.costUsd !== null) {
         known += it.costUsd;
         if (it.costApprox) approxCount++;
+        if (/^(pending-cancel|cancel)$/.test(it.verdict)) cancelMarked += it.costUsd;
       } else {
         uncosted++;
       }
@@ -129,12 +144,16 @@ export function buildMoneyView(csvText: string | null): MoneyView {
   }
 
   const topBurns = items
-    .filter((it) => it.costUsd !== null && BURN_CLASSES.includes(it.cls))
+    .filter((it) => it.costUsd !== null && !it.oneTime && BURN_CLASSES.includes(it.cls))
     .sort((a, b) => (b.costUsd ?? 0) - (a.costUsd ?? 0));
 
   const renewals = items
     .filter((it) => it.renewalIso !== null)
     .sort((a, b) => (a.renewalIso ?? "").localeCompare(b.renewalIso ?? ""));
+
+  const trials = items
+    .filter((it) => it.trialEnd !== null)
+    .sort((a, b) => (a.trialEnd ?? "").localeCompare(b.trialEnd ?? ""));
 
   return {
     items,
@@ -144,6 +163,8 @@ export function buildMoneyView(csvText: string | null): MoneyView {
     byClass,
     topBurns,
     renewals,
+    cancelMarkedUsd: Math.round(cancelMarked * 100) / 100,
+    trials,
   };
 }
 

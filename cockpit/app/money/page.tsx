@@ -5,8 +5,11 @@ import { buildMoneyView, upcomingRenewals, SPEND_CLASSES, type MoneyItem, type S
 import { buildSpendView } from "@/lib/spend";
 import { readCeilingUsd } from "@/lib/git";
 import { redactForDisplay } from "@/lib/redact";
+import { writeMode } from "@/lib/rule-writer";
+import { SubscriptionCard, type CardItem } from "./SubscriptionCard";
 
 export const revalidate = 60;
+export const dynamic = "force-dynamic"; // edits must be visible immediately
 
 const STATUS_CLASS: Record<SpendClass, string> = {
   core: "good",
@@ -18,31 +21,22 @@ const STATUS_CLASS: Record<SpendClass, string> = {
   personal: "",
 };
 
-function Item({ it }: { it: MoneyItem }) {
-  return (
-    <div className="card sub-card">
-      <div className="row1">
-        <h3 style={{ margin: 0 }}>
-          {it.service}
-          {it.status ? <span className={`badge ${STATUS_CLASS[it.cls]}`}>{it.status}</span> : null}
-        </h3>
-        <span className="cost">
-          {it.costUsd !== null ? `$${it.costUsd.toFixed(2)}${it.costApprox ? "≈" : ""}` : "$ ?"}
-        </span>
-      </div>
-      <div className="plan">
-        {[it.plan, it.cadence, it.renewalRaw ? `renews ${it.renewalRaw}` : ""]
-          .filter(Boolean)
-          .join(" · ") || "no plan details on record"}
-      </div>
-      {it.notes ? (
-        <details>
-          <summary>notes</summary>
-          <div className="notes">{redactForDisplay(it.notes)}</div>
-        </details>
-      ) : null}
-    </div>
-  );
+function toCardItem(it: MoneyItem): CardItem {
+  return {
+    service: it.service,
+    plan: it.plan,
+    costRaw: it.costRaw,
+    costUsd: it.costUsd,
+    cadence: it.cadence,
+    renewalRaw: it.renewalRaw,
+    renewalIso: it.renewalIso,
+    status: it.status,
+    statusClass: STATUS_CLASS[it.cls],
+    verdict: it.verdict,
+    trialEnd: it.trialEnd,
+    discount: it.discount,
+    notesRedacted: it.notes ? redactForDisplay(it.notes) : "",
+  };
 }
 
 export default async function MoneyPage() {
@@ -56,11 +50,12 @@ export default async function MoneyPage() {
   const money = buildMoneyView(subsCsv);
   const spend = buildSpendView(spendCsv, ceilingUsd);
   const renewals60 = upcomingRenewals(money, todayIso, 60);
+  const dryRun = writeMode() === "dry-run";
 
   return (
     <Chrome
       title="Money"
-      sub={`$${money.knownMonthlyUsd.toFixed(2)}/mo known · ${money.uncostedCount} uncosted · ${money.approxCount} approximate`}
+      sub={`$${money.knownMonthlyUsd.toFixed(2)}/mo known · ${money.uncostedCount} uncosted${money.cancelMarkedUsd > 0 ? ` · −$${money.cancelMarkedUsd.toFixed(2)} marked to cancel` : ""}${dryRun ? " · DRY-RUN (no commits)" : ""}`}
       active="/money"
     >
       <div className="grid">
@@ -76,6 +71,26 @@ export default async function MoneyPage() {
           </a>
         ))}
       </div>
+
+      {money.trials.length > 0 ? (
+        <>
+          <div className="section-head">
+            <h2>Trials — decide before they convert</h2>
+            <span className="meta">{money.trials.length} running</span>
+          </div>
+          <div className="ledger">
+            {money.trials.map((t) => (
+              <div key={t.service} className="l-row">
+                <span className="l-date">{t.trialEnd}</span>
+                <span className="l-name">{t.service}</span>
+                <span className={`l-amount ${t.costUsd === null ? "dim" : ""}`}>
+                  {t.costUsd !== null ? `$${t.costUsd.toFixed(2)} after` : "$ ? after"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
 
       <div className="section-head">
         <h2>Renewals · next 60 days</h2>
@@ -134,8 +149,8 @@ export default async function MoneyPage() {
                 {money.byClass[c.cls].uncosted ? ` + ${money.byClass[c.cls].uncosted}?` : ""}
               </span>
             </div>
-            {sorted.map((it, i) => (
-              <Item key={i} it={it} />
+            {sorted.map((it) => (
+              <SubscriptionCard key={it.service} it={toCardItem(it)} dryRun={dryRun} />
             ))}
           </section>
         );

@@ -281,6 +281,43 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 }
 .answer-input::placeholder { color: var(--faint); }
 
+/* ---- money editing ---- */
+
+.sub-card.verdict-approved { border-left: 3px solid var(--good); }
+.sub-card.verdict-pending-cancel { border-left: 3px solid var(--warn); }
+.sub-card.verdict-cancel { border-left: 3px solid var(--bad); }
+.sub-card.verdict-cancel h3 { text-decoration: line-through; text-decoration-color: var(--bad); text-decoration-thickness: 1px; }
+
+.verdict-row { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+.verdict-row .v-spacer { flex: 1; }
+.v-btn {
+  min-width: 40px; padding: 6px 10px; border-radius: 8px;
+  border: 1px solid var(--border-strong); background: var(--bg);
+  color: var(--muted); font-family: var(--font-mono); font-size: 12px;
+  cursor: pointer;
+}
+.v-btn:active { transform: scale(0.95); }
+.v-btn:disabled { opacity: 0.4; cursor: default; }
+.v-btn.v-good { color: var(--good); border-color: var(--good); }
+.v-btn.v-warn { color: var(--warn); border-color: var(--warn); }
+.v-btn.v-bad { color: var(--bad); border-color: var(--bad); }
+.v-btn.on { background: var(--panel-2); box-shadow: inset 0 0 0 1px currentColor; }
+
+.edit-form { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.edit-form label {
+  display: block; font-family: var(--font-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint);
+}
+.edit-form label .hint { text-transform: none; letter-spacing: 0; }
+.edit-form input, .edit-form select {
+  display: block; width: 100%; margin-top: 3px; padding: 8px 10px;
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--border-strong); border-radius: 8px;
+  font-family: var(--font-body); font-size: 14px;
+  color-scheme: dark;
+}
+.edit-form .confirm-row { grid-column: 1 / -1; }
+
 /* ---- progress bar ---- */
 
 .bar {

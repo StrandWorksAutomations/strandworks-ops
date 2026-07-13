@@ -55,3 +55,16 @@ export function parseCsv(text: string): CsvTable {
   });
   return { headers, rows };
 }
+
+// Serialize back to RFC-4180 CSV. Fields containing commas, quotes, or
+// newlines are quoted; everything else is written bare, matching how the
+// registers are hand-maintained (minimal quoting keeps git diffs readable).
+export function stringifyCsv(table: CsvTable): string {
+  const esc = (v: string) =>
+    /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+  const lines = [table.headers.map(esc).join(",")];
+  for (const row of table.rows) {
+    lines.push(table.headers.map((h) => esc(row[h] ?? "")).join(","));
+  }
+  return lines.join("\n") + "\n";
+}

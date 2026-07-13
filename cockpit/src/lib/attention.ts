@@ -94,6 +94,17 @@ export function buildAttentionQueue(inputs: AttentionInputs): AttentionItem[] {
         });
       }
     }
+    // Trial deadlines — a set trial_end means "decide before this date".
+    for (const it of money.trials) {
+      items.push({
+        severity: dateSeverity(it.trialEnd, today),
+        dateIso: it.trialEnd,
+        title: `Trial ends: ${it.service}`,
+        detail: it.costUsd !== null ? `converts to $${it.costUsd.toFixed(2)}/mo unless cancelled` : "decide before it converts",
+        href: "/money",
+        kind: "money",
+      });
+    }
     if (money.byClass.hidden.count > 0) {
       items.push({
         severity: "soon",
