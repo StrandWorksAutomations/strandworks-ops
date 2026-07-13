@@ -1,0 +1,4 @@
+{
+  "ceiling_usd": 200.00,
+  "note": "Monthly ceiling on NEW autonomous spend the orchestration fabric incurs on its own (VISION Autonomy Floor #1 / SPEC WS-B). Existing blessed subscriptions in registers/subscriptions.csv are OUTSIDE this figure. Owner-adjustable case-by-case; a change here is an owner act, not an agent act."
+}
