@@ -46,6 +46,30 @@ export function csvQuote(field: string): string {
   return field;
 }
 
+// Control characters (incl. newline, carriage return, tab, NUL) have no place in
+// a spend-ledger field. The historical parser split on newlines BEFORE parsing,
+// so a field containing a raw newline would wedge the whole ledger (a later
+// read would see a broken row and — per fail-closed — throw, refusing ALL
+// spend). We reject them on WRITE instead: these free-text fields (project /
+// purpose / requested_by) legitimately never contain control characters, and a
+// clear write-time error is far better than a corrupt append-only ledger.
+// Ordinary commas and quotes are still allowed and round-trip via csvQuote.
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/;
+
+/**
+ * Reject a field that carries any control character (newline, CR, tab, NUL, …).
+ * Throws with a clear, field-named error. Ordinary commas/quotes are fine.
+ */
+export function assertNoControlChars(name: string, value: string): void {
+  if (CONTROL_CHARS.test(value)) {
+    throw new Error(
+      `ledger field "${name}" contains a control character (e.g. newline/tab); ` +
+        `these are not allowed in spend-ledger fields`,
+    );
+  }
+}
+
 /** Parse a single CSV line into fields (handles quotes + escaped quotes). */
 export function parseCsvLine(line: string): string[] {
   const out: string[] = [];
@@ -78,17 +102,21 @@ export function parseCsvLine(line: string): string[] {
 }
 
 function entryToRow(e: LedgerEntry): string {
-  return [
-    e.date,
-    e.month,
-    e.amount_usd,
-    e.project,
-    e.purpose,
-    e.status,
-    e.requested_by,
-  ]
-    .map((f) => csvQuote(String(f)))
-    .join(",");
+  // Reject control characters on WRITE, so a rogue newline can never wedge the
+  // append-only ledger (fail-closed integrity). Ordinary commas/quotes are fine.
+  const fields: Array<[string, string]> = [
+    ["date", e.date],
+    ["month", e.month],
+    ["amount_usd", e.amount_usd],
+    ["project", e.project],
+    ["purpose", e.purpose],
+    ["status", e.status],
+    ["requested_by", e.requested_by],
+  ];
+  for (const [name, value] of fields) {
+    assertNoControlChars(name, String(value));
+  }
+  return fields.map(([, value]) => csvQuote(String(value))).join(",");
 }
 
 /** Ensure the ledger file exists with a header. */

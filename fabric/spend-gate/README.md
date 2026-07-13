@@ -44,6 +44,24 @@ as a decision card in `_governance/decisions/`
 the owner sees it in the cockpit queue. Every attempt (allowed or refused) is
 logged.
 
+## Concurrency & fail-closed guarantees
+
+- **Serialized decisions.** The read-sum → decide → append critical section is
+  guarded by an exclusive lockfile (`<ledger>.lock`, created with
+  `openSync(..., "wx")`) with bounded retry/backoff. Two overlapping charges
+  that individually fit but jointly exceed the ceiling can never both pass —
+  exactly one wins. If the lock cannot be acquired within the timeout the gate
+  **fails closed** (throws / refuses; never allows). A stale lock left by a
+  crashed process therefore refuses spend (the safe direction) until removed.
+- **Fail closed on every error.** A corrupt/missing/negative/non-finite ceiling,
+  an unreadable ledger, a bad header, an invalid `status` row, or a
+  NaN/negative/non-finite/non-numeric amount all make the gate THROW and the CLI
+  exit non-zero — never `0`/allowed, and never recording an `allowed` charge.
+  This is regression-locked by tests.
+- **CSV integrity.** Newlines and other control characters are rejected in
+  ledger fields on WRITE, so a rogue newline can never wedge the append-only
+  ledger. Ordinary commas and quotes round-trip via RFC-4180 quoting.
+
 ## Library API
 
 ```ts
@@ -76,12 +94,23 @@ inferred from the CLI's location; override with `--repo-root` or the individual
 
 ## Tests
 
+Point `node --test` at the test FILE (or a glob of files), not the bare
+directory — Node 24 tries to *execute* a bare directory as a module and fails:
+
 ```
+node --test fabric/spend-gate/gate.test.ts
+# or, to match every test file:
 node --test "fabric/spend-gate/**/*.test.ts"
 ```
 
 Zero dependencies: TypeScript runs directly under Node 24's native type
 stripping — no build step, no `node_modules`. Covers sum logic, ceiling
 boundary (exact vs one-cent-over), month rollover, config-driven ceiling,
-every-attempt logging, decision-card filing, and the two adversarial tests
-(cumulative-crossing block; no per-item bypass on the public surface).
+every-attempt logging, decision-card filing, the two adversarial tests
+(cumulative-crossing block; no per-item bypass on the public surface), the
+**fail-closed regression lock** (every corrupt ceiling/ledger/amount path throws
+and exits non-zero, never allowing spend), the **concurrent-write race** (two
+overlapping charges that jointly exceed the ceiling — exactly one is allowed via
+an exclusive lockfile; lock-acquisition failure fails closed), and **CSV
+control-character integrity** (commas/quotes round-trip; newline/CR/tab in a
+field is rejected on write).
