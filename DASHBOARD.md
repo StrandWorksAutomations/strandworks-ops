@@ -101,7 +101,7 @@ Generated 2026-07-13 by generate.py — edit registers/, never this file.
 
 | repo | latest_audit | latest_drift |
 |---|---|---|
-| strandworks-ops | never | never |
+| strandworks-ops | never | drift-2026-07-13.md |
 
 ## Models & compute
 
