@@ -55,12 +55,18 @@ function initRepo(): string {
   return repo;
 }
 
-/** Write a work-order that declares a branch. */
-function writeWorkOrder(dir: string, branch: string): string {
+/**
+ * Write a work-order that declares a branch. These WS-A loop tests exercise the
+ * LOW (autorun) path, so the work-order declares `audience: internal` — that is
+ * the classification the dispatch loop runs to completion under, unchanged. The
+ * WS-C gate (hero-silence hold, HIGH checkpoints, HALT) is covered separately in
+ * presprint.test.ts.
+ */
+function writeWorkOrder(dir: string, branch: string, audience = "internal"): string {
   const p = join(dir, "work-order.md");
   writeFileSync(
     p,
-    `# Test work order\n\nbranch: ${branch}\n\nGoal: make impl.txt.\nAcceptance: file exists.\n`,
+    `# Test work order\n\nbranch: ${branch}\naudience: ${audience}\n\nGoal: make impl.txt.\nAcceptance: file exists.\n`,
   );
   return p;
 }
