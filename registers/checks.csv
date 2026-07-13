@@ -1,3 +1,4 @@
 date,project,source,kind,status,summary,link
 2026-07-13,strandworks-ops,cockpit-session,progress,ok,Cockpit command-center redesign + editable money + decide answers built on feature/cockpit-command-center; pure-review ALIGNED-WITH-FLAGS; awaiting owner merge + deploy,
 2026-07-13,strandworks-ops,cockpit-session,deploy,ok,Command-center cockpit deployed to dashboard.strandautomationworks.com (merge 78ec277): redesign + editable money + checks register + decide answers,
+2026-07-13,strandworks-ops,orchestrator-session,build,ok,"WS-A slice 1 merged: orchestrator contract + config-driven dispatch loop; 16/16 tests; pure-review both ALIGNED-WITH-FLAGS (tag review/2026-07-13-ws-a)"
