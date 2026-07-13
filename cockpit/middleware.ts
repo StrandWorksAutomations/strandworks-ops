@@ -9,6 +9,26 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (PUBLIC_PATHS.some((re) => re.test(pathname))) return NextResponse.next();
 
+  // Dev-only bridge: `?dev-session=<HMAC-signed token>` sets the session
+  // cookie so the owner can open the local cockpit straight from a terminal.
+  // Hard-guarded out of production, and the token must verify against the
+  // same HMAC as any session — this adds no new trust, only a delivery path.
+  if (process.env.NODE_ENV !== "production") {
+    const t = req.nextUrl.searchParams.get("dev-session");
+    if (t && (await verifySessionToken(t))) {
+      const clean = req.nextUrl.clone();
+      clean.searchParams.delete("dev-session");
+      const res = NextResponse.redirect(clean);
+      res.cookies.set(cookieNames.session, t, {
+        httpOnly: true,
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 60,
+      });
+      return res;
+    }
+  }
+
   const ok = await verifySessionToken(req.cookies.get(cookieNames.session)?.value);
   if (ok) return NextResponse.next();
 

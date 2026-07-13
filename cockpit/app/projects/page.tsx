@@ -3,41 +3,62 @@ import { Chrome } from "../components/Chrome";
 import { readRepoFile } from "@/lib/repo";
 import { PROJECTS, buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
 import { parseScouts, scoutForTokens } from "@/lib/scouts";
+import { parseChecks, latestCheck, checkStatusClass } from "@/lib/checks";
+import { redactForDisplay } from "@/lib/redact";
 
 export const revalidate = 60;
 
 export default async function ProjectsIndex() {
-  const [services, assets, access, models, subscriptions, dashboardMd] = await Promise.all([
+  const [services, assets, access, models, subscriptions, dashboardMd, checksCsv] = await Promise.all([
     readRepoFile("registers/services.csv"),
     readRepoFile("registers/assets.csv"),
     readRepoFile("registers/access.csv"),
     readRepoFile("registers/models.csv"),
     readRepoFile("registers/subscriptions.csv"),
     readRepoFile("DASHBOARD.md"),
+    readRepoFile("registers/checks.csv"),
   ]);
   const inputs: RegisterInputs = { services, assets, access, models, subscriptions };
   const scouts = parseScouts(dashboardMd);
+  const checks = parseChecks(checksCsv);
 
   const rows = PROJECTS.map((p) => ({
     p,
     fp: buildProjectFootprint(p, inputs),
     scout: scoutForTokens(scouts, p.tokens),
-  })).sort((a, b) => b.fp.spendMonthlyUsd - a.fp.spendMonthlyUsd);
+    check: latestCheck(checks, p),
+  })).sort((a, b) => {
+    // most recently reported first, then by dedicated spend
+    const d = (b.check?.date ?? "").localeCompare(a.check?.date ?? "");
+    if (d !== 0) return d;
+    return b.fp.spendMonthlyUsd - a.fp.spendMonthlyUsd;
+  });
 
   return (
     <Chrome title="Projects" sub="footprint from the registers" active="/projects">
-      {rows.map(({ p, fp, scout }) => (
+      {rows.map(({ p, fp, scout, check }) => (
         <Link key={p.slug} href={`/projects/${p.slug}`}>
           <div className="card">
             <h3>
               {p.name}
+              {check ? (
+                <span className={`badge ${checkStatusClass(check.status)}`}>{check.status || check.kind}</span>
+              ) : null}
               {fp.spendMonthlyUsd > 0 || fp.spendHasUncosted ? (
                 <span className="badge brass">
                   ${fp.spendMonthlyUsd}/mo{fp.spendHasUncosted ? "+" : ""}
+                  {fp.sharedMonthlyUsd > 0 ? ` +$${Math.round(fp.sharedMonthlyUsd)} shared` : ""}
                 </span>
+              ) : fp.sharedMonthlyUsd > 0 ? (
+                <span className="badge">${Math.round(fp.sharedMonthlyUsd)}/mo shared</span>
               ) : null}
             </h3>
             <div className="meta">{p.role}</div>
+            {check ? (
+              <div className="meta" style={{ marginTop: 4 }}>
+                <span className="mono">{check.date.slice(5)}</span> · {redactForDisplay(check.summary)}
+              </div>
+            ) : null}
             <div className="chips">
               <span className="chip">{fp.infra.length} infra</span>
               <span className="chip">{fp.assets.length} assets</span>
