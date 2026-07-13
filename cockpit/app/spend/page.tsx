@@ -19,7 +19,7 @@ export default async function SpendPage() {
     <Chrome
       title="Autonomous spend"
       sub={`month-to-date vs $${view.ceilingUsd} ceiling · ${view.month}`}
-      active="/status"
+      active="/money"
     >
       <div className="card">
         <div className="cost" style={{ fontSize: 26 }}>

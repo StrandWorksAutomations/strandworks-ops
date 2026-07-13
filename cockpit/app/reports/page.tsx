@@ -10,7 +10,7 @@ export default async function ReportsIndex() {
     .sort()
     .reverse();
   return (
-    <Chrome title="Reports" sub="_governance/reports" active="/reports">
+    <Chrome title="Reports" sub="_governance/reports" active="/ops">
       {files.length === 0 ? <div className="card">no reports</div> : null}
       {files.map((f) => (
         <Link key={f} href={`/reports/${encodeURIComponent(f.replace(/\.md$/, ""))}`}>

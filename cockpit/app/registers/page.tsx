@@ -6,7 +6,7 @@ export const revalidate = 60;
 
 export default function RegistersIndex() {
   return (
-    <Chrome title="Registers" sub="git is the source of truth" active="/registers">
+    <Chrome title="Registers" sub="git is the source of truth" active="/ops">
       {REGISTERS.map((r) => (
         <Link key={r.name} href={`/registers/${r.name}`}>
           <div className="card">

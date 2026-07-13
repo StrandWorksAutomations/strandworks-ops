@@ -16,7 +16,7 @@ export default async function ReportPage({
   const md = await readRepoFile(`_governance/reports/${slug}.md`);
   if (md === null) notFound();
   return (
-    <Chrome title={slug} sub="governance report" active="/reports">
+    <Chrome title={slug} sub="governance report" active="/ops">
       <div className="prose table-scroll" dangerouslySetInnerHTML={{ __html: renderMarkdown(md) }} />
     </Chrome>
   );
