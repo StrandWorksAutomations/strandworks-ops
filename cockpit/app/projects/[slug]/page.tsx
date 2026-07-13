@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Chrome } from "../../components/Chrome";
 import { readRepoFile } from "@/lib/repo";
+import { redactForDisplay } from "@/lib/redact";
 import {
   PROJECTS,
   projectBySlug,
@@ -42,10 +43,12 @@ function Section({
         </div>
       ) : (
         rows.map(({ row, scope }, i) => {
-          const heading = row[titleField] || "(unnamed)";
+          // Every rendered register cell passes through redactForDisplay: the
+          // security floor as a CODE guarantee, not a content convention.
+          const heading = redactForDisplay(row[titleField] || "(unnamed)", titleField);
           const fields = Object.entries(row)
             .filter(([k, v]) => k !== titleField && v !== "")
-            .map(([k, v]) => ({ label: k.replace(/_/g, " "), value: v }));
+            .map(([k, v]) => ({ label: k.replace(/_/g, " "), value: redactForDisplay(v, k) }));
           return (
             <div className="card" key={i}>
               <h3>

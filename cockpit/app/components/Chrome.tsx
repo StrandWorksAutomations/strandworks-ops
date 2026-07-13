@@ -6,6 +6,7 @@ const TABS = [
   { href: "/registers", label: "Registers" },
   { href: "/decisions", label: "Decide" },
   { href: "/status", label: "Status" },
+  { href: "/reports", label: "Reports" },
 ];
 
 export function Chrome({
