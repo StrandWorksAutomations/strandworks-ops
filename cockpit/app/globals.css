@@ -273,6 +273,14 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 .confirm-row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
 .confirm-row .token-btn { flex: 1; }
 
+.answer-input {
+  width: 100%; margin-top: 12px; padding: 10px 12px;
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--border-strong); border-radius: 8px;
+  font-family: var(--font-body); font-size: 14px; resize: vertical;
+}
+.answer-input::placeholder { color: var(--faint); }
+
 /* ---- progress bar ---- */
 
 .bar {

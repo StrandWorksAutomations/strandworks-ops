@@ -9,6 +9,7 @@ import {
   type AttributedRow,
   type RegisterInputs,
 } from "@/lib/projects";
+import { parseScouts, scoutForTokens } from "@/lib/scouts";
 
 export const revalidate = 60;
 
@@ -80,15 +81,18 @@ export default async function ProjectPage({
   const proj = projectBySlug(slug);
   if (!proj) notFound();
 
-  const [services, assets, access, models, subscriptions] = await Promise.all([
+  const [services, assets, access, models, subscriptions, dashboardMd] = await Promise.all([
     readRepoFile("registers/services.csv"),
     readRepoFile("registers/assets.csv"),
     readRepoFile("registers/access.csv"),
     readRepoFile("registers/models.csv"),
     readRepoFile("registers/subscriptions.csv"),
+    readRepoFile("DASHBOARD.md"),
   ]);
   const inputs: RegisterInputs = { services, assets, access, models, subscriptions };
   const fp = buildProjectFootprint(proj, inputs);
+  const scouts = parseScouts(dashboardMd);
+  const scout = scoutForTokens(scouts, proj.tokens);
 
   return (
     <Chrome
@@ -104,6 +108,12 @@ export default async function ProjectPage({
           <span className="chip">{fp.access.length} access</span>
           <span className="chip">{fp.models.length} models</span>
           <span className="chip">{fp.subscriptions.length} subs</span>
+          {scout ? (
+            <>
+              <span className="chip">audit: {scout.latestAudit.replace(/^audit-|\.md$/g, "")}</span>
+              <span className="chip">drift: {scout.latestDrift.replace(/^drift-|\.md$/g, "")}</span>
+            </>
+          ) : null}
         </div>
         <div className="meta" style={{ marginTop: 8 }}>
           Rows marked <b>shared</b> are portfolio/all-scope infrastructure this

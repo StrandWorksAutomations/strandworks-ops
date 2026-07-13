@@ -2,24 +2,30 @@
 // session for every /api route except /api/auth/* — rulings can only come
 // from the owner's session (SPEC non-goal: no automation presses tokens).
 import { NextRequest, NextResponse } from "next/server";
-import { isOwnerToken, parseDecision, isPending } from "@/lib/decisions";
+import { isOwnerToken, parseDecision, isPending, sanitizeAnswer, ANSWER_MAX_LENGTH } from "@/lib/decisions";
 import { readRepoFile } from "@/lib/repo";
 import { commitRuling } from "@/lib/rule-writer";
 
 export async function POST(req: NextRequest) {
-  let body: { filename?: string; ruling?: string };
+  let body: { filename?: string; ruling?: string; answer?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
   }
 
-  const { filename, ruling } = body;
+  const { filename, ruling, answer } = body;
   if (!filename || !/^[A-Za-z0-9._-]+\.md$/.test(filename) || filename === "README.md") {
     return NextResponse.json({ error: "invalid decision filename" }, { status: 400 });
   }
   if (!ruling || !isOwnerToken(ruling)) {
     return NextResponse.json({ error: "ruling must be one of the six owner tokens" }, { status: 400 });
+  }
+  if (answer !== undefined && (typeof answer !== "string" || answer.length > ANSWER_MAX_LENGTH)) {
+    return NextResponse.json(
+      { error: `answer must be a string of at most ${ANSWER_MAX_LENGTH} characters` },
+      { status: 400 }
+    );
   }
 
   const raw = await readRepoFile(`_governance/decisions/${filename}`);
@@ -38,7 +44,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await commitRuling(filename, raw, ruling, new Date().toISOString());
+    const result = await commitRuling(
+      filename,
+      raw,
+      ruling,
+      new Date().toISOString(),
+      answer ? sanitizeAnswer(answer) : undefined
+    );
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
     // Error messages from rule-writer never contain token material.
