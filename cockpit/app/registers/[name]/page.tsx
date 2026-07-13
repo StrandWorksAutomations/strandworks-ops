@@ -35,7 +35,7 @@ export default async function RegisterPage({
             (view.incompleteCosts ? ` · ${view.incompleteCosts} uncosted` : "")
           : `${view.cards.length} entries`
       }
-      active="/registers"
+      active="/ops"
     >
       {view.cards.map((card, i) => (
         <div className="card" key={i}>

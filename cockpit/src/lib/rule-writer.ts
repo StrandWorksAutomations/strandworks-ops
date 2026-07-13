@@ -46,12 +46,14 @@ export async function commitRuling(
   filename: string,
   originalContent: string,
   ruling: OwnerToken,
-  ruledAtIso: string
+  ruledAtIso: string,
+  answer?: string
 ): Promise<RuleResult> {
-  const updated = applyRuling(originalContent, ruling, ruledAtIso, "cockpit");
+  const updated = applyRuling(originalContent, ruling, ruledAtIso, "cockpit", answer);
   const fromPath = `${DECISIONS_DIR}/${filename}`;
   const toPath = `${RESOLVED_DIR}/${filename}`;
-  const message = `ruling: ${ruling} — ${filename.replace(/\.md$/, "")} (source: cockpit)`;
+  const answerNote = answer ? ` answer: ${answer.slice(0, 40)}${answer.length > 40 ? "…" : ""} —` : "";
+  const message = `ruling: ${ruling} —${answerNote} ${filename.replace(/\.md$/, "")} (source: cockpit)`;
 
   if (writeMode() === "dry-run") {
     const root = repoRoot();

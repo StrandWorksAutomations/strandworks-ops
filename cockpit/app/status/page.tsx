@@ -33,7 +33,7 @@ export default async function StatusPage() {
   });
 
   return (
-    <Chrome title="Fabric status" sub="read-only reflection of git" active="/status">
+    <Chrome title="Fabric status" sub="read-only reflection of git" active="/ops">
       {status.halted ? (
         <div className="card" style={{ borderColor: "var(--bad)" }}>
           <h3>

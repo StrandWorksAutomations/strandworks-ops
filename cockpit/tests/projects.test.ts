@@ -113,11 +113,23 @@ describe("buildProjectFootprint", () => {
     expect(fp.subscriptions.length).toBe(3);
   });
 
-  it("sums only costed attributed subscriptions and flags uncosted", () => {
+  it("splits dedicated vs shared spend — shared services are never double-counted", () => {
     const fp = buildProjectFootprint(HAPTIC, inputs);
-    // 67.18 + 23.32 = 90.50; Meshy has no cost → uncosted flag, not counted
-    expect(fp.spendMonthlyUsd).toBeCloseTo(90.5, 2);
-    expect(fp.spendHasUncosted).toBe(true);
+    // Supabase names haptic-mirror AND liaison → SHARED ($67.18, reported
+    // separately); ElevenLabs names only haptic → dedicated $23.32.
+    expect(fp.spendMonthlyUsd).toBeCloseTo(23.32, 2);
+    expect(fp.sharedMonthlyUsd).toBeCloseTo(67.18, 2);
+    expect(fp.subscriptions.find((s) => s.row.service === "Supabase")?.scope).toBe("shared");
+    expect(fp.subscriptions.find((s) => s.row.service === "ElevenLabs")?.scope).toBe("dedicated");
+    expect(fp.spendHasUncosted).toBe(true); // Meshy: dedicated, no cost
+  });
+
+  it("the same shared row shows as shared on BOTH projects, dedicated on neither", () => {
+    const liaison = projectBySlug("liaison-dashboard")!;
+    const fpL = buildProjectFootprint(liaison, inputs);
+    expect(fpL.subscriptions.find((s) => s.row.service === "Supabase")?.scope).toBe("shared");
+    expect(fpL.sharedMonthlyUsd).toBeCloseTo(67.18, 2);
+    expect(fpL.spendMonthlyUsd).toBe(0);
   });
 
   it("keeps blank blank — a project with no matches gets empty sections, no invented rows", () => {

@@ -1,0 +1,2 @@
+date,project,source,kind,status,summary,link
+2026-07-13,strandworks-ops,cockpit-session,progress,ok,Cockpit command-center redesign + editable money + decide answers built on feature/cockpit-command-center; pure-review ALIGNED-WITH-FLAGS; awaiting owner merge + deploy,

@@ -154,8 +154,9 @@ export type ProjectFootprint = {
   access: AttributedRow[]; // access.csv (KEY LOCATIONS only)
   models: AttributedRow[]; // models.csv
   subscriptions: AttributedRow[]; // subscriptions.csv
-  spendMonthlyUsd: number; // sum of costed subscriptions attributed here
-  spendHasUncosted: boolean; // some attributed subs have no cost → total is a floor
+  spendMonthlyUsd: number; // costed subscriptions DEDICATED to this project only
+  sharedMonthlyUsd: number; // costed subs this project uses but shares with others
+  spendHasUncosted: boolean; // some dedicated subs have no cost → total is a floor
 };
 
 export type RegisterInputs = {
@@ -188,19 +189,29 @@ export function buildProjectFootprint(
     ? attributeRows(inputs.models, proj, ["name", "kind", "where", "notes"], "notes")
     : [];
   // subscriptions.csv has NO project column — match on token appearance in the
-  // whole row, and never treat it as shared (there is no scope column).
-  const subscriptions = inputs.subscriptions
-    ? attributeRows(inputs.subscriptions, proj, ["service", "plan", "notes"], "__none__")
-    : [];
-
+  // whole row. A row whose text names MORE THAN ONE project is SHARED
+  // infrastructure (e.g. the Supabase org serving several apps): its cost is
+  // reported separately and never summed into any single project's dedicated
+  // spend, so shared services are not double-counted across project pages.
+  const subscriptions: AttributedRow[] = [];
   let spendMonthlyUsd = 0;
+  let sharedMonthlyUsd = 0;
   let spendHasUncosted = false;
-  for (const { row } of subscriptions) {
-    const n = num(row["cost_monthly_usd"] ?? "");
-    if (n !== null) spendMonthlyUsd += n;
-    else {
-      const status = row["status"] ?? "";
-      if (status !== "" && !/dead|cancelled|expiring|owned/.test(status)) spendHasUncosted = true;
+  if (inputs.subscriptions) {
+    for (const row of parseCsv(inputs.subscriptions).rows) {
+      const text = rowText(row, ["service", "plan", "notes"]);
+      const matched = PROJECTS.filter((p) => matchesProject(text, p));
+      if (!matched.some((p) => p.slug === proj.slug)) continue;
+      const scope: RowScope = matched.length > 1 ? "shared" : "dedicated";
+      subscriptions.push({ row, scope });
+      const n = num(row["cost_monthly_usd"] ?? "");
+      if (n !== null) {
+        if (scope === "shared") sharedMonthlyUsd += n;
+        else spendMonthlyUsd += n;
+      } else if (scope === "dedicated") {
+        const status = row["status"] ?? "";
+        if (status !== "" && !/dead|cancelled|expiring|owned/.test(status)) spendHasUncosted = true;
+      }
     }
   }
 
@@ -212,6 +223,24 @@ export function buildProjectFootprint(
     models,
     subscriptions,
     spendMonthlyUsd: Math.round(spendMonthlyUsd * 100) / 100,
+    sharedMonthlyUsd: Math.round(sharedMonthlyUsd * 100) / 100,
     spendHasUncosted,
   };
+}
+
+// Deployed surfaces: URL-ish tokens found in a project's attributed service
+// rows — the register already records where things run; this just makes those
+// locations tappable. Extraction only, never invention.
+export function extractSurfaces(rows: AttributedRow[]): string[] {
+  const re = /(?:https?:\/\/)?(?:[a-z0-9-]+\.)+(?:com|app|net|org|io|dev|me|us)(?:\/[\w\-./?=&%]*)?/gi;
+  const out: string[] = [];
+  for (const { row } of rows) {
+    const text = `${row["what_it_runs"] ?? ""} ${row["notes"] ?? ""}`;
+    for (const m of text.match(re) ?? []) {
+      const url = m.replace(/^https?:\/\//i, "").replace(/[).,;]+$/, "").toLowerCase();
+      if (url.includes("@")) continue; // emails are not surfaces
+      if (!out.includes(url)) out.push(url);
+    }
+  }
+  return out.slice(0, 12);
 }

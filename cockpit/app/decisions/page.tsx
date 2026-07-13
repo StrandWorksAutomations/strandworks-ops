@@ -1,6 +1,6 @@
 import { Chrome } from "../components/Chrome";
 import { readRepoFile, listRepoDir } from "@/lib/repo";
-import { parseDecision, isPending, type Decision } from "@/lib/decisions";
+import { parseDecision, isPending, extractOptions, type Decision } from "@/lib/decisions";
 import { renderMarkdown } from "@/lib/markdown";
 import { DecisionCard } from "./DecisionCard";
 import { writeMode } from "@/lib/rule-writer";
@@ -49,6 +49,7 @@ export default async function DecisionsPage() {
           filedBy={d.filedBy}
           question={d.question}
           bodyHtml={renderMarkdown(d.body)}
+          options={extractOptions(d.body)}
           dryRun={mode === "dry-run"}
         />
       ))}

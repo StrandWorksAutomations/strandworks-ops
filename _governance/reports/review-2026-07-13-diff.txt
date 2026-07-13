@@ -1,0 +1,1680 @@
+diff --git a/cockpit/app/components/Chrome.tsx b/cockpit/app/components/Chrome.tsx
+index 04eeeda..46e05cc 100644
+--- a/cockpit/app/components/Chrome.tsx
++++ b/cockpit/app/components/Chrome.tsx
+@@ -1,12 +1,11 @@
+ import Link from "next/link";
+ 
+ const TABS = [
+-  { href: "/", label: "Overview" },
++  { href: "/", label: "Today" },
++  { href: "/money", label: "Money" },
+   { href: "/projects", label: "Projects" },
+-  { href: "/registers", label: "Registers" },
+   { href: "/decisions", label: "Decide" },
+-  { href: "/status", label: "Status" },
+-  { href: "/reports", label: "Reports" },
++  { href: "/ops", label: "Ops" },
+ ];
+ 
+ export function Chrome({
+@@ -20,21 +19,24 @@ export function Chrome({
+   active: string;
+   children: React.ReactNode;
+ }) {
++  const today = new Date().toISOString().slice(0, 10);
+   return (
+     <div className="shell">
+-      <div className="topbar">
++      <header className="topbar">
+         <div>
++          <div className="eyebrow">Strandworks ops</div>
+           <h1>{title}</h1>
+           {sub ? <div className="sub">{sub}</div> : null}
+         </div>
+-        <form action="/api/auth/logout" method="post">
+-          <button className="badge" style={{ background: "none", cursor: "pointer" }}>
+-            lock
+-          </button>
+-        </form>
+-      </div>
++        <div className="topbar-right">
++          <span className="today">{today}</span>
++          <form action="/api/auth/logout" method="post">
++            <button className="lock-btn">Lock</button>
++          </form>
++        </div>
++      </header>
+       {children}
+-      <nav className="nav">
++      <nav className="nav" aria-label="Cockpit sections">
+         {TABS.map((t) => (
+           <Link key={t.href} href={t.href} className={t.href === active ? "active" : ""}>
+             {t.label}
+diff --git a/cockpit/app/dashboard/page.tsx b/cockpit/app/dashboard/page.tsx
+index 2b7169e..33d0ca4 100644
+--- a/cockpit/app/dashboard/page.tsx
++++ b/cockpit/app/dashboard/page.tsx
+@@ -7,7 +7,7 @@ export const revalidate = 60;
+ export default async function DashboardPage() {
+   const md = await readRepoFile("DASHBOARD.md");
+   return (
+-    <Chrome title="Dashboard" sub="generated from registers" active="/">
++    <Chrome title="Dashboard" sub="generated from registers" active="/ops">
+       {md ? (
+         <div className="prose table-scroll" dangerouslySetInnerHTML={{ __html: renderMarkdown(md) }} />
+       ) : (
+diff --git a/cockpit/app/globals.css b/cockpit/app/globals.css
+index 41c41ec..722e1a5 100644
+--- a/cockpit/app/globals.css
++++ b/cockpit/app/globals.css
+@@ -1,13 +1,25 @@
++/* Strandworks cockpit — instrument-panel design system.
++   Warm charcoal ground, brass accent, three signal colors. Display type is
++   Barlow Semi Condensed, data is IBM Plex Mono, body is Barlow (loaded via
++   next/font in layout.tsx as --font-display / --font-mono / --font-body). */
++
+ :root {
+-  --bg: #0d1117;
+-  --panel: #161b22;
+-  --border: #2d333b;
+-  --text: #e6edf3;
+-  --muted: #8b949e;
+-  --accent: #58a6ff;
+-  --good: #3fb950;
+-  --warn: #d29922;
+-  --bad: #f85149;
++  --bg: #141210;
++  --panel: #1c1917;
++  --panel-2: #242019;
++  --border: #352e27;
++  --border-strong: #4a4036;
++  --ink: #ede6da;
++  --muted: #a2968a;
++  --faint: #746a5e;
++  --brass: #d9a44a;
++  --brass-dim: #8a6c34;
++  --good: #8cbe8c;
++  --warn: #e08a4e;
++  --bad: #e25b4d;
++  --font-body: -apple-system, sans-serif;
++  --font-display: var(--font-body);
++  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+ }
+ 
+ * { box-sizing: border-box; }
+@@ -15,110 +27,293 @@
+ body {
+   margin: 0;
+   background: var(--bg);
+-  color: var(--text);
+-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
++  color: var(--ink);
++  font-family: var(--font-body);
+   font-size: 15px;
+   line-height: 1.5;
+   -webkit-font-smoothing: antialiased;
+ }
+ 
+-a { color: var(--accent); text-decoration: none; }
++a { color: var(--brass); text-decoration: none; }
++a:hover { text-decoration: underline; text-underline-offset: 3px; }
++
++h1, h2, h3 {
++  font-family: var(--font-display);
++  letter-spacing: 0.01em;
++}
++
++:focus-visible {
++  outline: 2px solid var(--brass);
++  outline-offset: 2px;
++  border-radius: 4px;
++}
++
++.mono, .num {
++  font-family: var(--font-mono);
++  font-variant-numeric: tabular-nums;
++}
++
++/* ---- shell ---- */
+ 
+-.shell { max-width: 720px; margin: 0 auto; padding: 0 12px 96px; }
++.shell { max-width: 720px; margin: 0 auto; padding: 0 14px 104px; }
+ 
+ .topbar {
+   position: sticky; top: 0; z-index: 10;
+-  display: flex; align-items: center; justify-content: space-between;
+-  padding: 12px 4px; background: var(--bg);
++  display: flex; align-items: flex-end; justify-content: space-between;
++  padding: 14px 2px 10px;
++  background: color-mix(in srgb, var(--bg) 88%, transparent);
++  backdrop-filter: blur(8px);
+   border-bottom: 1px solid var(--border);
+ }
+-.topbar h1 { font-size: 17px; margin: 0; }
++.topbar .eyebrow {
++  font-family: var(--font-mono);
++  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
++  color: var(--brass);
++}
++.topbar h1 {
++  font-size: 22px; margin: 1px 0 0; font-weight: 700; text-transform: uppercase;
++  letter-spacing: 0.04em; line-height: 1.15;
++}
+ .topbar .sub { color: var(--muted); font-size: 12px; }
++.topbar-right { display: flex; align-items: center; gap: 10px; padding-bottom: 3px; }
++.topbar .today {
++  font-family: var(--font-mono); font-size: 11px; color: var(--faint);
++}
++.lock-btn {
++  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
++  text-transform: uppercase; color: var(--muted);
++  background: none; border: 1px solid var(--border); border-radius: 999px;
++  padding: 4px 10px; cursor: pointer;
++}
++.lock-btn:hover { color: var(--ink); border-color: var(--border-strong); }
++
++/* ---- bottom nav ---- */
+ 
+ .nav {
+   position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+-  display: flex; justify-content: space-around;
+-  background: var(--panel); border-top: 1px solid var(--border);
+-  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
++  display: flex; justify-content: center; gap: 2px;
++  background: color-mix(in srgb, var(--panel) 92%, transparent);
++  backdrop-filter: blur(10px);
++  border-top: 1px solid var(--border);
++  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
++}
++.nav a {
++  font-family: var(--font-mono);
++  color: var(--muted); font-size: 11px; letter-spacing: 0.08em;
++  text-transform: uppercase; text-align: center;
++  padding: 8px 13px; border-radius: 8px; border-top: 2px solid transparent;
++  flex: 0 1 auto;
+ }
+-.nav a { color: var(--muted); font-size: 12px; text-align: center; padding: 4px 10px; border-radius: 8px; }
+-.nav a.active { color: var(--text); background: var(--border); }
++.nav a:hover { text-decoration: none; color: var(--ink); }
++.nav a.active { color: var(--brass); border-top-color: var(--brass); background: var(--panel-2); }
++
++/* ---- sections & cards ---- */
++
++.section-head {
++  display: flex; align-items: baseline; justify-content: space-between;
++  margin: 24px 2px 8px; border-bottom: 1px solid var(--border); padding-bottom: 5px;
++}
++.section-head h2 {
++  font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: 0.14em;
++  color: var(--muted); font-weight: 600;
++}
++.section-head .meta, .section-head a { font-size: 11.5px; font-family: var(--font-mono); }
+ 
+ .card {
+   background: var(--panel); border: 1px solid var(--border);
+-  border-radius: 12px; padding: 14px; margin: 10px 0;
++  border-radius: 10px; padding: 14px; margin: 10px 0;
++  color: var(--ink); /* cards keep ink text even when wrapped in a link */
+ }
+-.card h3 { margin: 0 0 4px; font-size: 15px; }
++.card h3 { margin: 0 0 4px; font-size: 15.5px; font-weight: 600; }
+ .card .meta { color: var(--muted); font-size: 12.5px; }
+ .card dl { margin: 8px 0 0; }
+-.card dt { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 8px; }
++.card dt {
++  color: var(--faint); font-family: var(--font-mono); font-size: 10px;
++  text-transform: uppercase; letter-spacing: 0.1em; margin-top: 9px;
++}
+ .card dd { margin: 1px 0 0; font-size: 13.5px; overflow-wrap: anywhere; }
+ 
++a .card:hover, a.tile:hover { border-color: var(--border-strong); text-decoration: none; }
++a:has(.card):hover { text-decoration: none; }
++
+ .badge {
+-  display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px;
+-  border: 1px solid var(--border); color: var(--muted); margin-left: 6px; vertical-align: middle;
++  display: inline-block; font-family: var(--font-mono); font-size: 10.5px;
++  padding: 1px 8px; border-radius: 999px;
++  border: 1px solid var(--border-strong); color: var(--muted);
++  margin-left: 7px; vertical-align: middle; letter-spacing: 0.02em;
+ }
+ .badge.good { color: var(--good); border-color: var(--good); }
+ .badge.warn { color: var(--warn); border-color: var(--warn); }
+ .badge.bad { color: var(--bad); border-color: var(--bad); }
++.badge.brass { color: var(--brass); border-color: var(--brass); }
++
++.cost { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; }
++
++.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
++.chip {
++  display: inline-block; font-family: var(--font-mono); font-size: 10.5px;
++  padding: 2px 9px; border-radius: 999px;
++  border: 1px solid var(--border); color: var(--muted);
++  font-variant-numeric: tabular-nums;
++}
++
++/* ---- stat tiles ---- */
++
++.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
++.tile {
++  display: block;
++  background: var(--panel); border: 1px solid var(--border);
++  border-radius: 10px; padding: 12px 14px;
++  border-top: 2px solid var(--border-strong);
++}
++.tile.hot { border-top-color: var(--bad); }
++.tile.warm { border-top-color: var(--warn); }
++.tile.brass { border-top-color: var(--brass); }
++.tile.calm { border-top-color: var(--good); }
++.tile .big {
++  font-family: var(--font-mono); font-size: 24px; font-weight: 600;
++  font-variant-numeric: tabular-nums; line-height: 1.2; color: var(--ink);
++}
++.tile .big small { font-size: 13px; font-weight: 500; color: var(--muted); }
++.tile .label {
++  color: var(--muted); font-size: 11px; font-family: var(--font-mono);
++  letter-spacing: 0.05em; text-transform: uppercase; margin-top: 2px;
++}
++
++/* ---- attention queue (the signature element) ---- */
++
++.queue { margin: 10px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
++.q-item {
++  display: grid; grid-template-columns: 4px 74px 1fr; gap: 0 12px;
++  background: var(--panel); border-bottom: 1px solid var(--border);
++  padding: 0; color: inherit;
++}
++.q-item:last-child { border-bottom: none; }
++.q-item:hover { background: var(--panel-2); text-decoration: none; }
++.q-rail { background: var(--faint); }
++.q-item.now .q-rail { background: var(--bad); }
++.q-item.soon .q-rail { background: var(--warn); }
++.q-item.watch .q-rail { background: var(--faint); }
++.q-date {
++  font-family: var(--font-mono); font-size: 11px; color: var(--muted);
++  padding: 12px 0; align-self: start; text-align: left;
++  font-variant-numeric: tabular-nums; white-space: pre-line; line-height: 1.5;
++}
++.q-item.now .q-date { color: var(--bad); }
++.q-item.soon .q-date { color: var(--warn); }
++.q-body { padding: 10px 14px 10px 0; min-width: 0; }
++.q-title { font-size: 14px; font-weight: 600; line-height: 1.35; }
++.q-detail {
++  color: var(--muted); font-size: 12.5px; margin-top: 1px;
++  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
++  overflow: hidden;
++}
++
++/* ---- burn gauge ---- */
+ 
+-.cost { font-variant-numeric: tabular-nums; font-weight: 600; }
++.gauge {
++  display: flex; height: 14px; border-radius: 4px; overflow: hidden;
++  border: 1px solid var(--border-strong); margin: 12px 0 10px;
++}
++.gauge span { display: block; height: 100%; }
++.g-core { background: var(--brass); }
++.g-hidden { background: repeating-linear-gradient(135deg, var(--warn), var(--warn) 4px, #a35f33 4px, #a35f33 8px); }
++.g-flagged { background: var(--bad); }
++.g-review { background: var(--faint); }
++
++.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; }
++.legend .key { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
++.legend .swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
++.legend .num { color: var(--ink); font-size: 12px; }
++
++/* ---- ledger rows (renewals, top burns, projects) ---- */
++
++.ledger { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 10px 0; }
++.l-row {
++  display: flex; align-items: baseline; gap: 12px;
++  background: var(--panel); border-bottom: 1px solid var(--border);
++  padding: 10px 14px; color: inherit;
++}
++.l-row:last-child { border-bottom: none; }
++a.l-row:hover { background: var(--panel-2); text-decoration: none; }
++.l-date { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); flex: none; width: 74px; font-variant-numeric: tabular-nums; }
++.l-name { font-size: 14px; font-weight: 500; min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
++.l-sub { color: var(--faint); font-size: 12px; font-weight: 400; }
++.l-amount { font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; flex: none; color: var(--ink); }
++.l-amount.dim { color: var(--faint); }
++
++/* ---- money page item cards ---- */
++
++.sub-card { padding: 12px 14px; }
++.sub-card .row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
++.sub-card .plan { color: var(--faint); font-size: 12px; }
++.sub-card details { margin-top: 6px; }
++.sub-card summary {
++  cursor: pointer; color: var(--faint); font-size: 11.5px;
++  font-family: var(--font-mono); letter-spacing: 0.05em; list-style: none;
++}
++.sub-card summary::before { content: "+ "; color: var(--brass-dim); }
++.sub-card details[open] summary::before { content: "− "; }
++.sub-card details .notes { color: var(--muted); font-size: 12.5px; margin-top: 5px; overflow-wrap: anywhere; }
+ 
+-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+-.tile { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+-.tile .big { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+-.tile .label { color: var(--muted); font-size: 12px; }
++/* ---- decision tokens ---- */
+ 
+ .tokens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+ .token-btn {
+-  padding: 12px 0; border-radius: 10px; border: 1px solid var(--border);
+-  background: var(--bg); color: var(--text); font-weight: 700; font-size: 13px;
+-  letter-spacing: 0.05em; cursor: pointer;
++  padding: 12px 0; border-radius: 8px; border: 1px solid var(--border-strong);
++  background: var(--bg); color: var(--ink); font-weight: 700; font-size: 13px;
++  letter-spacing: 0.08em; cursor: pointer; font-family: var(--font-mono);
+ }
+ .token-btn:active { transform: scale(0.97); }
+ .token-btn.approve { border-color: var(--good); color: var(--good); }
+-.token-btn.blessed { border-color: var(--accent); color: var(--accent); }
++.token-btn.blessed { border-color: var(--brass); color: var(--brass); }
+ .token-btn.halt { border-color: var(--bad); color: var(--bad); }
+ .token-btn:disabled { opacity: 0.4; cursor: default; }
+ 
+ .confirm-row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+ .confirm-row .token-btn { flex: 1; }
+ 
+-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+-.chip {
+-  display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 999px;
+-  border: 1px solid var(--border); color: var(--muted);
+-  font-variant-numeric: tabular-nums;
+-}
+-
+-.section-head {
+-  display: flex; align-items: baseline; justify-content: space-between;
+-  margin: 18px 4px 2px;
+-}
+-.section-head h2 { font-size: 14px; margin: 0; }
+-.section-head .meta { font-size: 11.5px; }
++/* ---- progress bar ---- */
+ 
+ .bar {
+-  height: 8px; border-radius: 999px; background: var(--border);
++  height: 8px; border-radius: 999px; background: var(--panel-2);
++  border: 1px solid var(--border);
+   overflow: hidden; margin-top: 10px;
+ }
+ .bar-fill { height: 100%; background: var(--good); border-radius: 999px; }
+ .bar.warn .bar-fill { background: var(--warn); }
+ .bar.bad .bar-fill { background: var(--bad); }
+ 
++/* ---- prose (markdown renders) ---- */
++
+ .prose { font-size: 14px; }
+ .prose table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+ .prose th, .prose td { border: 1px solid var(--border); padding: 5px 7px; text-align: left; vertical-align: top; }
+-.prose th { background: var(--panel); }
++.prose th { background: var(--panel); font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+ .prose pre { overflow-x: auto; background: var(--panel); padding: 10px; border-radius: 8px; }
+ .prose h1 { font-size: 19px; } .prose h2 { font-size: 16px; } .prose h3 { font-size: 14.5px; }
+ .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+ 
++/* ---- misc ---- */
++
+ .btn-primary {
+-  display: block; width: 100%; padding: 14px; border-radius: 12px; border: none;
+-  background: var(--accent); color: #04121f; font-size: 16px; font-weight: 700; cursor: pointer;
++  display: block; width: 100%; padding: 14px; border-radius: 10px; border: none;
++  background: var(--brass); color: #1d1405; font-size: 15px; font-weight: 700;
++  letter-spacing: 0.04em; cursor: pointer; font-family: var(--font-display);
++  text-transform: uppercase;
+ }
+ .center-screen { min-height: 80vh; display: flex; flex-direction: column; justify-content: center; gap: 16px; text-align: center; }
+ .error-text { color: var(--bad); font-size: 13px; }
+ .ok-text { color: var(--good); font-size: 13px; }
+-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; overflow-wrap: anywhere; }
++
++/* ---- desktop ---- */
++
++@media (min-width: 960px) {
++  .shell { max-width: 1060px; }
++  .cols { display: grid; grid-template-columns: 3fr 2fr; gap: 0 28px; align-items: start; }
++  .grid { grid-template-columns: repeat(4, 1fr); }
++}
++
++@media (prefers-reduced-motion: reduce) {
++  * { transition: none !important; animation: none !important; }
++}
+diff --git a/cockpit/app/layout.tsx b/cockpit/app/layout.tsx
+index 362f4db..809dc7e 100644
+--- a/cockpit/app/layout.tsx
++++ b/cockpit/app/layout.tsx
+@@ -1,6 +1,23 @@
+ import type { Metadata, Viewport } from "next";
++import { Barlow, Barlow_Semi_Condensed, IBM_Plex_Mono } from "next/font/google";
+ import "./globals.css";
+ 
++const body = Barlow({
++  subsets: ["latin"],
++  weight: ["400", "500", "600"],
++  variable: "--font-body",
++});
++const display = Barlow_Semi_Condensed({
++  subsets: ["latin"],
++  weight: ["500", "600", "700"],
++  variable: "--font-display",
++});
++const mono = IBM_Plex_Mono({
++  subsets: ["latin"],
++  weight: ["400", "500", "600"],
++  variable: "--font-mono",
++});
++
+ export const metadata: Metadata = {
+   title: "Strandworks Cockpit",
+   description: "Owner-only operations cockpit",
+@@ -10,13 +27,13 @@ export const metadata: Metadata = {
+ export const viewport: Viewport = {
+   width: "device-width",
+   initialScale: 1,
+-  themeColor: "#0d1117",
++  themeColor: "#141210",
+ };
+ 
+ export default function RootLayout({ children }: { children: React.ReactNode }) {
+   return (
+-    <html lang="en">
+-      <body>{children}</body>
++    <html lang="en" className={`${body.variable} ${display.variable} ${mono.variable}`}>
++      <body style={{ fontFamily: "var(--font-body)" }}>{children}</body>
+     </html>
+   );
+ }
+diff --git a/cockpit/app/money/page.tsx b/cockpit/app/money/page.tsx
+new file mode 100644
+index 0000000..8348bb8
+--- /dev/null
++++ b/cockpit/app/money/page.tsx
+@@ -0,0 +1,153 @@
++import Link from "next/link";
++import { Chrome } from "../components/Chrome";
++import { readRepoFile } from "@/lib/repo";
++import { buildMoneyView, upcomingRenewals, SPEND_CLASSES, type MoneyItem, type SpendClass } from "@/lib/money";
++import { buildSpendView } from "@/lib/spend";
++import { readCeilingUsd } from "@/lib/git";
++import { redactForDisplay } from "@/lib/redact";
++
++export const revalidate = 60;
++
++const STATUS_CLASS: Record<SpendClass, string> = {
++  core: "good",
++  hidden: "warn",
++  flagged: "bad",
++  review: "warn",
++  ending: "",
++  owned: "",
++  personal: "",
++};
++
++function Item({ it }: { it: MoneyItem }) {
++  return (
++    <div className="card sub-card">
++      <div className="row1">
++        <h3 style={{ margin: 0 }}>
++          {it.service}
++          {it.status ? <span className={`badge ${STATUS_CLASS[it.cls]}`}>{it.status}</span> : null}
++        </h3>
++        <span className="cost">
++          {it.costUsd !== null ? `$${it.costUsd.toFixed(2)}${it.costApprox ? "≈" : ""}` : "$ ?"}
++        </span>
++      </div>
++      <div className="plan">
++        {[it.plan, it.cadence, it.renewalRaw ? `renews ${it.renewalRaw}` : ""]
++          .filter(Boolean)
++          .join(" · ") || "no plan details on record"}
++      </div>
++      {it.notes ? (
++        <details>
++          <summary>notes</summary>
++          <div className="notes">{redactForDisplay(it.notes)}</div>
++        </details>
++      ) : null}
++    </div>
++  );
++}
++
++export default async function MoneyPage() {
++  const [subsCsv, spendCsv, ceilingUsd] = await Promise.all([
++    readRepoFile("registers/subscriptions.csv"),
++    readRepoFile("registers/autonomous-spend.csv"),
++    readCeilingUsd(),
++  ]);
++
++  const todayIso = new Date().toISOString().slice(0, 10);
++  const money = buildMoneyView(subsCsv);
++  const spend = buildSpendView(spendCsv, ceilingUsd);
++  const renewals60 = upcomingRenewals(money, todayIso, 60);
++
++  return (
++    <Chrome
++      title="Money"
++      sub={`$${money.knownMonthlyUsd.toFixed(2)}/mo known · ${money.uncostedCount} uncosted · ${money.approxCount} approximate`}
++      active="/money"
++    >
++      <div className="grid">
++        {SPEND_CLASSES.filter((c) => ["core", "hidden", "flagged", "review"].includes(c.cls)).map((c) => (
++          <a key={c.cls} href={`#${c.cls}`} className={`tile ${c.cls === "core" ? "brass" : c.cls === "flagged" ? "hot" : "warm"}`}>
++            <div className="big">
++              ${Math.round(money.byClass[c.cls].totalUsd)}
++              {money.byClass[c.cls].uncosted ? <small>+?</small> : null}
++            </div>
++            <div className="label">
++              {c.label} · {money.byClass[c.cls].count}
++            </div>
++          </a>
++        ))}
++      </div>
++
++      <div className="section-head">
++        <h2>Renewals · next 60 days</h2>
++        <span className="meta">{renewals60.length} dated</span>
++      </div>
++      {renewals60.length === 0 ? (
++        <div className="card">
++          <div className="meta">No dated renewals inside 60 days.</div>
++        </div>
++      ) : (
++        <div className="ledger">
++          {renewals60.map((r, i) => (
++            <div key={i} className="l-row">
++              <span className="l-date">{r.renewalIso}</span>
++              <span className="l-name">
++                {r.service} <span className="l-sub">{r.status}</span>
++              </span>
++              <span className={`l-amount ${r.costUsd === null ? "dim" : ""}`}>
++                {r.costUsd !== null ? `$${r.costUsd.toFixed(2)}` : "$ ?"}
++              </span>
++            </div>
++          ))}
++        </div>
++      )}
++
++      <div className="section-head">
++        <h2>Autonomous spend gate</h2>
++        <Link href="/spend">ledger →</Link>
++      </div>
++      <Link href="/spend">
++        <div className="card">
++          <div className="cost">
++            ${spend.spentUsd.toFixed(2)}{" "}
++            <span className="meta" style={{ fontWeight: 400 }}>
++              of ${spend.ceilingUsd.toFixed(2)} agent ceiling · {spend.month}
++            </span>
++          </div>
++          <div className={`bar ${spend.over ? "bad" : spend.pctUsed >= 80 ? "warn" : "good"}`}>
++            <div className="bar-fill" style={{ width: `${Math.min(100, spend.pctUsed)}%` }} />
++          </div>
++        </div>
++      </Link>
++
++      {SPEND_CLASSES.map((c) => {
++        const items = money.items.filter((it) => it.cls === c.cls);
++        if (items.length === 0) return null;
++        const sorted = [...items].sort((a, b) => (b.costUsd ?? -1) - (a.costUsd ?? -1));
++        return (
++          <section key={c.cls} id={c.cls}>
++            <div className="section-head">
++              <h2>
++                {c.label} — {c.blurb}
++              </h2>
++              <span className="meta">
++                ${money.byClass[c.cls].totalUsd.toFixed(2)}
++                {money.byClass[c.cls].uncosted ? ` + ${money.byClass[c.cls].uncosted}?` : ""}
++              </span>
++            </div>
++            {sorted.map((it, i) => (
++              <Item key={i} it={it} />
++            ))}
++          </section>
++        );
++      })}
++
++      <div className="card">
++        <div className="meta">
++          Every figure above is read from registers/subscriptions.csv — the known total is a floor;
++          uncosted services make it understated, never overstated. Edit the register to correct
++          anything here.
++        </div>
++      </div>
++    </Chrome>
++  );
++}
+diff --git a/cockpit/app/ops/page.tsx b/cockpit/app/ops/page.tsx
+new file mode 100644
+index 0000000..a9bd7f9
+--- /dev/null
++++ b/cockpit/app/ops/page.tsx
+@@ -0,0 +1,72 @@
++import Link from "next/link";
++import { Chrome } from "../components/Chrome";
++import { listRepoDir } from "@/lib/repo";
++import { REGISTERS } from "@/lib/registers";
++
++export const revalidate = 60;
++
++export default async function OpsHub() {
++  const reportFiles = (await listRepoDir("_governance/reports")).filter((f) => f.endsWith(".md"));
++
++  return (
++    <Chrome title="Ops" sub="registers, fabric, and governance" active="/ops">
++      <div className="section-head">
++        <h2>Registers — the source of truth</h2>
++        <span className="meta">{REGISTERS.length} files</span>
++      </div>
++      <div className="ledger">
++        {REGISTERS.map((r) => (
++          <Link key={r.name} href={`/registers/${r.name}`} className="l-row">
++            <span className="l-name">
++              {r.title} <span className="l-sub">{r.blurb}</span>
++            </span>
++            <span className="l-amount dim">→</span>
++          </Link>
++        ))}
++      </div>
++
++      <div className="section-head">
++        <h2>Fabric</h2>
++      </div>
++      <div className="ledger">
++        <Link href="/status" className="l-row">
++          <span className="l-name">
++            Status <span className="l-sub">sprint + fabric state</span>
++          </span>
++          <span className="l-amount dim">→</span>
++        </Link>
++        <Link href="/spend" className="l-row">
++          <span className="l-name">
++            Spend ledger <span className="l-sub">autonomous-spend vs ceiling</span>
++          </span>
++          <span className="l-amount dim">→</span>
++        </Link>
++        <Link href="/dashboard" className="l-row">
++          <span className="l-name">
++            DASHBOARD.md <span className="l-sub">the generated flat file</span>
++          </span>
++          <span className="l-amount dim">→</span>
++        </Link>
++      </div>
++
++      <div className="section-head">
++        <h2>Governance reports</h2>
++        <Link href="/reports">all {reportFiles.length} →</Link>
++      </div>
++      <div className="ledger">
++        {reportFiles
++          .sort()
++          .reverse()
++          .slice(0, 8)
++          .map((f) => (
++            <Link key={f} href={`/reports/${encodeURIComponent(f.replace(/\.md$/, ""))}`} className="l-row">
++              <span className="l-name mono" style={{ fontSize: 12.5 }}>
++                {f}
++              </span>
++              <span className="l-amount dim">→</span>
++            </Link>
++          ))}
++      </div>
++    </Chrome>
++  );
++}
+diff --git a/cockpit/app/page.tsx b/cockpit/app/page.tsx
+index 3fee63d..253ed1e 100644
+--- a/cockpit/app/page.tsx
++++ b/cockpit/app/page.tsx
+@@ -1,125 +1,237 @@
+ import Link from "next/link";
+ import { Chrome } from "./components/Chrome";
+ import { readRepoFile, listRepoDir } from "@/lib/repo";
+-import { buildRegisterView } from "@/lib/registers";
+ import { parseDecision, isPending } from "@/lib/decisions";
+ import { buildSpendView } from "@/lib/spend";
+ import { readCeilingUsd } from "@/lib/git";
++import { buildMoneyView, upcomingRenewals } from "@/lib/money";
++import { buildAttentionQueue, type AttentionItem } from "@/lib/attention";
++import { PROJECTS, buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
++import { redactForDisplay } from "@/lib/redact";
+ 
+ export const revalidate = 60;
+ 
+-export default async function Overview() {
+-  const [subsCsv, calCsv, decisionFiles, spendCsv, ceilingUsd] = await Promise.all([
+-    readRepoFile("registers/subscriptions.csv"),
+-    readRepoFile("registers/calendar.csv"),
+-    listRepoDir("_governance/decisions"),
+-    readRepoFile("registers/autonomous-spend.csv"),
+-    readCeilingUsd(),
+-  ]);
++const KIND_TAG: Record<AttentionItem["kind"], string> = {
++  decision: "DECIDE",
++  deadline: "DATE",
++  money: "MONEY",
++  asset: "ASSET",
++};
+ 
+-  const subs = subsCsv ? buildRegisterView("subscriptions", subsCsv) : null;
++function shortDate(iso: string | null): string | null {
++  return iso ? iso.slice(5) : null; // MM-DD
++}
++
++export default async function Today() {
++  const [subsCsv, calCsv, assetsCsv, servicesCsv, accessCsv, modelsCsv, decisionFiles, spendCsv, ceilingUsd] =
++    await Promise.all([
++      readRepoFile("registers/subscriptions.csv"),
++      readRepoFile("registers/calendar.csv"),
++      readRepoFile("registers/assets.csv"),
++      readRepoFile("registers/services.csv"),
++      readRepoFile("registers/access.csv"),
++      readRepoFile("registers/models.csv"),
++      listRepoDir("_governance/decisions"),
++      readRepoFile("registers/autonomous-spend.csv"),
++      readCeilingUsd(),
++    ]);
++
++  const todayIso = new Date().toISOString().slice(0, 10);
++  const money = buildMoneyView(subsCsv);
+   const spend = buildSpendView(spendCsv, ceilingUsd);
+ 
+-  let pendingCount = 0;
++  const pendingDecisions: { title: string; file: string }[] = [];
+   for (const f of decisionFiles.filter((f) => f.endsWith(".md") && f !== "README.md")) {
+     const raw = await readRepoFile(`_governance/decisions/${f}`);
+     if (!raw) continue;
+     try {
+-      if (isPending(parseDecision(raw, f))) pendingCount++;
++      const d = parseDecision(raw, f);
++      if (isPending(d)) pendingDecisions.push({ title: d.question || d.id, file: f });
+     } catch {
+       // unparseable decision files are surfaced on the Decide tab, not here
+     }
+   }
+ 
+-  const upcoming = calCsv
+-    ? buildRegisterView("calendar", calCsv)
+-        .cards.filter((c) => {
+-          const d = c.fields.find((f) => f.label === "date")?.value;
+-          return d && d >= new Date().toISOString().slice(0, 10);
+-        })
+-        .slice(0, 5)
+-    : [];
++  const queue = buildAttentionQueue({
++    calendarCsv: calCsv,
++    subscriptionsCsv: subsCsv,
++    assetsCsv,
++    pendingDecisions,
++    todayIso,
++  });
++  const nowCount = queue.filter((q) => q.severity === "now").length;
++  const renewals30 = upcomingRenewals(money, todayIso, 30);
++
++  const inputs: RegisterInputs = {
++    services: servicesCsv,
++    assets: assetsCsv,
++    access: accessCsv,
++    models: modelsCsv,
++    subscriptions: subsCsv,
++  };
++  const footprints = PROJECTS.map((p) => buildProjectFootprint(p, inputs))
++    .sort((a, b) => b.spendMonthlyUsd - a.spendMonthlyUsd);
++
++  const burnClasses = [
++    { key: "core" as const, cssClass: "g-core", label: "core" },
++    { key: "hidden" as const, cssClass: "g-hidden", label: "hidden" },
++    { key: "flagged" as const, cssClass: "g-flagged", label: "flagged" },
++    { key: "review" as const, cssClass: "g-review", label: "review" },
++  ];
++  const burnTotal = burnClasses.reduce((s, c) => s + money.byClass[c.key].totalUsd, 0) || 1;
+ 
+   return (
+-    <Chrome title="Strandworks" sub="operations cockpit" active="/">
++    <Chrome title="Today" sub="the whole operation, triaged" active="/">
+       <div className="grid">
+-        <Link href="/registers/subscriptions" className="tile">
+-          <div className="big">${subs?.totalMonthlyUsd ?? "—"}</div>
++        <Link href="/money" className="tile brass">
++          <div className="big">
++            ${Math.round(money.knownMonthlyUsd)}
++            <small>/mo</small>
++          </div>
+           <div className="label">
+-            known monthly spend
+-            {subs?.incompleteCosts ? ` · ${subs.incompleteCosts} uncosted` : ""}
++            known burn{money.uncostedCount ? ` · ${money.uncostedCount} uncosted` : ""}
+           </div>
+         </Link>
+-        <Link href="/decisions" className="tile">
+-          <div className="big">{pendingCount}</div>
++        <div className={`tile ${nowCount > 0 ? "hot" : "calm"}`}>
++          <div className="big">{nowCount}</div>
++          <div className="label">need you now</div>
++        </div>
++        <Link href="/decisions" className={`tile ${pendingDecisions.length > 0 ? "hot" : "calm"}`}>
++          <div className="big">{pendingDecisions.length}</div>
+           <div className="label">pending decisions</div>
+         </Link>
++        <Link href="/money" className={`tile ${renewals30.length > 0 ? "warm" : "calm"}`}>
++          <div className="big">{renewals30.length}</div>
++          <div className="label">renewals · 30 days</div>
++        </Link>
+       </div>
+ 
+-      <Link href="/spend">
+-        <div className="card">
+-          <h3>
+-            Autonomous spend headroom
+-            <span className={`badge ${spend.over ? "bad" : spend.pctUsed >= 80 ? "warn" : "good"}`}>
+-              {spend.pctUsed}%
+-            </span>
+-          </h3>
+-          <div className="cost">
+-            ${spend.spentUsd.toFixed(2)}{" "}
+-            <span className="meta" style={{ fontWeight: 400 }}>
+-              of ${spend.ceilingUsd.toFixed(2)} · {spend.month}
+-            </span>
+-          </div>
+-          <div className={`bar ${spend.over ? "bad" : spend.pctUsed >= 80 ? "warn" : "good"}`}>
+-            <div className="bar-fill" style={{ width: `${Math.min(100, spend.pctUsed)}%` }} />
++      <div className="cols">
++        <div>
++          <div className="section-head">
++            <h2>Needs you</h2>
++            <span className="meta">{queue.length} open</span>
+           </div>
++          {queue.length === 0 ? (
++            <div className="card">
++              <div className="meta">Nothing needs you. The registers report no open actions.</div>
++            </div>
++          ) : (
++            <div className="queue">
++              {queue.slice(0, 12).map((q, i) => (
++                <Link key={i} href={q.href} className={`q-item ${q.severity}`}>
++                  <span className="q-rail" />
++                  <span className="q-date">
++                    {shortDate(q.dateIso) ?? KIND_TAG[q.kind]}
++                    {q.dateIso && q.dateIso < todayIso ? "\nOVERDUE" : ""}
++                  </span>
++                  <span className="q-body">
++                    <span className="q-title">{redactForDisplay(q.title)}</span>
++                    <span className="q-detail" style={{ display: "block" }}>
++                      {redactForDisplay(q.detail)}
++                    </span>
++                  </span>
++                </Link>
++              ))}
++            </div>
++          )}
++          {queue.length > 12 ? (
++            <div className="meta" style={{ textAlign: "center" }}>
++              + {queue.length - 12} more across <Link href="/money">Money</Link> and{" "}
++              <Link href="/registers/calendar">Calendar</Link>
++            </div>
++          ) : null}
+         </div>
+-      </Link>
+ 
+-      <div className="card">
+-        <h3>Upcoming dates</h3>
+-        {upcoming.length === 0 ? (
+-          <div className="meta">nothing dated ahead</div>
+-        ) : (
+-          <dl>
+-            {upcoming.map((c, i) => (
+-              <div key={i}>
+-                <dt>{c.fields.find((f) => f.label === "date")?.value}</dt>
+-                <dd>{c.title}</dd>
++        <div>
++          <div className="section-head">
++            <h2>Burn</h2>
++            <Link href="/money">breakdown →</Link>
++          </div>
++          <div className="card">
++            <div className="cost" style={{ fontSize: 18 }}>
++              ${money.knownMonthlyUsd.toFixed(2)}
++              <span className="meta" style={{ fontWeight: 400 }}> /mo known — a floor, not a ceiling</span>
++            </div>
++            <div className="gauge" role="img" aria-label="burn by class">
++              {burnClasses.map((c) => (
++                <span
++                  key={c.key}
++                  className={c.cssClass}
++                  style={{ width: `${(money.byClass[c.key].totalUsd / burnTotal) * 100}%` }}
++                />
++              ))}
++            </div>
++            <div className="legend">
++              {burnClasses.map((c) => (
++                <span key={c.key} className="key">
++                  <span className={`swatch ${c.cssClass}`} />
++                  {c.label} <span className="num">${Math.round(money.byClass[c.key].totalUsd)}</span>
++                </span>
++              ))}
++            </div>
++          </div>
++
++          <Link href="/spend">
++            <div className="card">
++              <h3>
++                Autonomous spend
++                <span className={`badge ${spend.over ? "bad" : spend.pctUsed >= 80 ? "warn" : "good"}`}>
++                  {spend.pctUsed}%
++                </span>
++              </h3>
++              <div className="meta">
++                ${spend.spentUsd.toFixed(2)} of ${spend.ceilingUsd.toFixed(2)} ceiling · {spend.month}
+               </div>
+-            ))}
+-          </dl>
+-        )}
+-      </div>
++              <div className={`bar ${spend.over ? "bad" : spend.pctUsed >= 80 ? "warn" : "good"}`}>
++                <div className="bar-fill" style={{ width: `${Math.min(100, spend.pctUsed)}%` }} />
++              </div>
++            </div>
++          </Link>
++
++          <div className="section-head">
++            <h2>Renewals · 30 days</h2>
++            <Link href="/money">all →</Link>
++          </div>
++          {renewals30.length === 0 ? (
++            <div className="card">
++              <div className="meta">No dated renewals in the next 30 days.</div>
++            </div>
++          ) : (
++            <div className="ledger">
++              {renewals30.slice(0, 6).map((r, i) => (
++                <div key={i} className="l-row">
++                  <span className="l-date">{shortDate(r.renewalIso)}</span>
++                  <span className="l-name">{r.service}</span>
++                  <span className={`l-amount ${r.costUsd === null ? "dim" : ""}`}>
++                    {r.costUsd !== null ? `$${r.costUsd.toFixed(2)}` : "$ ?"}
++                  </span>
++                </div>
++              ))}
++            </div>
++          )}
+ 
+-      <div className="card">
+-        <h3>Views</h3>
+-        <dl>
+-          <dt>Projects</dt>
+-          <dd>
+-            <Link href="/projects">per-project footprint</Link>
+-          </dd>
+-          <dt>Status</dt>
+-          <dd>
+-            <Link href="/status">fabric / sprint status</Link>
+-          </dd>
+-          <dt>Spend</dt>
+-          <dd>
+-            <Link href="/spend">autonomous-spend ledger vs ceiling</Link>
+-          </dd>
+-          <dt>Dashboard</dt>
+-          <dd>
+-            <Link href="/dashboard">DASHBOARD.md (generated)</Link>
+-          </dd>
+-          <dt>Registers</dt>
+-          <dd>
+-            <Link href="/registers">all six registers</Link>
+-          </dd>
+-          <dt>Reports</dt>
+-          <dd>
+-            <Link href="/reports">governance reports</Link>
+-          </dd>
+-        </dl>
++          <div className="section-head">
++            <h2>Projects</h2>
++            <Link href="/projects">all →</Link>
++          </div>
++          <div className="ledger">
++            {footprints.slice(0, 6).map((fp) => (
++              <Link key={fp.project.slug} href={`/projects/${fp.project.slug}`} className="l-row">
++                <span className="l-name">
++                  {fp.project.name}{" "}
++                  <span className="l-sub">
++                    {fp.infra.length} infra · {fp.subscriptions.length} subs
++                  </span>
++                </span>
++                <span className={`l-amount ${fp.spendMonthlyUsd === 0 ? "dim" : ""}`}>
++                  ${fp.spendMonthlyUsd}
++                  {fp.spendHasUncosted ? "+" : ""}
++                </span>
++              </Link>
++            ))}
++          </div>
++        </div>
+       </div>
+     </Chrome>
+   );
+diff --git a/cockpit/app/registers/[name]/page.tsx b/cockpit/app/registers/[name]/page.tsx
+index 71b9685..792d070 100644
+--- a/cockpit/app/registers/[name]/page.tsx
++++ b/cockpit/app/registers/[name]/page.tsx
+@@ -35,7 +35,7 @@ export default async function RegisterPage({
+             (view.incompleteCosts ? ` · ${view.incompleteCosts} uncosted` : "")
+           : `${view.cards.length} entries`
+       }
+-      active="/registers"
++      active="/ops"
+     >
+       {view.cards.map((card, i) => (
+         <div className="card" key={i}>
+diff --git a/cockpit/app/registers/page.tsx b/cockpit/app/registers/page.tsx
+index 9db4e8d..704cbc9 100644
+--- a/cockpit/app/registers/page.tsx
++++ b/cockpit/app/registers/page.tsx
+@@ -6,7 +6,7 @@ export const revalidate = 60;
+ 
+ export default function RegistersIndex() {
+   return (
+-    <Chrome title="Registers" sub="git is the source of truth" active="/registers">
++    <Chrome title="Registers" sub="git is the source of truth" active="/ops">
+       {REGISTERS.map((r) => (
+         <Link key={r.name} href={`/registers/${r.name}`}>
+           <div className="card">
+diff --git a/cockpit/app/reports/[slug]/page.tsx b/cockpit/app/reports/[slug]/page.tsx
+index 228ceca..5167e34 100644
+--- a/cockpit/app/reports/[slug]/page.tsx
++++ b/cockpit/app/reports/[slug]/page.tsx
+@@ -16,7 +16,7 @@ export default async function ReportPage({
+   const md = await readRepoFile(`_governance/reports/${slug}.md`);
+   if (md === null) notFound();
+   return (
+-    <Chrome title={slug} sub="governance report" active="/reports">
++    <Chrome title={slug} sub="governance report" active="/ops">
+       <div className="prose table-scroll" dangerouslySetInnerHTML={{ __html: renderMarkdown(md) }} />
+     </Chrome>
+   );
+diff --git a/cockpit/app/reports/page.tsx b/cockpit/app/reports/page.tsx
+index fa953bc..ed04591 100644
+--- a/cockpit/app/reports/page.tsx
++++ b/cockpit/app/reports/page.tsx
+@@ -10,7 +10,7 @@ export default async function ReportsIndex() {
+     .sort()
+     .reverse();
+   return (
+-    <Chrome title="Reports" sub="_governance/reports" active="/reports">
++    <Chrome title="Reports" sub="_governance/reports" active="/ops">
+       {files.length === 0 ? <div className="card">no reports</div> : null}
+       {files.map((f) => (
+         <Link key={f} href={`/reports/${encodeURIComponent(f.replace(/\.md$/, ""))}`}>
+diff --git a/cockpit/app/spend/page.tsx b/cockpit/app/spend/page.tsx
+index f550f81..3520b72 100644
+--- a/cockpit/app/spend/page.tsx
++++ b/cockpit/app/spend/page.tsx
+@@ -19,7 +19,7 @@ export default async function SpendPage() {
+     <Chrome
+       title="Autonomous spend"
+       sub={`month-to-date vs $${view.ceilingUsd} ceiling · ${view.month}`}
+-      active="/status"
++      active="/money"
+     >
+       <div className="card">
+         <div className="cost" style={{ fontSize: 26 }}>
+diff --git a/cockpit/app/status/page.tsx b/cockpit/app/status/page.tsx
+index d96d0ec..536eadd 100644
+--- a/cockpit/app/status/page.tsx
++++ b/cockpit/app/status/page.tsx
+@@ -33,7 +33,7 @@ export default async function StatusPage() {
+   });
+ 
+   return (
+-    <Chrome title="Fabric status" sub="read-only reflection of git" active="/status">
++    <Chrome title="Fabric status" sub="read-only reflection of git" active="/ops">
+       {status.halted ? (
+         <div className="card" style={{ borderColor: "var(--bad)" }}>
+           <h3>
+diff --git a/cockpit/src/lib/attention.ts b/cockpit/src/lib/attention.ts
+new file mode 100644
+index 0000000..a633d9c
+--- /dev/null
++++ b/cockpit/src/lib/attention.ts
+@@ -0,0 +1,146 @@
++// The attention queue — the cockpit's triage board.
++//
++// One ordered list of "things that need the owner", assembled from what the
++// registers and governance files ALREADY say needs action. Nothing here is
++// invented: every item traces to a calendar row with an open action, a pending
++// decision file, a subscription the register itself flags, or an asset the
++// register marks as a single copy.
++
++import { parseCsv } from "./csv";
++import { buildMoneyView, type MoneyView } from "./money";
++
++export type Severity = "now" | "soon" | "watch";
++
++export type AttentionItem = {
++  severity: Severity;
++  dateIso: string | null; // the deadline driving urgency, if dated
++  title: string;
++  detail: string;
++  href: string; // where in the cockpit to act on it
++  kind: "decision" | "deadline" | "money" | "asset";
++};
++
++const SEVERITY_RANK: Record<Severity, number> = { now: 0, soon: 1, watch: 2 };
++
++function dateSeverity(dateIso: string | null, todayIso: string): Severity {
++  if (!dateIso) return "watch";
++  if (dateIso <= addDaysIso(todayIso, 7)) return "now"; // overdue or this week
++  if (dateIso <= addDaysIso(todayIso, 30)) return "soon";
++  return "watch";
++}
++
++function addDaysIso(iso: string, days: number): string {
++  const d = new Date(`${iso}T00:00:00Z`);
++  d.setUTCDate(d.getUTCDate() + days);
++  return d.toISOString().slice(0, 10);
++}
++
++export type AttentionInputs = {
++  calendarCsv?: string | null;
++  subscriptionsCsv?: string | null;
++  assetsCsv?: string | null;
++  pendingDecisions?: { title: string; file: string }[];
++  todayIso: string;
++};
++
++export function buildAttentionQueue(inputs: AttentionInputs): AttentionItem[] {
++  const items: AttentionItem[] = [];
++  const today = inputs.todayIso;
++
++  // 1. Pending decisions — always "now": the fabric is waiting on a ruling.
++  for (const d of inputs.pendingDecisions ?? []) {
++    items.push({
++      severity: "now",
++      dateIso: null,
++      title: d.title,
++      detail: "pending ruling",
++      href: "/decisions",
++      kind: "decision",
++    });
++  }
++
++  // 2. Calendar rows with an OPEN action (skip rows the register marks DONE).
++  if (inputs.calendarCsv) {
++    for (const row of parseCsv(inputs.calendarCsv).rows) {
++      const action = (row["action_needed"] ?? "").trim();
++      if (action === "" || /^done\b/i.test(action)) continue;
++      const dateIso = /^\d{4}-\d{2}-\d{2}$/.test((row["date"] ?? "").trim())
++        ? (row["date"] ?? "").trim()
++        : null;
++      items.push({
++        severity: dateSeverity(dateIso, today),
++        dateIso,
++        title: row["item"] || "(undated item)",
++        detail: action,
++        href: "/registers/calendar",
++        kind: "deadline",
++      });
++    }
++  }
++
++  // 3. Money flags straight from the subscriptions register's own statuses.
++  if (inputs.subscriptionsCsv) {
++    const money: MoneyView = buildMoneyView(inputs.subscriptionsCsv);
++    for (const it of money.items) {
++      const s = it.status.toLowerCase();
++      if (/refund-requested|do-not-renew|paused-but-billing|owner-review|unswept/.test(s)) {
++        items.push({
++          severity: it.renewalIso ? dateSeverity(it.renewalIso, today) : "soon",
++          dateIso: it.renewalIso,
++          title: `${it.service} — ${it.status}`,
++          detail: it.notes,
++          href: "/money",
++          kind: "money",
++        });
++      }
++    }
++    if (money.byClass.hidden.count > 0) {
++      items.push({
++        severity: "soon",
++        dateIso: null,
++        title: `${money.byClass.hidden.count} hidden subscriptions from the bank sweep`,
++        detail: `$${money.byClass.hidden.totalUsd.toFixed(2)}/mo known across them — verify each: keep, cancel, or reclassify`,
++        href: "/money",
++        kind: "money",
++      });
++    }
++    if (money.uncostedCount > 0) {
++      items.push({
++        severity: "watch",
++        dateIso: null,
++        title: `${money.uncostedCount} recurring services with no cost on record`,
++        detail: "the burn floor is understated until these are costed",
++        href: "/money",
++        kind: "money",
++      });
++    }
++  }
++
++  // 4. Single-copy assets — the register's own canonical column says so.
++  if (inputs.assetsCsv) {
++    for (const row of parseCsv(inputs.assetsCsv).rows) {
++      if (/only-copy/i.test(row["canonical"] ?? "")) {
++        items.push({
++          severity: "soon",
++          dateIso: null,
++          title: `Single copy: ${row["asset"] || "(unnamed asset)"}`,
++          detail: `${row["location"] ?? ""} — not backed up anywhere else`,
++          href: "/registers/assets",
++          kind: "asset",
++        });
++      }
++    }
++  }
++
++  return items.sort((a, b) => {
++    const s = SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity];
++    if (s !== 0) return s;
++    // Pending decisions pin to the top of their band: the fabric is blocked.
++    const d = (a.kind === "decision" ? 0 : 1) - (b.kind === "decision" ? 0 : 1);
++    if (d !== 0) return d;
++    if (a.dateIso && b.dateIso) return a.dateIso.localeCompare(b.dateIso);
++    if (a.dateIso) return -1;
++    if (b.dateIso) return 1;
++    return 0;
++  });
++}
+diff --git a/cockpit/src/lib/money.ts b/cockpit/src/lib/money.ts
+new file mode 100644
+index 0000000..affef2b
+--- /dev/null
++++ b/cockpit/src/lib/money.ts
+@@ -0,0 +1,162 @@
++// Money view — a classified picture of registers/subscriptions.csv.
++//
++// Reads ONLY the subscriptions register and shapes it for the /money page and
++// the Overview burn gauge. It invents nothing: every dollar figure shown is a
++// figure already in the register; unknown costs stay unknown and are surfaced
++// as "uncosted" counts, never guessed. The known total is therefore a FLOOR.
++
++import { parseCsv } from "./csv";
++
++// Spend classes, in display order. Derived mechanically from the register's
++// own `status` vocabulary (active / active-HIDDEN / review / refund-requested /
++// do-not-renew / paused-but-billing / cancelled-expiring / presumed-dead /
++// owned / fyi / UNSWEPT / owner-review).
++export type SpendClass =
++  | "core" // active, deliberately kept
++  | "hidden" // found in the bank sweep, was never in a register
++  | "flagged" // owner action pending: refunds, do-not-renew, paused-but-billing
++  | "review" // single/unclear charges + unswept surfaces awaiting a verdict
++  | "ending" // cancelled, expiring, or presumed dead — no action needed
++  | "owned" // one-time licenses, not recurring burn
++  | "personal"; // out of business scope (fyi rows)
++
++export const SPEND_CLASSES: { cls: SpendClass; label: string; blurb: string }[] = [
++  { cls: "core", label: "Core", blurb: "active, deliberately kept" },
++  { cls: "hidden", label: "Hidden", blurb: "found in the bank sweep" },
++  { cls: "flagged", label: "Flagged", blurb: "owner action pending" },
++  { cls: "review", label: "Review", blurb: "unclear — needs a verdict" },
++  { cls: "ending", label: "Winding down", blurb: "cancelled or lapsing" },
++  { cls: "owned", label: "Owned", blurb: "one-time licenses" },
++  { cls: "personal", label: "Personal", blurb: "out of business scope" },
++];
++
++export function classifyStatus(status: string): SpendClass {
++  const s = (status ?? "").toLowerCase();
++  if (s.includes("hidden")) return "hidden";
++  if (/refund|do-not-renew|paused-but-billing/.test(s)) return "flagged";
++  if (/dead|cancelled|expiring/.test(s)) return "ending";
++  if (s.includes("owned")) return "owned";
++  if (s === "fyi") return "personal";
++  if (/unswept|owner-review|review/.test(s)) return "review";
++  if (/active|keep/.test(s)) return "core";
++  return "review";
++}
++
++export type MoneyItem = {
++  service: string;
++  plan: string;
++  costUsd: number | null; // parsed cost; null = unknown (never guessed)
++  costRaw: string; // the register's own cost text ("5.99+", "~12", "")
++  costApprox: boolean; // register marked the figure approximate (~, +)
++  cadence: string;
++  renewalIso: string | null; // first YYYY-MM-DD found in renewal_date
++  renewalRaw: string;
++  status: string;
++  cls: SpendClass;
++  notes: string;
++};
++
++export type MoneyView = {
++  items: MoneyItem[];
++  // Known recurring burn = costed core+hidden+flagged+review (a floor).
++  knownMonthlyUsd: number;
++  uncostedCount: number; // recurring rows with no usable figure
++  approxCount: number; // rows counted from an approximate figure
++  byClass: Record<SpendClass, { totalUsd: number; count: number; uncosted: number }>;
++  topBurns: MoneyItem[]; // costed recurring items, largest first
++  renewals: MoneyItem[]; // items with a parseable renewal date, soonest first
++};
++
++// Classes whose costs count toward the recurring-burn floor. Ending/owned are
++// excluded (not ongoing); personal is out of business scope.
++const BURN_CLASSES: SpendClass[] = ["core", "hidden", "flagged", "review"];
++
++function parseCost(raw: string): { n: number | null; approx: boolean } {
++  const text = (raw ?? "").trim();
++  if (text === "") return { n: null, approx: false };
++  const n = parseFloat(text.replace(/[^0-9.]/g, ""));
++  if (!Number.isFinite(n)) return { n: null, approx: false };
++  return { n, approx: /[~+]/.test(text) };
++}
++
++function parseRenewal(raw: string): string | null {
++  const m = (raw ?? "").match(/\d{4}-\d{2}-\d{2}/);
++  return m ? m[0] : null;
++}
++
++export function buildMoneyView(csvText: string | null): MoneyView {
++  const rows = csvText ? parseCsv(csvText).rows : [];
++
++  const items: MoneyItem[] = rows.map((r) => {
++    const { n, approx } = parseCost(r["cost_monthly_usd"] ?? "");
++    return {
++      service: r["service"] || "(unnamed)",
++      plan: r["plan"] ?? "",
++      costUsd: n,
++      costRaw: (r["cost_monthly_usd"] ?? "").trim(),
++      costApprox: approx,
++      cadence: r["billing_cadence"] ?? "",
++      renewalIso: parseRenewal(r["renewal_date"] ?? ""),
++      renewalRaw: r["renewal_date"] ?? "",
++      status: r["status"] ?? "",
++      cls: classifyStatus(r["status"] ?? ""),
++      notes: r["notes"] ?? "",
++    };
++  });
++
++  const byClass = {} as MoneyView["byClass"];
++  for (const { cls } of SPEND_CLASSES) byClass[cls] = { totalUsd: 0, count: 0, uncosted: 0 };
++
++  let known = 0;
++  let uncosted = 0;
++  let approxCount = 0;
++  for (const it of items) {
++    const bucket = byClass[it.cls];
++    bucket.count++;
++    if (it.costUsd !== null) {
++      bucket.totalUsd = Math.round((bucket.totalUsd + it.costUsd) * 100) / 100;
++    } else {
++      bucket.uncosted++;
++    }
++    if (BURN_CLASSES.includes(it.cls)) {
++      if (it.costUsd !== null) {
++        known += it.costUsd;
++        if (it.costApprox) approxCount++;
++      } else {
++        uncosted++;
++      }
++    }
++  }
++
++  const topBurns = items
++    .filter((it) => it.costUsd !== null && BURN_CLASSES.includes(it.cls))
++    .sort((a, b) => (b.costUsd ?? 0) - (a.costUsd ?? 0));
++
++  const renewals = items
++    .filter((it) => it.renewalIso !== null)
++    .sort((a, b) => (a.renewalIso ?? "").localeCompare(b.renewalIso ?? ""));
++
++  return {
++    items,
++    knownMonthlyUsd: Math.round(known * 100) / 100,
++    uncostedCount: uncosted,
++    approxCount,
++    byClass,
++    topBurns,
++    renewals,
++  };
++}
++
++// Renewals falling on/after `todayIso` and within `days` — the near horizon.
++export function upcomingRenewals(view: MoneyView, todayIso: string, days: number): MoneyItem[] {
++  const end = addDays(todayIso, days);
++  return view.renewals.filter(
++    (it) => it.renewalIso !== null && it.renewalIso >= todayIso && it.renewalIso <= end,
++  );
++}
++
++export function addDays(iso: string, days: number): string {
++  const d = new Date(`${iso}T00:00:00Z`);
++  d.setUTCDate(d.getUTCDate() + days);
++  return d.toISOString().slice(0, 10);
++}
+diff --git a/cockpit/tests/attention.test.ts b/cockpit/tests/attention.test.ts
+new file mode 100644
+index 0000000..2598d14
+--- /dev/null
++++ b/cockpit/tests/attention.test.ts
+@@ -0,0 +1,95 @@
++import { describe, it, expect } from "vitest";
++import { buildAttentionQueue } from "../src/lib/attention";
++
++const TODAY = "2026-07-13";
++
++const CAL_HEADER = "date,item,type,action_needed";
++const SUB_HEADER =
++  "service,plan,cost_monthly_usd,billing_cadence,renewal_date,payment_last4,status,notes";
++const ASSET_HEADER = "asset,type,location,size,hash,project,canonical,notes";
++
++describe("buildAttentionQueue", () => {
++  it("turns open calendar actions into items and skips DONE rows", () => {
++    const q = buildAttentionQueue({
++      calendarCsv: [
++        CAL_HEADER,
++        "2026-07-18,Cascadeur refund escalation,deadline-watch,escalate if no reply",
++        "2026-07-12,Supabase bill review,billing,DONE 2026-07-11 — resolved",
++        "2026-08-29,Namecheap renewal cluster,billing,review speculative domains",
++        ",LLC filing dates,business,owner to supply",
++      ].join("\n"),
++      todayIso: TODAY,
++    });
++    expect(q.map((i) => i.title)).toEqual([
++      "Cascadeur refund escalation", // within 7 days → now
++      "Namecheap renewal cluster", // ~6 weeks out → watch? no: >30d → watch
++      "LLC filing dates",
++    ]);
++    expect(q[0].severity).toBe("now");
++    expect(q[1].severity).toBe("watch");
++    expect(q[2].severity).toBe("watch");
++  });
++
++  it("treats overdue dated actions as now", () => {
++    const q = buildAttentionQueue({
++      calendarCsv: [CAL_HEADER, "2026-07-01,Old task,billing,still open"].join("\n"),
++      todayIso: TODAY,
++    });
++    expect(q[0].severity).toBe("now");
++    expect(q[0].dateIso).toBe("2026-07-01");
++  });
++
++  it("surfaces flagged subscriptions, hidden aggregate, and uncosted watch", () => {
++    const q = buildAttentionQueue({
++      subscriptionsCsv: [
++        SUB_HEADER,
++        "Cascadeur,Yearly,26.20,annual,2027-07-08,,refund-requested,refund email sent",
++        "Watchful,annual,3.33,annual,2027-04-29,,do-not-renew,cancel in settings",
++        "ElevenLabs,,23.32,monthly,2026-08-08,8774,active-HIDDEN,voice",
++        "Linear,,,unknown,,8774,active-HIDDEN,uncosted",
++        "Fine,,10,monthly,,,active,",
++      ].join("\n"),
++      todayIso: TODAY,
++    });
++    const titles = q.map((i) => i.title);
++    expect(titles).toContain("Cascadeur — refund-requested");
++    expect(titles).toContain("Watchful — do-not-renew");
++    expect(titles).toContain("2 hidden subscriptions from the bank sweep");
++    expect(titles).toContain("1 recurring services with no cost on record");
++    // far-future renewal dates don't make a flag urgent
++    const casc = q.find((i) => i.title.startsWith("Cascadeur"));
++    expect(casc?.severity).toBe("watch");
++  });
++
++  it("ranks decisions first, then dated deadlines by date", () => {
++    const q = buildAttentionQueue({
++      pendingDecisions: [{ title: "Approve worker VM", file: "x.md" }],
++      calendarCsv: [
++        CAL_HEADER,
++        "2026-07-15,Sooner,billing,act",
++        "2026-07-14,Soonest,billing,act",
++      ].join("\n"),
++      todayIso: TODAY,
++    });
++    expect(q.map((i) => i.title)).toEqual(["Approve worker VM", "Soonest", "Sooner"]);
++    expect(q[0].kind).toBe("decision");
++  });
++
++  it("flags single-copy assets", () => {
++    const q = buildAttentionQueue({
++      assetsCsv: [
++        ASSET_HEADER,
++        "Lens-scenes,scenes,Mac JB-1272,156MB,,3rdrider,yes-only-copy,not in git",
++        "MedSim assets,art,repo,700MB,,MedSim-Game,yes,in git",
++      ].join("\n"),
++      todayIso: TODAY,
++    });
++    expect(q).toHaveLength(1);
++    expect(q[0].title).toBe("Single copy: Lens-scenes");
++    expect(q[0].severity).toBe("soon");
++  });
++
++  it("is empty with no inputs", () => {
++    expect(buildAttentionQueue({ todayIso: TODAY })).toEqual([]);
++  });
++});
+diff --git a/cockpit/tests/money.test.ts b/cockpit/tests/money.test.ts
+new file mode 100644
+index 0000000..4d84db9
+--- /dev/null
++++ b/cockpit/tests/money.test.ts
+@@ -0,0 +1,122 @@
++import { describe, it, expect } from "vitest";
++import {
++  buildMoneyView,
++  classifyStatus,
++  upcomingRenewals,
++  addDays,
++} from "../src/lib/money";
++
++const HEADER =
++  "service,plan,cost_monthly_usd,billing_cadence,renewal_date,payment_last4,status,notes";
++
++function csv(...rows: string[]): string {
++  return [HEADER, ...rows].join("\n");
++}
++
++describe("classifyStatus", () => {
++  it("maps the register's status vocabulary to spend classes", () => {
++    expect(classifyStatus("active")).toBe("core");
++    expect(classifyStatus("active-keep")).toBe("core");
++    expect(classifyStatus("active-HIDDEN")).toBe("hidden");
++    expect(classifyStatus("refund-requested")).toBe("flagged");
++    expect(classifyStatus("do-not-renew")).toBe("flagged");
++    expect(classifyStatus("paused-but-billing")).toBe("flagged");
++    expect(classifyStatus("cancelled-expiring")).toBe("ending");
++    expect(classifyStatus("presumed-dead")).toBe("ending");
++    expect(classifyStatus("owned")).toBe("owned");
++    expect(classifyStatus("owned-CONFIRMED")).toBe("owned");
++    expect(classifyStatus("fyi")).toBe("personal");
++    expect(classifyStatus("review")).toBe("review");
++    expect(classifyStatus("owner-review")).toBe("review");
++    expect(classifyStatus("UNSWEPT")).toBe("review");
++  });
++
++  it("defaults unknown statuses to review, never to core", () => {
++    expect(classifyStatus("")).toBe("review");
++    expect(classifyStatus("mystery")).toBe("review");
++  });
++});
++
++describe("buildMoneyView", () => {
++  it("sums only recurring burn classes and never invents costs", () => {
++    const view = buildMoneyView(
++      csv(
++        "Claude,Max,212.00,monthly,2026-08-07,8774,active,primary",
++        "ElevenLabs,,23.32,monthly,2026-08-08,8774,active-HIDDEN,voice",
++        "Linear,,,unknown,,8774,active-HIDDEN,uncosted",
++        "CC5,perpetual,,one-time,,,owned,license",
++        "Personal,grouped,,monthly,,mixed,fyi,out of scope",
++        "Old thing,,9.99,monthly,,,presumed-dead,gone",
++      ),
++    );
++    expect(view.knownMonthlyUsd).toBe(235.32); // 212 + 23.32; dead 9.99 excluded
++    expect(view.uncostedCount).toBe(1); // Linear only — owned/personal don't count
++    expect(view.byClass.core.totalUsd).toBe(212);
++    expect(view.byClass.hidden.count).toBe(2);
++    expect(view.byClass.hidden.uncosted).toBe(1);
++    expect(view.byClass.ending.totalUsd).toBe(9.99);
++  });
++
++  it("parses approximate costs and marks them approximate", () => {
++    const view = buildMoneyView(
++      csv(
++        "Meshy,base,5.99+,monthly,,8774,active-HIDDEN,tops up",
++        "GCP,payg,~12,monthly,,8774,active-HIDDEN,growing",
++      ),
++    );
++    expect(view.knownMonthlyUsd).toBe(17.99);
++    expect(view.approxCount).toBe(2);
++    expect(view.items[0].costApprox).toBe(true);
++  });
++
++  it("extracts a renewal date even from prose renewal fields", () => {
++    const view = buildMoneyView(
++      csv(
++        "Namecheap,34 domains,,annual,staggered — 10 renew 2026-08-29/30,,active,domains",
++        "Supabase,Pro,67.18,monthly,2026-08-11,8774,active,db",
++        "NoDate,,5,monthly,,,active,",
++      ),
++    );
++    expect(view.renewals.map((r) => r.service)).toEqual(["Supabase", "Namecheap"]);
++    expect(view.renewals[1].renewalIso).toBe("2026-08-29");
++  });
++
++  it("orders top burns largest first, excluding non-recurring classes", () => {
++    const view = buildMoneyView(
++      csv(
++        "Small,,5,monthly,,,active,",
++        "Big,,80,monthly,,,active-HIDDEN,",
++        "Dead,,500,monthly,,,presumed-dead,",
++      ),
++    );
++    expect(view.topBurns.map((t) => t.service)).toEqual(["Big", "Small"]);
++  });
++
++  it("handles a missing register", () => {
++    const view = buildMoneyView(null);
++    expect(view.items).toEqual([]);
++    expect(view.knownMonthlyUsd).toBe(0);
++  });
++});
++
++describe("upcomingRenewals", () => {
++  it("returns only renewals inside the horizon, soonest first", () => {
++    const view = buildMoneyView(
++      csv(
++        "A,,1,monthly,2026-07-15,,active,",
++        "B,,2,monthly,2026-08-20,,active,",
++        "C,,3,monthly,2026-07-01,,active,", // already past
++      ),
++    );
++    const up = upcomingRenewals(view, "2026-07-13", 30);
++    expect(up.map((u) => u.service)).toEqual(["A"]);
++    const wide = upcomingRenewals(view, "2026-07-13", 60);
++    expect(wide.map((u) => u.service)).toEqual(["A", "B"]);
++  });
++});
++
++describe("addDays", () => {
++  it("crosses month boundaries", () => {
++    expect(addDays("2026-07-28", 7)).toBe("2026-08-04");
++  });
++});
