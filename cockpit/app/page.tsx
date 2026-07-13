@@ -3,17 +3,22 @@ import { Chrome } from "./components/Chrome";
 import { readRepoFile, listRepoDir } from "@/lib/repo";
 import { buildRegisterView } from "@/lib/registers";
 import { parseDecision, isPending } from "@/lib/decisions";
+import { buildSpendView } from "@/lib/spend";
+import { readCeilingUsd } from "@/lib/git";
 
 export const revalidate = 60;
 
 export default async function Overview() {
-  const [subsCsv, calCsv, decisionFiles] = await Promise.all([
+  const [subsCsv, calCsv, decisionFiles, spendCsv, ceilingUsd] = await Promise.all([
     readRepoFile("registers/subscriptions.csv"),
     readRepoFile("registers/calendar.csv"),
     listRepoDir("_governance/decisions"),
+    readRepoFile("registers/autonomous-spend.csv"),
+    readCeilingUsd(),
   ]);
 
   const subs = subsCsv ? buildRegisterView("subscriptions", subsCsv) : null;
+  const spend = buildSpendView(spendCsv, ceilingUsd);
 
   let pendingCount = 0;
   for (const f of decisionFiles.filter((f) => f.endsWith(".md") && f !== "README.md")) {
@@ -51,6 +56,26 @@ export default async function Overview() {
         </Link>
       </div>
 
+      <Link href="/spend">
+        <div className="card">
+          <h3>
+            Autonomous spend headroom
+            <span className={`badge ${spend.over ? "bad" : spend.pctUsed >= 80 ? "warn" : "good"}`}>
+              {spend.pctUsed}%
+            </span>
+          </h3>
+          <div className="cost">
+            ${spend.spentUsd.toFixed(2)}{" "}
+            <span className="meta" style={{ fontWeight: 400 }}>
+              of ${spend.ceilingUsd.toFixed(2)} · {spend.month}
+            </span>
+          </div>
+          <div className={`bar ${spend.over ? "bad" : spend.pctUsed >= 80 ? "warn" : "good"}`}>
+            <div className="bar-fill" style={{ width: `${Math.min(100, spend.pctUsed)}%` }} />
+          </div>
+        </div>
+      </Link>
+
       <div className="card">
         <h3>Upcoming dates</h3>
         {upcoming.length === 0 ? (
@@ -70,6 +95,18 @@ export default async function Overview() {
       <div className="card">
         <h3>Views</h3>
         <dl>
+          <dt>Projects</dt>
+          <dd>
+            <Link href="/projects">per-project footprint</Link>
+          </dd>
+          <dt>Status</dt>
+          <dd>
+            <Link href="/status">fabric / sprint status</Link>
+          </dd>
+          <dt>Spend</dt>
+          <dd>
+            <Link href="/spend">autonomous-spend ledger vs ceiling</Link>
+          </dd>
           <dt>Dashboard</dt>
           <dd>
             <Link href="/dashboard">DASHBOARD.md (generated)</Link>

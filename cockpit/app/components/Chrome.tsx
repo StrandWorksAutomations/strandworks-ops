@@ -2,9 +2,10 @@ import Link from "next/link";
 
 const TABS = [
   { href: "/", label: "Overview" },
+  { href: "/projects", label: "Projects" },
   { href: "/registers", label: "Registers" },
   { href: "/decisions", label: "Decide" },
-  { href: "/reports", label: "Reports" },
+  { href: "/status", label: "Status" },
 ];
 
 export function Chrome({
