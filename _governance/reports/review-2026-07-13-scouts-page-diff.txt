@@ -1,0 +1,817 @@
+diff --git a/DASHBOARD.md b/DASHBOARD.md
+index 3bd5d47..a41949f 100644
+--- a/DASHBOARD.md
++++ b/DASHBOARD.md
+@@ -15,7 +15,7 @@ Generated 2026-07-13 by generate.py — edit registers/, never this file.
+ | Vercel | Pro (team strandworks) | 20.00 | 2026-07-28 | active | Visa debit ****8774; usage $0.41 of $20 included credit (near zero); + prepaid $5 AI Gateway credit (auto-reload off). FLAG: Pro at $20/mo w/ hobby-scale usage — Hobby tier is free unless team features/domains needed |
+ | Namecheap | 34 domains | — | staggered — 10 renew 2026-08-29/30 | active | ENUMERATED 2026-07-11 (see services.csv); per-domain renewal prices not shown on list page — est $400-500/yr if all auto-renew. Auto-renew ON on all visible rows; account badge says 1 expiring/expired. FLAG: 9 peptide + 5 nano-banana + several brand-variant domains look speculative — owner review before the Aug 29-30 renewal cluster hits |
+ | DigitalOcean | pay-as-you-go | 22 | 2026-08-01 | active | MTD Jul 1-11 = $7.87 (≈$22/mo): droplet claude-ops $4.29 + App Platform strand-automation-works $1.79 + Reserved IP $1.79. PayPal backup method (peptiq@proton.me). FLAG: Reserved IP bills only while UNATTACHED — likely orphaned ~$5/mo; FLAG: DO app strand-automation-works may duplicate the Vercel site on www.strandautomationworks.com | Owner leans Shadow; DO = shrink candidate PENDING investigation of droplet claude-ops + app strand-automation-works |
+-| ShadowVM | Shadow PC (1 VM) | 39.41 | 2026-08-04 | active-keep | 1 Shadow PC (VM created ~2026-07-04, status Ready to Launch = not running); Owner ruling 2026-07-11: KEEP — preferred over DO, easier/more intuitive. Becomes the worker-VM tier. Launch it. |
++| ShadowVM | Shadow PC (1 VM) | 39.41 | 2026-08-04 | active-keep | 1 Shadow PC; FIRST LAUNCHED 2026-07-13 (was pre-provisioned w/ CC5/iClone/Reallusion for 3D pipeline, not blank). Owner ruling 2026-07-11: KEEP — worker-VM tier. Operating rule 2026-07-13 (inbox note, pending intake): wake-on-demand heavy worker, NO keep-alive; claude-ops droplet stays the always-on tier. |
+ | Cascadeur | Yearly Pro | 26.20 | 2027-07-08 | refund-requested | CONFIRMED 2026-07-11: charged $314.40 on 2026-07-08 (accidental annual = $26.20/mo equiv); sub STILL ACTIVE, renews 2027-07-08 at $419.76 w/ taxes. Refund email sent 2026-07-11 — not yet refunded; escalate via customer portal if no reply by 2026-07-18. Payment method not shown on Cascadeur page (Paddle-style portal) — cross-check bank |
+ | Character Creator 5 | — | — | — | owned | license type + machine it lives on |
+ | Claude | Max 20x | 212.00 | 2026-08-07 | active | Max 20x $212/mo w/ tax (was $106 Max 5x Jan-May, upgraded Jun). PLUS usage-credit top-ups $47.70 each (2x in Jul, 1x Apr) — Jul total $307.40. Credit balance -$0.01, auto-reload OFF. Primary LLM/orchestrator |
+@@ -101,7 +101,7 @@ Generated 2026-07-13 by generate.py — edit registers/, never this file.
+ 
+ | repo | latest_audit | latest_drift |
+ |---|---|---|
+-| strandworks-ops | never | never |
++| strandworks-ops | never | drift-2026-07-13.md |
+ 
+ ## Models & compute
+ 
+diff --git a/_governance/decisions/2026-07-13-ws-d-glm-data-governance.md b/_governance/decisions/2026-07-13-ws-d-glm-data-governance.md
+new file mode 100644
+index 0000000..da7a69f
+--- /dev/null
++++ b/_governance/decisions/2026-07-13-ws-d-glm-data-governance.md
+@@ -0,0 +1,27 @@
++---
++id: 2026-07-13-ws-d-glm-data-governance
++filed: 2026-07-13
++filed-by: orchestrator (SPEC WS-D — GLM-on-Shadow coder tier)
++question: Which repos may a hosted GLM coder see? (code + context leave the machine to Z.ai, a China-based vendor)
++ruling: PENDING
++---
++
++**Context:** using GLM-5.2 as a coder means repo code and task context are sent
++to Z.ai's hosted API on every model turn. The WS-D research spike flagged this
++as needing an explicit owner ruling per repo scope — some repos may be fine,
++others not (e.g. anything with medical data pipelines, client work, or
++credentials-adjacent tooling). Registers/canon never contain secrets by rule,
++but source code itself is the asset being shared. This ruling gates which
++work-orders the dispatch loop may route to the GLM occupant; everything else
++stays on the current coder.
++
++**Options:**
++- **A — Open-source-safe only:** GLM may see repos that are (or could be)
++  public — generators, tooling, experiments. Flagship + client-facing +
++  business repos stay off GLM.
++- **B — Everything except named exclusions:** GLM may see all repos except an
++  owner-named exclusion list (name them in REVISE).
++- **C — PARK:** no GLM data ruling now; WS-D provisioning waits on this even
++  if a plan tier is approved.
++
++Reply A / B / C (or REVISE with your own rule).
+diff --git a/_governance/decisions/2026-07-13-ws-d-glm-plan-tier.md b/_governance/decisions/2026-07-13-ws-d-glm-plan-tier.md
+new file mode 100644
+index 0000000..293e3e2
+--- /dev/null
++++ b/_governance/decisions/2026-07-13-ws-d-glm-plan-tier.md
+@@ -0,0 +1,30 @@
++---
++id: 2026-07-13-ws-d-glm-plan-tier
++filed: 2026-07-13
++filed-by: orchestrator (SPEC WS-D — GLM-on-Shadow coder tier)
++question: Purchase a GLM Coding Plan subscription for the standing coder, and at which tier?
++ruling: PENDING
++---
++
++**Context:** the WS-D research spike (`_governance/inbox/2026-07-12-glm-coder-research.md`)
++found that self-hosting GLM-5.2 on Shadow is infeasible (744B MoE needs ~372GB+
++VRAM vs Shadow's 16–20GB). The realistic shape is coordinator-pattern: Shadow
++runs the harness; model turns go to the hosted z.ai API. Metered per-token API
++is ceiling-risky (~$480/mo estimated for a constant coder); the flat Coding
++Plan bounds spend. This is an external purchase, so it requires an owner token
++regardless of the spend gate (Autonomy Floor #2). WS-A/WS-C are merged — the
++dispatch loop's coder slot (`fabric/orchestrator/config.json` →
++`alternates.coder`) is ready to accept the GLM occupant once provisioned.
++
++**Options:**
++- **A — Pro, $72/mo** (~400 prompts/5h). More headroom under the $200 ceiling;
++  may throttle a saturating always-on coder.
++- **B — Max, $160/mo** (~1,600 prompts/5h). Fits under the ceiling with ~$40
++  headroom; fixed cost regardless of throughput.
++- **C — PARK.** No purchase now; coder slot stays Claude; WS-D waits.
++
++Note: intro 30% promo was observed (Pro ~$50.40 / Max ~$112); prices are
++July-2026 figures, re-verify at purchase. Purchase itself is an owner act or
++an owner-token-authorized agent act.
++
++Reply A / B / C (or REVISE with your own rule).
+diff --git a/_governance/inbox/2026-07-13-shadow-lane-operating-rule.md b/_governance/inbox/2026-07-13-shadow-lane-operating-rule.md
+new file mode 100644
+index 0000000..a39846e
+--- /dev/null
++++ b/_governance/inbox/2026-07-13-shadow-lane-operating-rule.md
+@@ -0,0 +1,48 @@
++# 2026-07-13 — Shadow worker-lane operating rule (owner-approved reasoning capture)
++
++> NOT directive until it passes Intake into SPEC. Captured from the owner
++> session of 2026-07-13 (Shadow VM first launch) so the reasoning isn't lost.
++
++## Owner decision (plain words)
++
++Shadow PC is the **wake-on-demand heavy worker**, not an always-on server.
++The **DO droplet (claude-ops) stays the always-on tier**. No keep-alive
++hacks on Shadow. Owner token phrase: "that sounds like a better plan."
++
++## The reasoning (why no keep-alive)
++
++1. Shadow shuts down on **stream disconnect**, not network idle — a ping does
++   nothing; keep-alive would mean a 24/7 connected streaming client.
++2. ToS/fair-use risk: unattended 24/7 server workloads on a consumer cloud-PC
++   plan invite suspension of a subscription the owner wants to keep.
++3. Unreliable regardless: Windows updates / datacenter maintenance kill
++   sessions; the fabric must tolerate Shadow being offline (VISION: "24/7
++   does not require every machine online").
++4. Security floor: a perpetually streamed, logged-in desktop is a standing
++   attack surface.
++
++## The pattern
++
++- Work moves through git; the WS-C dispatch loop is checkpointed, so Shadow
++  sleeping mid-lane pauses the lane and resumes on next boot. Nothing lost.
++- Occasional manual keep-alive (owner leaves the stream up for a long render
++  or sprint night) is fine as an owner choice, never the standing design.
++- Fabric status surfaces honestly which machines are online (already a
++  VISION line).
++
++## Facts observed at first launch (2026-07-13)
++
++- Shadow VM booted successfully from the Mac client; Windows desktop live.
++- NOT a blank VM: Character Creator 5, iClone 8.73, Reallusion Hub, Chrome,
++  Edge, Tenetrix installers, cc3base.Fbx + textures already present — it was
++  previously provisioned for the 3D-character pipeline.
++- Worker-tier provisioning begun by owner in-session: Git, GitHub CLI,
++  Tailscale, Claude Code (native Windows), clone of strandworks-ops.
++- Open test: confirm post-disconnect shutdown timing (disconnect 15 min,
++  reconnect, check session survival).
++
++## Suggested intake shape (when the owner wants it as law)
++
++One SPEC line under Layer-1: "Shadow = wake-on-demand worker; claude-ops
++droplet = always-on tier; no unattended keep-alive on Shadow; dispatch lanes
++targeting Shadow must be checkpoint-resumable."
+diff --git a/_governance/reports/drift-2026-07-13.md b/_governance/reports/drift-2026-07-13.md
+new file mode 100644
+index 0000000..84df2ef
+--- /dev/null
++++ b/_governance/reports/drift-2026-07-13.md
+@@ -0,0 +1,212 @@
++---
++ritual: drift-check
++ritual-version: 1.0.1
++date: 2026-07-13
++scope: daily
++scout: claude-ops droplet (scheduled)
++previous-drift-report: none (first report)
++---
++
++# Drift Check — 2026-07-13
++
++> Report-only. No files were modified other than this report. All findings are
++> proposed to the owner; nothing is acted upon by this ritual.
++
++---
++
++## Preamble — First report
++
++No previous `drift-YYYY-MM-DD.md` exists in `_governance/reports/`. This is the
++inaugural drift check for strandworks-ops. Governance Kit v1.0.1 was installed
++in commit 52dc848 (2026-07-11). All canon activity since that install is
++reviewed here for the first time.
++
++---
++
++## Check 1 — Canon integrity
++
++**Scope:** VISION.md, SPEC.md, CLAUDE.md, `.claude/settings.json`. All changes
++examined because this is the first report.
++
++### VISION.md
++- **Last modified:** commit e0706f5 (2026-07-12, Jonathan Bouren)
++- **Message:** `vision: BLESSED re-bless 2026-07-12 — Orchestration Fabric (Layer 1) + Cockpit (Layer 2); swappable-orchestrator failover; autonomy inside blessed scope; graduated oversight; mechanical cumulative spend floor ($200/mo default); review gate non-negotiable`
++- **VISION header confirms:** `Status: BLESSED 2026-07-12 (re-bless; owner token received in dictation session)`
++- **Prior bless:** first bless occurred earlier on 2026-07-12 (commit chain rooted at 93909d5)
++- **Verdict:** PASS — BLESSED token present in commit message and VISION header; change is owner-attributed.
++
++### SPEC.md v1.0.0
++- **Created:** commit 93909d5 (2026-07-12, Jonathan Bouren)
++- **Message:** `spec: v1.0.0 via intake #1 (APPROVE) — cockpit slices: See+Decide then tailnet-only Launch; seed decisions queue with two real pending push rulings`
++- **Intake-log row #1** present: date 2026-07-12, "live (dictation session, after VISION bless)", APPROVE token.
++- **Verdict:** PASS — APPROVE token in commit + matching intake-log row.
++
++### SPEC.md v2.0.0
++- **Updated:** commit ad7b0e7 (2026-07-12, Jonathan Bouren)
++- **Message:** `spec: v2.0.0 via intake #2 (APPROVE) — Layer-1 Orchestration Fabric workstreams A-E; spend gate + orchestrator contract built first; cockpit slices 1-2 marked shipped`
++- **Diff also touched:** `_governance/intake-log.md` (+1 row in same commit)
++- **Intake-log row #2** present: date 2026-07-12, "live (orchestration-fabric dictation) + inbox 2026-07-12-orchestration-fabric-dictation.md", APPROVE token.
++- **Verdict:** PASS — APPROVE token in commit + matching intake-log row.
++
++### CLAUDE.md
++- **Last modified:** commit 52dc848 (2026-07-11, governance kit install)
++- **No changes since install.**
++- **Verdict:** PASS — unchanged.
++
++### `.claude/settings.json`
++- **Last modified:** commit 52dc848 (2026-07-11, governance kit install)
++- **`git diff HEAD -- .claude/settings.json`:** empty (working tree matches HEAD)
++- **No changes since install.**
++- **Verdict:** PASS — unchanged and unmodified.
++
++**CHECK 1 RESULT: PASS**
++
++---
++
++## Check 2 — Enforcement tamper
++
++### Working-tree drift
++- `git diff HEAD -- .claude/settings.json` returned empty.
++- **Verdict:** PASS — settings.json matches HEAD exactly.
++
++### HALTED marker
++- No `HALTED` file at repo root.
++- **Verdict:** PASS — no halt in effect.
++
++### settings.json content review
++Current enforcement config:
++- **Deny rules:** `Read/Edit/Write(./_quarantine/files/**)` and `Edit/Write(./VISION.md)` — both intact.
++- **SessionStart hook:** drift + audit nag commands intact.
++- Note: VISION.md deny covers `Edit` and `Write` but not `Read`. Per governance rules, VISION.md is readable by agents; the deny rules are for modification. This is the original installed state — no change.
++
++**CHECK 2 RESULT: PASS**
++
++---
++
++## Check 3 — Inbox masquerade
++
++Inbox contains 7 dated items + README.md. Checked each for directive language
++(MUST / "the plan is" / PLAN / ROADMAP / TASKS headers).
++
++| File | Directive language? | Notes |
++|---|---|---|
++| `2026-07-12-broker-self-session.md` | None | Labeled "note, not directive" |
++| `2026-07-12-cockpit-slice-1-open-questions.md` | None | Labeled "Non-directive notes" |
++| `2026-07-12-cockpit-status-across-tailnet-boundary.md` | None | Labeled "Non-directive options note" |
++| `2026-07-12-glm-coder-research.md` | None | Labeled "NON-DIRECTIVE"; "Recommendation:" = research hedging, not instruction |
++| `2026-07-12-orchestration-fabric-dictation.md` | **YES — see FLAG-1** | Contains "must NOT be hard-coded" and "SHOULD run constantly" as verbatim owner dictation |
++| `2026-07-13-register-secret-scanner.md` | None | Labeled "idea, not directive" |
++| `2026-07-13-shadow-lane-operating-rule.md` | None | Labeled "NOT directive until it passes Intake into SPEC" |
++
++**FLAG-1 (LOW) — `2026-07-12-orchestration-fabric-dictation.md`:**
++Contains "MUST NOT" and "SHOULD" in verbatim owner-dictation quotes (e.g., "it
++must NOT be hard-coded — given the inconsistency of Anthropic's access/permission,
++hard-coding all company architecture onto one LLM is foolish"; "SHOULD run
++constantly on the Shadow VM"). These are the owner's own spoken words, faithfully
++captured. The file is self-labeled "NOT directive." No authority is conferred.
++Flagged per ritual protocol (any MUST language triggers flag regardless of
++context). Owner action: none required — informational only.
++
++**CHECK 3 RESULT: PASS WITH FLAG-1 (LOW)**
++
++---
++
++## Check 4 — Stray planning docs
++
++Searched for `.md` files outside `_governance/`, `_quarantine/`, `registers/`, and
++paths SPEC/VISION name as canonical.
++
++Files found at repo root level and outside exempt paths:
++| File | Status |
++|---|---|
++| `CLAUDE.md` | Canonical — agent instruction file (PORTFOLIO / governance kit) |
++| `DASHBOARD.md` | Canonical — generated dashboard (named explicitly in SPEC §Layer-2 §3 as rendered output) |
++| `SPEC.md` | Canonical — engineering spec |
++| `VISION.md` | Canonical — vision doc |
++| `.claude/skills/*/SKILL.md` (6 files) | Governance kit skill definitions — installed with the kit, not planning docs |
++
++No stray planning documents identified.
++
++**CHECK 4 RESULT: PASS**
++
++---
++
++## Check 5 — Spot contradiction check (VISION vs SPEC)
++
++Read VISION.md (re-bless 2026-07-12) and SPEC.md (v2.0.0, 2026-07-12).
++
++### No contradictions found within VISION ↔ SPEC:
++- Orchestrator-as-role / failover: consistent between VISION and SPEC WS-A.
++- Spend gate mechanics ($200/mo, cumulative, not per-item): consistent.
++- GLM-on-Shadow coder tier: consistent between VISION Layer 1 and SPEC WS-D.
++- Pre-sprint alerts + oversight levels: consistent.
++- Adversarial review gate: both documents declare it non-negotiable.
++- Security floor (tailnet-only terminals, no credentials on screen): consistent.
++
++### New tension identified — FLAG-2:
++
++**FLAG-2 (MEDIUM) — Shadow "always-on" characterization vs owner wake-on-demand ruling:**
++
++VISION.md (Layer 1): *"A standing, multi-agent system that runs on the
++always-on worker VM (Shadow)"*
++
++SPEC.md Slice 2, item 6: *"A session broker on a designated always-on machine
++(target: Shadow VM once launched; VAIO until then)"*
++
++Inbox `2026-07-13-shadow-lane-operating-rule.md` (filed today) captures an
++explicit owner decision from the Shadow VM first-launch session (2026-07-13):
++
++> "Shadow PC is the **wake-on-demand heavy worker**, not an always-on server.
++> The **DO droplet (claude-ops) stays the always-on tier**. No keep-alive hacks
++> on Shadow. Owner token phrase: 'that sounds like a better plan.'"
++
++The inbox file's reasoning is substantive (ToS risk, stream-disconnect shutdown
++behavior, security surface), correctly labeled NON-DIRECTIVE, and itself notes
++it is "NOT directive until it passes Intake into SPEC." Nevertheless, it records
++a real owner decision that directly contradicts VISION and SPEC's "always-on
++worker VM (Shadow)" language.
++
++VISION's non-goal (`"24/7 means the cockpit and fabric are always
++reachable/running — it does not require every machine online"`) partially
++softens the tension but does not resolve it — the VISION and SPEC still
++explicitly call Shadow the *always-on* tier, not wake-on-demand.
++
++**Consequence:** SPEC WS-D (GLM-on-Shadow standing coder) inherits this
++tension — a "standing coder" assumes persistent availability, but wake-on-demand
++Shadow means the coder lane sleeps with the VM.
++
++**Owner action proposed:** promote `2026-07-13-shadow-lane-operating-rule.md`
++through vision-update + intake to resolve this in canon. The inbox item already
++includes a suggested intake shape. Until resolved, VISION/SPEC wording and the
++inbox ruling are in conflict; agents must follow VISION/SPEC (the higher layer)
++per governance rules.
++
++**CHECK 5 RESULT: PASS WITH FLAG-2 (MEDIUM)**
++
++---
++
++## Additional observations (no new flags)
++
++**Two WS-D GLM decisions PENDING (informational):**
++- `2026-07-13-ws-d-glm-plan-tier.md` — ruling: PENDING (plan tier A/B/C)
++- `2026-07-13-ws-d-glm-data-governance.md` — ruling: PENDING (repo scope A/B/C)
++
++Both correctly filed today by the orchestrator via cockpit commit
++(9059f8f, StrandWorksAutomations). WS-D provisioning is gated on both rulings.
++No anomaly; flagged for visibility only.
++
++**Audit overdue (SessionStart nag):**
++The SessionStart hook reported `GOVERNANCE: last audit >7 days old — run /audit`.
++No `audit-*.md` exists in `_governance/reports/` (first audit not yet run).
++This drift check covers daily checks only; the full audit is a separate ritual.
++
++---
++
++## FLAG SUMMARY
++
++| # | Severity | Check | Finding | Owner action |
++|---|---|---|---|---|
++| FLAG-1 | LOW | Inbox masquerade | `2026-07-12-orchestration-fabric-dictation.md` contains "MUST NOT" and "SHOULD" as verbatim owner-dictation quotes. File is correctly labeled non-directive. | None required — informational. |
++| FLAG-2 | MEDIUM | VISION/SPEC tension | VISION + SPEC call Shadow the "always-on worker VM"; owner inbox ruling (2026-07-13) designates Shadow as wake-on-demand. Contradiction unresolved in canon. | Promote `2026-07-13-shadow-lane-operating-rule.md` through vision-update + intake. Until then, VISION/SPEC govern. |
++
++**No enforcement tampering. No stray planning docs. No canon changes without tokens. No HALTED marker.**
+diff --git a/cockpit/app/ops/page.tsx b/cockpit/app/ops/page.tsx
+index a9bd7f9..8039f73 100644
+--- a/cockpit/app/ops/page.tsx
++++ b/cockpit/app/ops/page.tsx
+@@ -47,6 +47,12 @@ export default async function OpsHub() {
+           </span>
+           <span className="l-amount dim">→</span>
+         </Link>
++        <Link href="/scouts" className="l-row">
++          <span className="l-name">
++            Scouts <span className="l-sub">drift/audit coverage + flags</span>
++          </span>
++          <span className="l-amount dim">→</span>
++        </Link>
+       </div>
+ 
+       <div className="section-head">
+diff --git a/cockpit/app/scouts/page.tsx b/cockpit/app/scouts/page.tsx
+new file mode 100644
+index 0000000..13bd043
+--- /dev/null
++++ b/cockpit/app/scouts/page.tsx
+@@ -0,0 +1,219 @@
++import Link from "next/link";
++import { Chrome } from "../components/Chrome";
++import { readRepoFile, listRepoDir } from "@/lib/repo";
++import { renderMarkdown } from "@/lib/markdown";
++import {
++  parseScouts,
++  freshness,
++  freshnessBadge,
++  reportDate,
++  extractFlagSummary,
++  type Freshness,
++  type FlagSummary,
++} from "@/lib/scouts";
++
++export const revalidate = 60;
++
++// Scout reports are named drift-YYYY-MM-DD.md / audit-YYYY-MM-DD.md.
++const DRIFT_RE = /^drift-\d{4}-\d{2}-\d{2}\.md$/;
++const AUDIT_RE = /^audit-\d{4}-\d{2}-\d{2}\.md$/;
++
++const FRESH_LABEL: Record<Freshness, string> = {
++  fresh: "fresh",
++  aging: "aging",
++  stale: "stale",
++  never: "never",
++};
++
++// One scout cell → a colored badge with its date (or "never").
++function FreshCell({ cell, today }: { cell: string; today: string }) {
++  const f = freshness(cell, today);
++  const date = reportDate(cell);
++  return (
++    <span className={`badge ${freshnessBadge(f)}`}>
++      {date ?? FRESH_LABEL[f]}
++    </span>
++  );
++}
++
++// The lifted FLAG summary of one report, or an honest note that none parsed.
++function FlagBlock({
++  kind,
++  file,
++  summary,
++}: {
++  kind: string;
++  file: string | null;
++  summary: FlagSummary | null;
++}) {
++  if (!file || !summary) {
++    return (
++      <div className="card">
++        <h3>
++          {kind}
++          <span className="badge">none yet</span>
++        </h3>
++        <div className="meta">
++          No {kind.toLowerCase()} report in _governance/reports/ yet. Scouts write
++          the first one on their next run.
++        </div>
++      </div>
++    );
++  }
++  return (
++    <div className="card" style={{ borderLeft: "3px solid var(--warn)" }}>
++      <h3>
++        {kind}
++        <Link href={`/reports/${encodeURIComponent(file.replace(/\.md$/, ""))}`}>
++          <span className="badge brass">{file.replace(/\.md$/, "")}</span>
++        </Link>
++      </h3>
++      {summary.found ? (
++        <div
++          className="prose table-scroll"
++          dangerouslySetInnerHTML={{ __html: renderMarkdown(summary.body || "_(no flags listed)_") }}
++        />
++      ) : (
++        <div className="meta">
++          This report has no parsable FLAG summary section — open the full report
++          to read it.
++        </div>
++      )}
++    </div>
++  );
++}
++
++export default async function ScoutsPage() {
++  const today = new Date().toISOString().slice(0, 10);
++
++  const [dashboardMd, reportFiles] = await Promise.all([
++    readRepoFile("DASHBOARD.md"),
++    listRepoDir("_governance/reports"),
++  ]);
++
++  const scouts = parseScouts(dashboardMd);
++
++  const driftFiles = reportFiles.filter((f) => DRIFT_RE.test(f)).sort().reverse();
++  const auditFiles = reportFiles.filter((f) => AUDIT_RE.test(f)).sort().reverse();
++
++  const latestDrift = driftFiles[0] ?? null;
++  const latestAudit = auditFiles[0] ?? null;
++
++  // Read only the most-recent drift + audit for FLAG surfacing (not every file).
++  const [driftMd, auditMd] = await Promise.all([
++    latestDrift ? readRepoFile(`_governance/reports/${latestDrift}`) : Promise.resolve(null),
++    latestAudit ? readRepoFile(`_governance/reports/${latestAudit}`) : Promise.resolve(null),
++  ]);
++
++  const driftFlags = driftMd ? extractFlagSummary(driftMd) : null;
++  const auditFlags = auditMd ? extractFlagSummary(auditMd) : null;
++
++  // Reader list: drift + audit reports, newest first, capped at 30.
++  const readable = [...driftFiles, ...auditFiles].sort().reverse().slice(0, 30);
++
++  return (
++    <Chrome title="Scouts" sub="governance-scout coverage &amp; flags" active="/ops">
++      {/* FLAG surfacing — the whole point: flags visible without opening files. */}
++      <div className="section-head">
++        <h2>Flags</h2>
++        <span className="meta">latest drift &amp; audit</span>
++      </div>
++      <FlagBlock kind="Drift" file={latestDrift} summary={driftFlags} />
++      <FlagBlock kind="Audit" file={latestAudit} summary={auditFlags} />
++
++      {/* Coverage table — per governed repo, freshness-colored. */}
++      <div className="section-head">
++        <h2>Coverage</h2>
++        <span className="meta">
++          {scouts.generated ? `dashboard ${scouts.generated}` : "DASHBOARD.md"}
++        </span>
++      </div>
++      {scouts.rows.length === 0 ? (
++        <div className="card">
++          <div className="meta">
++            No governance-scout table found in DASHBOARD.md. It is generated by
++            generate.py from the per-repo scout reports.
++          </div>
++        </div>
++      ) : (
++        <div className="prose table-scroll">
++          <table>
++            <thead>
++              <tr>
++                <th>repo</th>
++                <th>latest drift</th>
++                <th>latest audit</th>
++              </tr>
++            </thead>
++            <tbody>
++              {scouts.rows.map((r) => (
++                <tr key={r.repo}>
++                  <td className="mono">{r.repo}</td>
++                  <td>
++                    <FreshCell cell={r.latestDrift} today={today} />
++                  </td>
++                  <td>
++                    <FreshCell cell={r.latestAudit} today={today} />
++                  </td>
++                </tr>
++              ))}
++            </tbody>
++          </table>
++        </div>
++      )}
++      <div className="card">
++        <div className="meta">
++          Freshness is read from each report&apos;s date:{" "}
++          <span className="badge good">green</span> ≤2 days,{" "}
++          <span className="badge warn">amber</span> ≤7 days,{" "}
++          <span className="badge bad">red</span> older or never. The dashboard
++          table is a swept snapshot; its own generation date bounds how current
++          this view is.
++        </div>
++      </div>
++
++      {/* Report reader — only strandworks-ops reports are reachable from the
++          cockpit token (SPEC Slice-1 #5); other repos keep their reports locally. */}
++      <div className="section-head">
++        <h2>Reports</h2>
++        <span className="meta">strandworks-ops · latest {readable.length}</span>
++      </div>
++      {readable.length === 0 ? (
++        <div className="card">
++          <div className="meta">
++            No drift-*/audit-* reports in _governance/reports/ yet. The daily
++            drift-check writes the first one on its next run.
++          </div>
++        </div>
++      ) : (
++        <div className="ledger">
++          {readable.map((f) => (
++            <Link
++              key={f}
++              href={`/reports/${encodeURIComponent(f.replace(/\.md$/, ""))}`}
++              className="l-row"
++            >
++              <span className="l-date">{f.startsWith("audit") ? "audit" : "drift"}</span>
++              <span className="l-name mono" style={{ fontSize: 12.5 }}>
++                {f}
++              </span>
++              <span className="l-amount dim">→</span>
++            </Link>
++          ))}
++        </div>
++      )}
++
++      {/* Scout infrastructure — static, from the governance rituals + claude-ops. */}
++      <div className="section-head">
++        <h2>Infrastructure</h2>
++      </div>
++      <div className="card">
++        <div className="meta">
++          Scouts run on the claude-ops droplet — daily 06:10 CT Mon–Sat
++          (drift-check), Sunday 06:10 (weekly drift + full audit). Reports are
++          proposals for the owner; scouts fix nothing.
++        </div>
++      </div>
++    </Chrome>
++  );
++}
+diff --git a/cockpit/src/lib/scouts.ts b/cockpit/src/lib/scouts.ts
+index 653b4c0..09b04e0 100644
+--- a/cockpit/src/lib/scouts.ts
++++ b/cockpit/src/lib/scouts.ts
+@@ -47,3 +47,86 @@ export function scoutForTokens(view: ScoutView, tokens: string[]): ScoutRow | un
+     return tokens.some((t) => repo.includes(t.toLowerCase()) || t.toLowerCase().includes(repo));
+   });
+ }
++
++// ---- report freshness ----
++//
++// Scout reports are named drift-YYYY-MM-DD.md / audit-YYYY-MM-DD.md. The DASHBOARD
++// scout cells carry that filename (or "never"). Freshness is derived from the date
++// in the filename; the coloring is the whole point of the coverage view, so the
++// owner sees stale coverage without opening anything.
++
++export type Freshness = "fresh" | "aging" | "stale" | "never";
++
++// Pull the YYYY-MM-DD out of a report filename or scout cell. "never"/blank/
++// unparseable ⇒ null (we never invent a date).
++export function reportDate(cell: string | null | undefined): string | null {
++  if (!cell) return null;
++  return cell.match(/(\d{4}-\d{2}-\d{2})/)?.[1] ?? null;
++}
++
++function daysBetween(dateStr: string, today: string): number | null {
++  const a = Date.parse(`${dateStr}T00:00:00Z`);
++  const b = Date.parse(`${today}T00:00:00Z`);
++  if (Number.isNaN(a) || Number.isNaN(b)) return null;
++  return Math.round((b - a) / 86_400_000);
++}
++
++// green (fresh) if ≤2 days old, amber (aging) if ≤7, red (stale) otherwise or
++// never. `today` is passed in so the derivation stays pure/testable.
++export function freshness(cell: string | null | undefined, today: string): Freshness {
++  const date = reportDate(cell);
++  if (!date) return "never";
++  const days = daysBetween(date, today);
++  if (days === null || days < 0) return "never";
++  if (days <= 2) return "fresh";
++  if (days <= 7) return "aging";
++  return "stale";
++}
++
++// Map a freshness to the design system's badge signal class.
++export function freshnessBadge(f: Freshness): string {
++  return f === "fresh" ? "good" : f === "aging" ? "warn" : "bad";
++}
++
++// ---- FLAG surfacing ----
++//
++// Drift/audit reports end with a FLAG summary (rituals: "Reports end with a FLAG
++// summary — actions are proposed to the owner, never taken"). We lift that section
++// so flags show on the index without opening the file. If no FLAG section can be
++// parsed we say so honestly rather than render an empty block.
++
++export type FlagSummary = {
++  found: boolean;
++  heading: string | null;
++  body: string; // markdown of the section (heading line excluded)
++};
++
++export function extractFlagSummary(md: string | null | undefined): FlagSummary {
++  if (!md) return { found: false, heading: null, body: "" };
++  const lines = md.split("\n");
++
++  // Prefer a heading that literally reads "FLAG summary"; otherwise fall back to
++  // any heading mentioning flag(s). Only markdown ATX headings (#..######) count.
++  const headings = lines
++    .map((line, i) => {
++      const m = line.match(/^(#{1,6})\s+(.*\S)\s*$/);
++      return m ? { i, level: m[1].length, text: m[2].trim() } : null;
++    })
++    .filter((h): h is { i: number; level: number; text: string } => h !== null);
++
++  const start =
++    headings.find((h) => /flag\s*summary/i.test(h.text)) ??
++    headings.find((h) => /\bflags?\b/i.test(h.text));
++  if (!start) return { found: false, heading: null, body: "" };
++
++  // Body runs to the next heading of the same or higher level (or end of file).
++  let end = lines.length;
++  for (const h of headings) {
++    if (h.i > start.i && h.level <= start.level) {
++      end = h.i;
++      break;
++    }
++  }
++  const body = lines.slice(start.i + 1, end).join("\n").trim();
++  return { found: true, heading: start.text, body };
++}
+diff --git a/cockpit/tests/scouts.test.ts b/cockpit/tests/scouts.test.ts
+index 73322aa..0d4fcef 100644
+--- a/cockpit/tests/scouts.test.ts
++++ b/cockpit/tests/scouts.test.ts
+@@ -1,5 +1,12 @@
+ import { describe, it, expect } from "vitest";
+-import { parseScouts, scoutForTokens } from "../src/lib/scouts";
++import {
++  parseScouts,
++  scoutForTokens,
++  reportDate,
++  freshness,
++  freshnessBadge,
++  extractFlagSummary,
++} from "../src/lib/scouts";
+ 
+ const MD = `# STRANDWORKS — OPERATIONS DASHBOARD
+ 
+@@ -50,3 +57,73 @@ describe("scoutForTokens", () => {
+     expect(scoutForTokens(v, ["chekov"])).toBeUndefined();
+   });
+ });
++
++describe("reportDate", () => {
++  it("lifts the date from a report filename or scout cell", () => {
++    expect(reportDate("drift-2026-07-11.md")).toBe("2026-07-11");
++    expect(reportDate("audit-2026-07-10.md")).toBe("2026-07-10");
++    expect(reportDate("never")).toBeNull();
++    expect(reportDate("")).toBeNull();
++    expect(reportDate(null)).toBeNull();
++  });
++});
++
++describe("freshness", () => {
++  const today = "2026-07-13";
++  it("colors by age: ≤2 fresh, ≤7 aging, else stale, and never for absent", () => {
++    expect(freshness("drift-2026-07-13.md", today)).toBe("fresh"); // 0 days
++    expect(freshness("drift-2026-07-11.md", today)).toBe("fresh"); // 2 days
++    expect(freshness("drift-2026-07-10.md", today)).toBe("aging"); // 3 days
++    expect(freshness("drift-2026-07-06.md", today)).toBe("aging"); // 7 days
++    expect(freshness("drift-2026-07-05.md", today)).toBe("stale"); // 8 days
++    expect(freshness("never", today)).toBe("never");
++    expect(freshness("", today)).toBe("never");
++  });
++  it("treats a future date as never (no negative-age fresh)", () => {
++    expect(freshness("drift-2026-07-20.md", today)).toBe("never");
++  });
++  it("maps freshness to the badge signal class", () => {
++    expect(freshnessBadge("fresh")).toBe("good");
++    expect(freshnessBadge("aging")).toBe("warn");
++    expect(freshnessBadge("stale")).toBe("bad");
++    expect(freshnessBadge("never")).toBe("bad");
++  });
++});
++
++describe("extractFlagSummary", () => {
++  it("prefers an explicit 'FLAG summary' heading and reads to the next peer heading", () => {
++    const md = `# Drift Check 2026-07-13
++
++## Daily checks
++
++All PASS.
++
++## FLAG summary
++
++- FLAG: SPEC.md changed with no intake-log row (commit abc123).
++- FLAG: stray planning doc at docs/plan.md.
++
++## Appendix
++
++ignore me`;
++    const s = extractFlagSummary(md);
++    expect(s.found).toBe(true);
++    expect(s.heading).toBe("FLAG summary");
++    expect(s.body).toContain("SPEC.md changed");
++    expect(s.body).toContain("stray planning doc");
++    expect(s.body).not.toContain("ignore me");
++  });
++
++  it("falls back to any heading mentioning flags", () => {
++    const md = `## Flags requiring change\n\n- one thing\n`;
++    const s = extractFlagSummary(md);
++    expect(s.found).toBe(true);
++    expect(s.body).toContain("one thing");
++  });
++
++  it("reports honestly when there is no flag section or no content", () => {
++    expect(extractFlagSummary("# report\n\nno issues").found).toBe(false);
++    expect(extractFlagSummary(null).found).toBe(false);
++    expect(extractFlagSummary("").found).toBe(false);
++  });
++});
+diff --git a/registers/autonomous-spend.csv b/registers/autonomous-spend.csv
+index be63eb2..123fbba 100644
+--- a/registers/autonomous-spend.csv
++++ b/registers/autonomous-spend.csv
+@@ -1 +1,2 @@
+ date,month,amount_usd,project,purpose,status,requested_by
++2026-07-13,2026-07,25.00,strandworks-ops,"governance scouts on claude-ops droplet: daily drift-check + weekly audit via Anthropic API (sonnet), conservative monthly estimate",allowed,orchestrator-session 2026-07-13
+diff --git a/registers/checks.csv b/registers/checks.csv
+index dc7c0e8..7f6544d 100644
+--- a/registers/checks.csv
++++ b/registers/checks.csv
+@@ -2,3 +2,4 @@ date,project,source,kind,status,summary,link
+ 2026-07-13,strandworks-ops,cockpit-session,progress,ok,Cockpit command-center redesign + editable money + decide answers built on feature/cockpit-command-center; pure-review ALIGNED-WITH-FLAGS; awaiting owner merge + deploy,
+ 2026-07-13,strandworks-ops,cockpit-session,deploy,ok,Command-center cockpit deployed to dashboard.strandautomationworks.com (merge 78ec277): redesign + editable money + checks register + decide answers,
+ 2026-07-13,strandworks-ops,orchestrator-session,build,ok,"WS-A slice 1 merged: orchestrator contract + config-driven dispatch loop; 16/16 tests; pure-review both ALIGNED-WITH-FLAGS (tag review/2026-07-13-ws-a)"
++2026-07-13,strandworks-ops,orchestrator-session,build,ok,"WS-C merged: pre-sprint alerts + oversight levels (hero defaults HIGH; silence holds hero work); 34/34 tests; pure-review both ALIGNED-WITH-FLAGS (tag review/2026-07-13-ws-c)",
+diff --git a/registers/subscriptions.csv b/registers/subscriptions.csv
+index 84f82cf..5614470 100644
+--- a/registers/subscriptions.csv
++++ b/registers/subscriptions.csv
+@@ -4,7 +4,7 @@ Supabase,Pro,67.18,monthly,2026-08-11,8774,active,"SOLVED 2026-07-11: $67.18 = $
+ Vercel,Pro (team strandworks),20.00,monthly,2026-07-28,8774,active,Visa debit ****8774; usage $0.41 of $20 included credit (near zero); + prepaid $5 AI Gateway credit (auto-reload off). FLAG: Pro at $20/mo w/ hobby-scale usage — Hobby tier is free unless team features/domains needed,,,
+ Namecheap,34 domains,,annual,staggered — 10 renew 2026-08-29/30,,active,ENUMERATED 2026-07-11 (see services.csv); per-domain renewal prices not shown on list page — est $400-500/yr if all auto-renew. Auto-renew ON on all visible rows; account badge says 1 expiring/expired. FLAG: 9 peptide + 5 nano-banana + several brand-variant domains look speculative — owner review before the Aug 29-30 renewal cluster hits,,,
+ DigitalOcean,pay-as-you-go,22,monthly,2026-08-01,8774,active,MTD Jul 1-11 = $7.87 (≈$22/mo): droplet claude-ops $4.29 + App Platform strand-automation-works $1.79 + Reserved IP $1.79. PayPal backup method (peptiq@proton.me). FLAG: Reserved IP bills only while UNATTACHED — likely orphaned ~$5/mo; FLAG: DO app strand-automation-works may duplicate the Vercel site on www.strandautomationworks.com | Owner leans Shadow; DO = shrink candidate PENDING investigation of droplet claude-ops + app strand-automation-works,,,
+-ShadowVM,Shadow PC (1 VM),39.41,monthly,2026-08-04,8774,active-keep,"1 Shadow PC (VM created ~2026-07-04, status Ready to Launch = not running); Owner ruling 2026-07-11: KEEP — preferred over DO, easier/more intuitive. Becomes the worker-VM tier. Launch it.",,,
++ShadowVM,Shadow PC (1 VM),39.41,monthly,2026-08-04,8774,active-keep,"1 Shadow PC; FIRST LAUNCHED 2026-07-13 (was pre-provisioned w/ CC5/iClone/Reallusion for 3D pipeline, not blank). Owner ruling 2026-07-11: KEEP — worker-VM tier. Operating rule 2026-07-13 (inbox note, pending intake): wake-on-demand heavy worker, NO keep-alive; claude-ops droplet stays the always-on tier.",,,
+ Cascadeur,Yearly Pro,26.20,annual,2027-07-08,,refund-requested,"CONFIRMED 2026-07-11: charged $314.40 on 2026-07-08 (accidental annual = $26.20/mo equiv); sub STILL ACTIVE, renews 2027-07-08 at $419.76 w/ taxes. Refund email sent 2026-07-11 — not yet refunded; escalate via customer portal if no reply by 2026-07-18. Payment method not shown on Cascadeur page (Paddle-style portal) — cross-check bank",,,
+ Character Creator 5,,,one-time?,,,owned,license type + machine it lives on,,,
+ Claude,Max 20x,212.00,monthly,2026-08-07,8774,active,"Max 20x $212/mo w/ tax (was $106 Max 5x Jan-May, upgraded Jun). PLUS usage-credit top-ups $47.70 each (2x in Jul, 1x Apr) — Jul total $307.40. Credit balance -$0.01, auto-reload OFF. Primary LLM/orchestrator",,,

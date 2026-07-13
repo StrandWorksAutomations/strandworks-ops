@@ -47,6 +47,12 @@ export default async function OpsHub() {
           </span>
           <span className="l-amount dim">→</span>
         </Link>
+        <Link href="/scouts" className="l-row">
+          <span className="l-name">
+            Scouts <span className="l-sub">drift/audit coverage + flags</span>
+          </span>
+          <span className="l-amount dim">→</span>
+        </Link>
       </div>
 
       <div className="section-head">

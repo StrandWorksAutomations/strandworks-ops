@@ -47,3 +47,86 @@ export function scoutForTokens(view: ScoutView, tokens: string[]): ScoutRow | un
     return tokens.some((t) => repo.includes(t.toLowerCase()) || t.toLowerCase().includes(repo));
   });
 }
+
+// ---- report freshness ----
+//
+// Scout reports are named drift-YYYY-MM-DD.md / audit-YYYY-MM-DD.md. The DASHBOARD
+// scout cells carry that filename (or "never"). Freshness is derived from the date
+// in the filename; the coloring is the whole point of the coverage view, so the
+// owner sees stale coverage without opening anything.
+
+export type Freshness = "fresh" | "aging" | "stale" | "never";
+
+// Pull the YYYY-MM-DD out of a report filename or scout cell. "never"/blank/
+// unparseable ⇒ null (we never invent a date).
+export function reportDate(cell: string | null | undefined): string | null {
+  if (!cell) return null;
+  return cell.match(/(\d{4}-\d{2}-\d{2})/)?.[1] ?? null;
+}
+
+function daysBetween(dateStr: string, today: string): number | null {
+  const a = Date.parse(`${dateStr}T00:00:00Z`);
+  const b = Date.parse(`${today}T00:00:00Z`);
+  if (Number.isNaN(a) || Number.isNaN(b)) return null;
+  return Math.round((b - a) / 86_400_000);
+}
+
+// green (fresh) if ≤2 days old, amber (aging) if ≤7, red (stale) otherwise or
+// never. `today` is passed in so the derivation stays pure/testable.
+export function freshness(cell: string | null | undefined, today: string): Freshness {
+  const date = reportDate(cell);
+  if (!date) return "never";
+  const days = daysBetween(date, today);
+  if (days === null || days < 0) return "never";
+  if (days <= 2) return "fresh";
+  if (days <= 7) return "aging";
+  return "stale";
+}
+
+// Map a freshness to the design system's badge signal class.
+export function freshnessBadge(f: Freshness): string {
+  return f === "fresh" ? "good" : f === "aging" ? "warn" : "bad";
+}
+
+// ---- FLAG surfacing ----
+//
+// Drift/audit reports end with a FLAG summary (rituals: "Reports end with a FLAG
+// summary — actions are proposed to the owner, never taken"). We lift that section
+// so flags show on the index without opening the file. If no FLAG section can be
+// parsed we say so honestly rather than render an empty block.
+
+export type FlagSummary = {
+  found: boolean;
+  heading: string | null;
+  body: string; // markdown of the section (heading line excluded)
+};
+
+export function extractFlagSummary(md: string | null | undefined): FlagSummary {
+  if (!md) return { found: false, heading: null, body: "" };
+  const lines = md.split("\n");
+
+  // Prefer a heading that literally reads "FLAG summary"; otherwise fall back to
+  // any heading mentioning flag(s). Only markdown ATX headings (#..######) count.
+  const headings = lines
+    .map((line, i) => {
+      const m = line.match(/^(#{1,6})\s+(.*\S)\s*$/);
+      return m ? { i, level: m[1].length, text: m[2].trim() } : null;
+    })
+    .filter((h): h is { i: number; level: number; text: string } => h !== null);
+
+  const start =
+    headings.find((h) => /flag\s*summary/i.test(h.text)) ??
+    headings.find((h) => /\bflags?\b/i.test(h.text));
+  if (!start) return { found: false, heading: null, body: "" };
+
+  // Body runs to the next heading of the same or higher level (or end of file).
+  let end = lines.length;
+  for (const h of headings) {
+    if (h.i > start.i && h.level <= start.level) {
+      end = h.i;
+      break;
+    }
+  }
+  const body = lines.slice(start.i + 1, end).join("\n").trim();
+  return { found: true, heading: start.text, body };
+}
