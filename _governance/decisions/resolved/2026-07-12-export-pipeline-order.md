@@ -3,7 +3,10 @@ id: 2026-07-12-export-pipeline-order
 filed: 2026-07-12
 filed-by: orchestrator (from 3rdrider WS3 inbox question)
 question: In 3rdrider's export pipeline, what order do the two safety gates run?
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-14T23:21:46.715Z
+source: cockpit
+answer: B
 ---
 
 **Context:** two structural gates now exist and export (WS5) must pass both:
