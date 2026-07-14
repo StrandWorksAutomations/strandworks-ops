@@ -3,7 +3,9 @@ id: 2026-07-13-ws-d-glm-plan-tier
 filed: 2026-07-13
 filed-by: orchestrator (SPEC WS-D — GLM-on-Shadow coder tier)
 question: Purchase a GLM Coding Plan subscription for the standing coder, and at which tier?
-ruling: PENDING
+ruling: CLEAR
+ruled: 2026-07-14T23:22:24.056Z
+source: cockpit
 ---
 
 **Context:** the WS-D research spike (`_governance/inbox/2026-07-12-glm-coder-research.md`)
