@@ -3,7 +3,10 @@ id: 2026-07-13-ws-d-glm-data-governance
 filed: 2026-07-13
 filed-by: orchestrator (SPEC WS-D — GLM-on-Shadow coder tier)
 question: Which repos may a hosted GLM coder see? (code + context leave the machine to Z.ai, a China-based vendor)
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-14T23:21:54.217Z
+source: cockpit
+answer: A
 ---
 
 **Context:** using GLM-5.2 as a coder means repo code and task context are sent
