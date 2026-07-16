@@ -1,6 +1,6 @@
 # STRANDWORKS — OPERATIONS DASHBOARD
 
-Generated 2026-07-15 by generate.py — edit registers/, never this file.
+Generated 2026-07-16 by generate.py — edit registers/, never this file.
 
 ## Money
 
@@ -101,7 +101,7 @@ Generated 2026-07-15 by generate.py — edit registers/, never this file.
 
 | repo | latest_audit | latest_drift |
 |---|---|---|
-| strandworks-ops | never | drift-2026-07-15.md |
+| strandworks-ops | never | drift-2026-07-16.md |
 
 ## Models & compute
 
