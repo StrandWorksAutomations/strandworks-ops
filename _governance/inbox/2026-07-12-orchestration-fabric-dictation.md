@@ -51,6 +51,22 @@ every aspect: LLC/business side, assets, social media, the numbers.
 **Prior art.** Earlier dashboards (e.g. `Projects/media_manager`) attempted
 this but none had the full functionality and scope.
 
+## Autonomy model (owner's answer, 2026-07-12)
+
+Once the vision is locked securely, the orchestrator may dispatch + monitor
+sub-agents as necessary, INCLUDING spinning up the heavy systems for
+processing assets / generating visuals / models / research / scenes as needed.
+If version control + branches are managed appropriately, work can progress
+WITHOUT the owner's explicit approval. Inside blessed scopes, work continues
+autonomously.
+
+**Graduated oversight (owner's idea):** a pre-sprint alert system — the owner
+gets alerts of upcoming work that could need eyes-on or hands-on testing;
+opens the alert and selects his OVERSIGHT LEVEL for that item. Example given:
+HUD design → HIGH involvement (very human-facing design integration).
+Pairs with the "hero task" axis: human/client-facing ⇒ higher default
+oversight; internal plumbing ⇒ runs autonomously.
+
 ## Orchestrator notes (for the interview / draft — not owner's words)
 - Portfolio-touching: "Fable 5 has overview of ALL projects" is a
   PORTFOLIO-level statement; the fabric may warrant a PORTFOLIO line + a
