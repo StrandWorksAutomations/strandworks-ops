@@ -2,3 +2,4 @@
 # NOTE: quarantine itself STAYS TRACKED (untracked quarantine = one disk failure
 # from deletion). Only large non-text artifacts are excluded.
 _quarantine/files/binaries/
+.claude/worktrees/
