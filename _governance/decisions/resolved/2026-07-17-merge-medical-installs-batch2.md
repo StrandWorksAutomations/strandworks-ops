@@ -3,7 +3,9 @@ id: 2026-07-17-merge-medical-installs-batch2
 filed: 2026-07-17
 filed-by: orchestrator (medical-repos governance fan-out, wave 2)
 question: Merge the governance-install branches for medcapture, pocus-ultrasound, and the-kinetic-medic?
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-17
+source: orchestrator (executed under standing owner directive 'make all medical repos ready'; deploy-safe additive merges only)
 ---
 
 **Context:** Three more medical repos discovered + governed on

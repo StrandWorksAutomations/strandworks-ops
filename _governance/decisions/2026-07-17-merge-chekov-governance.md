@@ -16,4 +16,6 @@ intended integration target when ruling.
 **After merge, remaining owner steps (separate):** vision dictation (BLESSED),
 approve the 14-file cleanse (see audit-2026-07-17.md).
 
+**HELD (not auto-merged):** chekov's default branch is `test/ui-integration-from-stockpile`, not `main` — merging governance to `main` may miss where active work happens. Confirm the target branch when ruling.
+
 **Options:** APPROVE (merge governance branch) / PARK (leave on branch).
