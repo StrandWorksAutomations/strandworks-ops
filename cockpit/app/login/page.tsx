@@ -17,7 +17,7 @@ export default function LoginPage() {
         setError("No passkey enrolled yet. Owner setup: open /setup on the enrollment device.");
         return;
       }
-      if (!optRes.ok) throw new Error("could not start login");
+      if (!optRes.ok) throw new Error(`could not start login (HTTP ${optRes.status})`);
       const options = await optRes.json();
       const assertion = await startAuthentication({ optionsJSON: options });
       const verifyRes = await fetch("/api/auth/login-verify", {
@@ -25,11 +25,16 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(assertion),
       });
-      if (!verifyRes.ok) throw new Error("passkey verification failed");
+      if (!verifyRes.ok) {
+        const detail = await verifyRes.json().then(d => d?.error).catch(() => null);
+        throw new Error(detail ? `${detail} (HTTP ${verifyRes.status})` : `verification failed (HTTP ${verifyRes.status})`);
+      }
       router.push("/");
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "login failed");
+      // Surface the DOMException name — "NotAllowedError: ..." tells us the
+      // authenticator declined/timed out vs. a server-side verify failure.
+      setError(e instanceof Error ? `${e.name !== "Error" ? e.name + ": " : ""}${e.message}` : "login failed");
     } finally {
       setBusy(false);
     }
