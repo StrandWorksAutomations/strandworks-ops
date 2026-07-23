@@ -3,6 +3,7 @@ import Link from "next/link";
 const TABS = [
   { href: "/operate", label: "Operate" },
   { href: "/", label: "Today" },
+  { href: "/orchard", label: "Orchard", boundary: true },
   { href: "/money", label: "Money" },
   { href: "/projects", label: "Projects" },
   { href: "/decisions", label: "Decide" },
@@ -39,9 +40,23 @@ export function Chrome({
       {children}
       <nav className="nav" aria-label="Cockpit sections">
         {TABS.map((t) => (
-          <Link key={t.href} href={t.href} className={t.href === active ? "active" : ""}>
-            {t.label}
-          </Link>
+          t.boundary ? (
+            <a
+              key={t.href}
+              href={t.href}
+              className={t.href === active ? "active" : ""}
+            >
+              {t.label}
+            </a>
+          ) : (
+            <Link
+              key={t.href}
+              href={t.href}
+              className={t.href === active ? "active" : ""}
+            >
+              {t.label}
+            </Link>
+          )
         ))}
       </nav>
     </div>
