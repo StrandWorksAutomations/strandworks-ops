@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operate — The Wire</title>
+<style>
+  :root {
+    --void: #05070a;
+    --panel: #0c1116;
+    --panel-raised: #111820;
+    --bezel-hi: #232e3a;
+    --bezel-lo: #0a0e13;
+    --hairline: #1c2530;
+    --hairline-soft: #161e27;
+
+    --green: #4ff2a8;
+    --green-dim: #2f8f68;
+    --green-faint: #1c4c3a;
+    --green-glow: rgba(79, 242, 168, 0.32);
+
+    --amber: #ffb454;
+    --amber-dim: #a97a3f;
+    --amber-glow: rgba(255, 180, 84, 0.28);
+
+    --cyan: #6fd6ff;
+    --cyan-dim: #4a8fab;
+
+    --red: #ff6b6b;
+    --red-dim: #a94f4f;
+
+    --ink: #dcefe3;
+    --ink-dim: #86998f;
+    --ink-faint: #4c5b55;
+
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--void);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    height: 100%;
+  }
+
+  body {
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 1200px 700px at 20% -10%, rgba(79, 242, 168, 0.05), transparent 60%),
+      radial-gradient(ellipse 900px 600px at 100% 0%, rgba(111, 214, 255, 0.04), transparent 55%);
+    background-color: var(--void);
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  ::selection { background: var(--green-faint); color: var(--green); }
+
+  :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+  /* ---------- LED ---------- */
+  .led {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; display: inline-block;
+    background: var(--green);
+    box-shadow: 0 0 8px 1px var(--green-glow);
+  }
+  .led.amber { background: var(--amber); box-shadow: 0 0 8px 1px var(--amber-glow); }
+  .led.cyan { background: var(--cyan); box-shadow: 0 0 8px 1px rgba(111, 214, 255, 0.35); }
+  .led.dim { background: var(--ink-faint); box-shadow: none; }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--hairline);
+    background: linear-gradient(180deg, rgba(12, 17, 22, 0.9), rgba(12, 17, 22, 0.5));
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    backdrop-filter: blur(6px);
+  }
+
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+
+  .wordmark {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--ink);
+    text-shadow: 0 0 12px var(--green-glow);
+  }
+  .wordmark span { color: var(--ink-faint); font-weight: 500; text-shadow: none; }
+
+  .wordmark-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-dim);
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border: 1px solid var(--green-faint);
+    border-radius: 999px;
+    color: var(--green);
+    letter-spacing: 0.05em;
+    font-size: 11px;
+  }
+
+  .clock { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; color: var(--ink); }
+
+  /* ---------- Layout ---------- */
+  .shell {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr) 296px;
+    gap: 20px;
+    padding: 20px 24px 28px;
+    max-width: 1600px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  @media (max-width: 1180px) {
+    .shell { grid-template-columns: 200px minmax(0, 1fr) 260px; }
+  }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .rail-right { order: 3; }
+    .rail-left { order: 1; display: flex; flex-wrap: wrap; gap: 12px; }
+    .rail-left > * { flex: 1 1 220px; }
+    .river-col { order: 2; }
+  }
+
+  /* ---------- Cards ---------- */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+
+  .card + .card { margin-top: 14px; }
+
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    margin: 0 0 11px;
+  }
+
+  /* ---------- Left rail: nav ---------- */
+  .nav-card { padding: 8px; }
+  .nav-list { list-style: none; margin: 0; padding: 0; }
+  .nav-list li a {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink-dim);
+  }
+  .nav-list li a:hover { background: var(--panel-raised); color: var(--ink); }
+  .nav-list li a.active {
+    background: var(--green-faint);
+    color: var(--green);
+  }
+  .nav-list li a .n-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-faint); }
+  .nav-list li a.active .n-dot { background: var(--green); }
+
+  /* ---------- Agent presence ---------- */
+  .agent-row { padding: 9px 0; border-top: 1px solid var(--hairline-soft); }
+  .agent-row:first-of-type { border-top: none; padding-top: 2px; }
+  .agent-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .agent-name { font-family: var(--mono); font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; color: var(--ink); }
+  .agent-heartbeat {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: var(--ink-faint);
+  }
+  .agent-row.is-active .agent-heartbeat {
+    background: var(--green);
+    box-shadow: 0 0 0 0 var(--green-glow);
+    animation: heartbeat 2.2s ease-out infinite;
+  }
+  @keyframes heartbeat {
+    0%   { box-shadow: 0 0 0 0 rgba(79, 242, 168, 0.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(79, 242, 168, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(79, 242, 168, 0); }
+  }
+  .agent-status { margin-left: auto; font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; color: var(--ink-dim); }
+  .agent-row.is-active .agent-status { color: var(--green); }
+  .agent-project { font-size: 11px; color: var(--ink-dim); margin-bottom: 2px; }
+  .agent-task { font-size: 11.5px; color: var(--ink-dim); line-height: 1.4; }
+
+  /* ---------- Systems health ---------- */
+  .sys-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 5px 0;
+    font-size: 12px;
+  }
+  .sys-name { color: var(--ink-dim); }
+  .sys-note { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--ink-dim); }
+  .sys-row.is-warn .sys-note { color: var(--amber); }
+
+  /* ---------- Treasury ---------- */
+  .treasury-figure { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
+  .treasury-figure .label { font-size: 12px; color: var(--ink-dim); }
+  .treasury-figure .value { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--ink); }
+  .runway-bar {
+    height: 4px; border-radius: 2px; background: var(--hairline-soft);
+    overflow: hidden; margin: 10px 0 12px;
+  }
+  .runway-bar-fill { height: 100%; width: 64%; background: linear-gradient(to right, var(--green-dim), var(--green)); }
+  .treasury-pending {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--amber);
+    border-top: 1px solid var(--hairline-soft); padding-top: 9px;
+  }
+
+  /* ---------- River column ---------- */
+  .river-col { min-width: 0; }
+
+  .filters {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .filter-chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--hairline);
+    background: var(--panel);
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .filter-chip:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .filter-chip.active {
+    background: var(--green-faint);
+    border-color: var(--green-dim);
+    color: var(--green);
+  }
+  .live-indicator {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 7px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em;
+    color: var(--ink-faint);
+  }
+  .live-indicator .led { animation: livepulse 1.8s ease-in-out infinite; }
+  @keyframes livepulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  /* ---------- River bezel + screen (signature element) ---------- */
+  .river-bezel {
+    background: linear-gradient(155deg, var(--bezel-hi), var(--bezel-lo) 60%);
+    border-radius: 16px;
+    padding: 8px;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.04) inset,
+      0 18px 40px -20px rgba(0, 0, 0, 0.8);
+  }
+
+  .river-screen {
+    position: relative;
+    background: radial-gradient(ellipse at 50% 0%, #0a1410 0%, #060a09 70%);
+    border-radius: 10px;
+    border: 1px solid #000;
+    overflow: hidden;
+    height: calc(100vh - 200px);
+    min-height: 480px;
+  }
+
+  .river-screen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.035) 0px,
+      rgba(255, 255, 255, 0.035) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .river-screen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 50px 8px rgba(0, 0, 0, 0.65);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .river-frame {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    padding: 4px 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--hairline) transparent;
+  }
+  .river-frame::-webkit-scrollbar { width: 8px; }
+  .river-frame::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 4px; }
+
+  .band-divider {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 20px 8px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+  .band-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--hairline-soft);
+  }
+  .band-divider.now-band { color: var(--green); }
+
+  .event-row {
+    display: grid;
+    grid-template-columns: 4px 76px 108px 116px minmax(0, 1fr);
+    gap: 12px;
+    align-items: stretch;
+    padding: 5px 20px;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  .event-row:hover { background: rgba(79, 242, 168, 0.035); }
+
+  .ev-bar {
+    border-radius: 2px;
+    align-self: stretch;
+    min-height: 18px;
+    background: var(--ink-faint);
+  }
+  .ev-bar.sev-ok { background: var(--green-dim); }
+  .ev-bar.sev-info { background: var(--cyan-dim); }
+  .ev-bar.sev-warn { background: var(--amber-dim); }
+  .ev-bar.sev-crit { background: var(--red-dim); }
+  .ev-bar.sev-quiet { background: var(--ink-faint); }
+
+  .ev-time {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11.5px;
+    color: var(--ink-dim);
+    align-self: center;
+  }
+
+  .ev-chip {
+    align-self: center;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 1px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--hairline);
+    color: var(--ink-dim);
+    width: fit-content;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .ev-proj {
+    align-self: center;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ev-msg { align-self: center; color: var(--ink); min-width: 0; }
+
+  /* Rich inline card */
+  .event-card {
+    margin: 4px 20px 10px 20px;
+    padding: 10px 13px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    background: var(--panel-raised);
+    font-size: 11.5px;
+  }
+  .event-card-head {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 11px; color: var(--ink-dim);
+    margin-bottom: 6px;
+  }
+  .event-card-head b { color: var(--ink); }
+  .event-card-body { color: var(--ink-dim); line-height: 1.5; }
+
+  /* Arrival animation */
+  .event-row.entering, .event-card.entering { animation: arrive 0.6s ease-out; }
+  @keyframes arrive {
+    0%   { opacity: 0; transform: translateY(-6px); background: rgba(79, 242, 168, 0.10); }
+    60%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 1; background: transparent; }
+  }
+  .event-row.entering.sev-warn { animation-name: arrive-warn; }
+  @keyframes arrive-warn {
+    0%   { opacity: 0; transform: translateY(-6px); background: rgba(255, 180, 84, 0.12); }
+    60%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 1; background: transparent; }
+  }
+  .event-row.entering.sev-info { animation-name: arrive-info; }
+  @keyframes arrive-info {
+    0%   { opacity: 0; transform: translateY(-6px); background: rgba(111, 214, 255, 0.10); }
+    60%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 1; background: transparent; }
+  }
+  .event-row.entering.sev-crit { animation-name: arrive-crit; }
+  @keyframes arrive-crit {
+    0%   { opacity: 0; transform: translateY(-6px); background: rgba(255, 107, 107, 0.14); }
+    60%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 1; background: transparent; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .event-row.entering, .event-card.entering { animation: none; }
+    .agent-row.is-active .agent-heartbeat { animation: none; }
+    .live-indicator .led { animation: none; }
+  }
+
+  @media (max-width: 640px) {
+    .event-row { grid-template-columns: 4px 62px 1fr; grid-template-areas: "bar time time" "bar src proj" "bar msg msg"; row-gap: 2px; padding: 8px 14px; }
+    .ev-bar { grid-area: bar; }
+    .ev-time { grid-area: time; }
+    .ev-chip { grid-area: src; }
+    .ev-proj { grid-area: proj; }
+    .ev-msg { grid-area: msg; }
+  }
+
+  /* ---------- Right rail: decisions ---------- */
+  .rail-right { position: sticky; top: 92px; }
+  .decisions-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .decisions-head .card-title { margin: 0; }
+  .decisions-count {
+    font-family: var(--mono); font-size: 10.5px; color: var(--amber);
+    border: 1px solid var(--amber-dim); border-radius: 999px; padding: 1px 8px;
+  }
+
+  .decision-card {
+    border: 1px solid var(--hairline);
+    border-left: 3px solid var(--ink-faint);
+    border-radius: var(--radius-sm);
+    padding: 12px 13px;
+    background: var(--panel-raised);
+    margin-bottom: 10px;
+    transition: opacity 0.4s ease;
+  }
+  .decision-card.tier-urgent { border-left-color: var(--red); }
+  .decision-card.tier-normal { border-left-color: var(--amber); }
+  .decision-card.tier-fyi { border-left-color: var(--cyan-dim); }
+
+  .decision-tier {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid currentColor;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .tier-urgent .decision-tier { color: var(--red); background: rgba(255, 107, 107, 0.08); }
+  .tier-normal .decision-tier { color: var(--amber); background: rgba(255, 180, 84, 0.08); }
+  .tier-fyi .decision-tier { color: var(--cyan); background: rgba(111, 214, 255, 0.08); }
+
+  .decision-q { font-size: 13px; color: var(--ink); line-height: 1.42; margin-bottom: 8px; }
+  .decision-meta {
+    display: flex; gap: 8px; align-items: center;
+    font-family: var(--mono); font-size: 10px; color: var(--ink-dim);
+    margin-bottom: 11px;
+  }
+  .decision-meta .dot-sep { opacity: 0.5; }
+
+  .decision-actions { display: flex; gap: 8px; }
+  .btn {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--hairline);
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .btn.primary {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+    background: rgba(255, 180, 84, 0.14);
+  }
+  .btn.primary:hover { background: rgba(255, 180, 84, 0.24); }
+  .decision-card.resolved { opacity: 0.4; }
+  .decision-card.resolved .decision-actions { display: none; }
+  .decision-resolved-note {
+    font-family: var(--mono); font-size: 10.5px; color: var(--green);
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="wordmark">STRANDWORKS <span>// OPERATE</span></span>
+    <span class="wordmark-sub">dashboard.strandautomationworks.com</span>
+  </div>
+  <div class="topbar-right">
+    <span class="status-pill"><span class="led"></span>ALL SYSTEMS NOMINAL</span>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- LEFT RAIL -->
+  <div class="rail-left">
+    <div class="card nav-card">
+      <ul class="nav-list">
+        <li><a href="#" class="active"><span class="n-dot"></span>Operate</a></li>
+        <li><a href="#"><span class="n-dot"></span>Projects</a></li>
+        <li><a href="#"><span class="n-dot"></span>Decisions</a></li>
+        <li><a href="#"><span class="n-dot"></span>Records</a></li>
+        <li><a href="#"><span class="n-dot"></span>Systems</a></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <p class="card-title"><span class="led"></span>Agent Presence</p>
+
+      <div class="agent-row is-active">
+        <div class="agent-head">
+          <span class="agent-heartbeat"></span>
+          <span class="agent-name">CLAUDE</span>
+          <span class="agent-status">ACTIVE</span>
+        </div>
+        <div class="agent-project">MedSim-Game</div>
+        <div class="agent-task">Modeling cardiovascular hemodynamics v3 — commit in progress</div>
+      </div>
+
+      <div class="agent-row">
+        <div class="agent-head">
+          <span class="agent-heartbeat"></span>
+          <span class="agent-name">CODEX</span>
+          <span class="agent-status">IDLE · 41M</span>
+        </div>
+        <div class="agent-project">web-qa</div>
+        <div class="agent-task">Idle since flaky-selector test sweep finished</div>
+      </div>
+
+      <div class="agent-row is-active">
+        <div class="agent-head">
+          <span class="agent-heartbeat"></span>
+          <span class="agent-name">ANTIGRAVITY</span>
+          <span class="agent-status">ACTIVE</span>
+        </div>
+        <div class="agent-project">Drift</div>
+        <div class="agent-task">Running TestFlight build 10 smoke tests</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title"><span class="led"></span>Systems</p>
+      <div class="sys-row"><span class="led"></span><span class="sys-name">Vercel</span><span class="sys-note">operational</span></div>
+      <div class="sys-row"><span class="led"></span><span class="sys-name">Supabase</span><span class="sys-note">operational</span></div>
+      <div class="sys-row"><span class="led"></span><span class="sys-name">Cron jobs</span><span class="sys-note" id="cron-note">next in 12m</span></div>
+      <div class="sys-row is-warn"><span class="led amber"></span><span class="sys-name">Passkey auth</span><span class="sys-note">degraded</span></div>
+    </div>
+
+    <div class="card">
+      <p class="card-title"><span class="led"></span>Treasury</p>
+      <div class="treasury-figure"><span class="label">Burn rate</span><span class="value">$1,920/mo</span></div>
+      <div class="treasury-figure"><span class="label">Runway</span><span class="value">16 mo</span></div>
+      <div class="runway-bar"><div class="runway-bar-fill"></div></div>
+      <div class="treasury-pending"><span class="led amber"></span>$25/mo pending — Supabase Pro</div>
+    </div>
+  </div>
+
+  <!-- CENTER: THE RIVER -->
+  <div class="river-col">
+    <div class="filters">
+      <button class="filter-chip active" data-filter="all">ALL</button>
+      <button class="filter-chip" data-filter="agent">AGENTS</button>
+      <button class="filter-chip" data-filter="deploy">DEPLOYS</button>
+      <button class="filter-chip" data-filter="decision">DECISIONS</button>
+      <button class="filter-chip" data-filter="scout">SCOUTS</button>
+      <span class="live-indicator"><span class="led"></span>LIVE</span>
+    </div>
+
+    <div class="river-bezel">
+      <div class="river-screen">
+        <div class="river-frame" id="river">
+          <!-- populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT RAIL: DECISION DOCK -->
+  <div class="rail-right">
+    <div class="card">
+      <div class="decisions-head">
+        <p class="card-title"><span class="led amber"></span>Pending Decisions</p>
+        <span class="decisions-count" id="pending-count">5</span>
+      </div>
+
+      <div class="decision-card tier-urgent" data-id="d1">
+        <span class="decision-tier">URGENT</span>
+        <div class="decision-q">Lock the cardiovascular model spec at v3?</div>
+        <div class="decision-meta"><span>CLAUDE</span><span class="dot-sep">·</span><span>MedSim-Game</span></div>
+        <div class="decision-actions">
+          <button class="btn primary" data-action="resolve">Lock v3</button>
+          <button class="btn" data-action="resolve">Not yet</button>
+        </div>
+      </div>
+
+      <div class="decision-card tier-normal" data-id="d2">
+        <span class="decision-tier">NORMAL</span>
+        <div class="decision-q">Approve the Supabase Pro upgrade — $25/mo?</div>
+        <div class="decision-meta"><span>CLAUDE</span><span class="dot-sep">·</span><span>cockpit</span></div>
+        <div class="decision-actions">
+          <button class="btn primary" data-action="resolve">Approve</button>
+          <button class="btn" data-action="resolve">Hold</button>
+        </div>
+      </div>
+
+      <div class="decision-card tier-normal" data-id="d3">
+        <span class="decision-tier">NORMAL</span>
+        <div class="decision-q">Merge fix/flaky-selectors into main?</div>
+        <div class="decision-meta"><span>CODEX</span><span class="dot-sep">·</span><span>web-qa</span></div>
+        <div class="decision-actions">
+          <button class="btn primary" data-action="resolve">Merge</button>
+          <button class="btn" data-action="resolve">Wait</button>
+        </div>
+      </div>
+
+      <div class="decision-card tier-fyi" data-id="d4">
+        <span class="decision-tier">FYI</span>
+        <div class="decision-q">Retire the Codex subscription?</div>
+        <div class="decision-meta"><span>ANTIGRAVITY</span><span class="dot-sep">·</span><span>portfolio</span></div>
+        <div class="decision-actions">
+          <button class="btn primary" data-action="resolve">Retire it</button>
+          <button class="btn" data-action="resolve">Keep for now</button>
+        </div>
+      </div>
+
+      <div class="decision-card tier-fyi" data-id="d5">
+        <span class="decision-tier">FYI</span>
+        <div class="decision-q">Archive SmartBadge repo — frozen 94 days?</div>
+        <div class="decision-meta"><span>ANTIGRAVITY</span><span class="dot-sep">·</span><span>SmartBadge</span></div>
+        <div class="decision-actions">
+          <button class="btn primary" data-action="resolve">Archive</button>
+          <button class="btn" data-action="resolve">Keep frozen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- Clock ----------
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function fmtTime(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+  function fmtShort(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+
+  function tickClock() {
+    document.getElementById('clock').textContent = fmtTime(new Date());
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  // ---------- Data ----------
+  // Severity grammar: ok = phosphor green (routine/live), info = cyan (system/deploy/scout awareness),
+  // warn = amber (needs attention — including any open decision), crit = red (errors only),
+  // quiet = muted ink-faint (idle / no-op).
+  var SRC = {
+    claude: { label: 'CLAUDE' },
+    codex: { label: 'CODEX' },
+    antigravity: { label: 'ANTIGRAVITY' },
+    system: { label: 'CRON' }
+  };
+
+  var now = new Date();
+  function minsAgo(m) { return new Date(now.getTime() - m * 60000); }
+
+  // seed events: { t, src, proj, msg, sev, cat }
+  var seed = [
+    // TODAY (older)
+    { t: minsAgo(540), src: 'system', proj: '—', msg: 'Nightly cron sweep completed — 6 jobs, 0 failures.', sev: 'info', cat: 'system' },
+    { t: minsAgo(512), src: 'claude', proj: 'MedSim-Game', msg: 'Opened branch feature/hemo-model-v3 from main.', sev: 'ok', cat: 'agent' },
+    { t: minsAgo(487), src: 'antigravity', proj: 'Drift', msg: 'Session started — resuming TestFlight prep.', sev: 'ok', cat: 'agent' },
+    { t: minsAgo(455), src: 'codex', proj: 'web-qa', msg: 'Committed 12 files — stabilize selector waits.', sev: 'ok', cat: 'agent' },
+    { t: minsAgo(430), src: 'system', proj: 'Drift', msg: 'Vercel deploy queued for cockpit — commit a91fe2c.', sev: 'info', cat: 'deploy' },
+    { t: minsAgo(398), src: 'antigravity', proj: '—', msg: 'Scout: new WebXR hand-tracking SDK flagged for MedSim-Game evaluation.', sev: 'info', cat: 'scout' },
+    { t: minsAgo(360), src: 'claude', proj: 'MedSim-Game', msg: 'Decision answered — "Use VitalDB waveform set for v2 calibration?" → Yes.', sev: 'ok', cat: 'decision' },
+    { t: minsAgo(311), src: 'codex', proj: 'web-qa', msg: 'Test run finished — 84/86 passing.', sev: 'warn', cat: 'agent', card: { head: 'web-qa · test run · 84/86', body: '2 failures in checkout-flow.spec — both timeout on selector #confirm-btn. Flagged for CODEX follow-up.' } },
+    { t: minsAgo(276), src: 'system', proj: 'Media_Manager', msg: 'Health check — project frozen, no active monitors.', sev: 'quiet', cat: 'system' },
+    { t: minsAgo(240), src: 'claude', proj: 'MedSim-Game', msg: 'Committed 4 files — cardiovascular hemodynamics draft v2.', sev: 'ok', cat: 'agent' },
+
+    // LAST HOUR
+    { t: minsAgo(52), src: 'antigravity', proj: 'Drift', msg: 'Build 10 archived — uploading to TestFlight.', sev: 'info', cat: 'deploy' },
+    { t: minsAgo(47), src: 'system', proj: 'cockpit', msg: 'Vercel deploy succeeded — commit a91fe2c, 38s build.', sev: 'info', cat: 'deploy', card: { head: 'cockpit · deploy · succeeded', body: 'Production — dashboard.strandautomationworks.com · build 38.2s · no warnings.' } },
+    { t: minsAgo(41), src: 'codex', proj: 'web-qa', msg: 'Session ended — idle, awaiting next assignment.', sev: 'quiet', cat: 'agent' },
+    { t: minsAgo(33), src: 'claude', proj: 'MedSim-Game', msg: 'Raised decision — "Lock the cardiovascular model spec at v3?"', sev: 'warn', cat: 'decision' },
+    { t: minsAgo(26), src: 'antigravity', proj: '—', msg: 'Scout: Codex usage down 71% over 30 days — flagged for review.', sev: 'info', cat: 'scout' },
+    { t: minsAgo(19), src: 'system', proj: '—', msg: 'Cron sweep — dependency audit, 0 critical, 2 minor.', sev: 'info', cat: 'system' },
+    { t: minsAgo(14), src: 'claude', proj: 'MedSim-Game', msg: 'Raised decision — "Approve the Supabase Pro upgrade — $25/mo?"', sev: 'warn', cat: 'decision' },
+    { t: minsAgo(8), src: 'codex', proj: 'web-qa', msg: 'Raised decision — "Merge fix/flaky-selectors into main?"', sev: 'warn', cat: 'decision' },
+
+    // NOW
+    { t: minsAgo(3), src: 'claude', proj: 'MedSim-Game', msg: 'Commit pushed — a91fe2c: valve-timing constants tuned against VitalDB reference set.', sev: 'ok', cat: 'agent' },
+    { t: minsAgo(1), src: 'antigravity', proj: 'Drift', msg: 'Smoke test 7/9 complete — no regressions so far.', sev: 'ok', cat: 'agent' }
+  ];
+
+  // pool for live injection
+  var pool = [
+    { src: 'claude', proj: 'MedSim-Game', msg: 'Commit pushed — hemodynamics: fixed left-ventricle pressure curve.', sev: 'ok', cat: 'agent' },
+    { src: 'claude', proj: 'MedSim-Game', msg: 'Running unit tests against cardiovascular model v3.', sev: 'ok', cat: 'agent' },
+    { src: 'antigravity', proj: 'Drift', msg: 'TestFlight smoke test passed — auth flow, 0 crashes.', sev: 'ok', cat: 'agent' },
+    { src: 'antigravity', proj: 'Drift', msg: 'Build 10 processing — TestFlight review queue.', sev: 'info', cat: 'deploy' },
+    { src: 'codex', proj: 'web-qa', msg: 'Session resumed — investigating checkout-flow timeout.', sev: 'ok', cat: 'agent' },
+    { src: 'system', proj: 'cockpit', msg: 'Vercel deploy succeeded — preview build, 29s.', sev: 'info', cat: 'deploy' },
+    { src: 'system', proj: '—', msg: 'Cron sweep — backup verification, all checksums match.', sev: 'info', cat: 'system' },
+    { src: 'system', proj: 'MedSim-Game', msg: 'Supabase migration applied — 20260723_hemo_constants.', sev: 'info', cat: 'deploy' },
+    { src: 'antigravity', proj: '—', msg: 'Scout: new open-source ragdoll physics lib flagged for MedSim-Game.', sev: 'info', cat: 'scout' },
+    { src: 'antigravity', proj: '—', msg: 'Scout: passkey auth library shipped a CVE patch — cockpit uses this dep.', sev: 'warn', cat: 'scout' },
+    { src: 'claude', proj: 'MedSim-Game', msg: 'Decision answered — "Lock the cardiovascular model spec at v3?" → Locked.', sev: 'ok', cat: 'decision' },
+    { src: 'claude', proj: 'cockpit', msg: 'Decision answered — "Approve the Supabase Pro upgrade?" → Approved.', sev: 'ok', cat: 'decision' },
+    { src: 'codex', proj: 'web-qa', msg: 'Test run finished — 86/86 passing.', sev: 'ok', cat: 'agent', card: { head: 'web-qa · test run · 86/86', body: 'All checkout-flow timeouts resolved. Suite green for the first time in 6 days.' } },
+    { src: 'claude', proj: 'MedSim-Game', msg: 'Committed 2 files — updated valve-timing test fixtures.', sev: 'ok', cat: 'agent' },
+    { src: 'antigravity', proj: 'Drift', msg: 'Session heartbeat — still monitoring build 10 processing.', sev: 'quiet', cat: 'agent' },
+    { src: 'system', proj: '—', msg: 'Health check — all four monitored systems nominal.', sev: 'info', cat: 'system' },
+    { src: 'claude', proj: 'MedSim-Game', msg: 'Flagged anomaly — hemodynamics test suite runtime up 40%, investigating.', sev: 'warn', cat: 'agent' },
+    { src: 'codex', proj: 'web-qa', msg: 'Raised decision — "Add visual regression gate to CI?"', sev: 'warn', cat: 'decision' },
+    { src: 'system', proj: 'Drift', msg: 'Vercel deploy failed — build a002c9: type error in AuthGate.tsx.', sev: 'crit', cat: 'deploy', card: { head: 'Drift · deploy · failed', body: 'TypeScript error at AuthGate.tsx:44 — property "sessionId" does not exist. Rolled back to previous build automatically.' } },
+    { src: 'claude', proj: 'MedSim-Game', msg: 'Session started — resuming cardiovascular model work.', sev: 'ok', cat: 'agent' }
+  ];
+
+  var CAP_TOTAL = 90;
+
+  var riverEl = document.getElementById('river');
+
+  function makeChip(srcKey) {
+    var s = SRC[srcKey] || SRC.system;
+    var span = document.createElement('span');
+    span.className = 'ev-chip';
+    span.textContent = s.label;
+    return span;
+  }
+
+  function buildRow(ev) {
+    var row = document.createElement('div');
+    row.className = 'event-row sev-' + ev.sev;
+    row.setAttribute('data-cat', ev.cat);
+
+    var bar = document.createElement('span');
+    bar.className = 'ev-bar sev-' + ev.sev;
+    row.appendChild(bar);
+
+    var time = document.createElement('span');
+    time.className = 'ev-time';
+    time.textContent = fmtShort(ev.t);
+    row.appendChild(time);
+
+    row.appendChild(makeChip(ev.src));
+
+    var proj = document.createElement('span');
+    proj.className = 'ev-proj';
+    proj.textContent = ev.proj;
+    row.appendChild(proj);
+
+    var msg = document.createElement('span');
+    msg.className = 'ev-msg';
+    msg.textContent = ev.msg;
+    row.appendChild(msg);
+
+    return row;
+  }
+
+  function buildCard(ev) {
+    var wrap = document.createElement('div');
+    wrap.className = 'event-card';
+    wrap.setAttribute('data-cat', ev.cat);
+    var head = document.createElement('div');
+    head.className = 'event-card-head';
+    head.innerHTML = '<b>' + ev.card.head + '</b>';
+    var body = document.createElement('div');
+    body.className = 'event-card-body';
+    body.textContent = ev.card.body;
+    wrap.appendChild(head);
+    wrap.appendChild(body);
+    return wrap;
+  }
+
+  function bandOf(t) {
+    var diffMin = (now.getTime() - t.getTime()) / 60000;
+    if (diffMin < 5) return 'now';
+    if (diffMin < 60) return 'hour';
+    return 'today';
+  }
+
+  // Build initial DOM: bands in order NOW / LAST HOUR / TODAY, newest first within band
+  var bands = { now: [], hour: [], today: [] };
+  seed.forEach(function (ev) { bands[bandOf(ev.t)].push(ev); });
+  bands.now.sort(function (a, b) { return b.t - a.t; });
+  bands.hour.sort(function (a, b) { return b.t - a.t; });
+  bands.today.sort(function (a, b) { return b.t - a.t; });
+
+  var bandMeta = [
+    { key: 'now', label: 'Now', cls: 'now-band' },
+    { key: 'hour', label: 'Last hour', cls: '' },
+    { key: 'today', label: 'Today', cls: '' }
+  ];
+
+  var bandContainers = {};
+
+  bandMeta.forEach(function (b) {
+    if (bands[b.key].length === 0 && b.key !== 'now') return;
+    var divider = document.createElement('div');
+    divider.className = 'band-divider ' + b.cls;
+    divider.textContent = b.label;
+    divider.setAttribute('data-band', b.key);
+    riverEl.appendChild(divider);
+
+    var container = document.createElement('div');
+    container.setAttribute('data-band-container', b.key);
+    riverEl.appendChild(container);
+    bandContainers[b.key] = container;
+
+    bands[b.key].forEach(function (ev) {
+      container.appendChild(buildRow(ev));
+      if (ev.card) container.appendChild(buildCard(ev));
+    });
+  });
+
+  // ---------- Live injection ----------
+  var nowContainer = bandContainers.now;
+
+  function trimIfNeeded() {
+    var total = riverEl.querySelectorAll('.event-row').length;
+    while (total > CAP_TOTAL) {
+      var containers = ['today', 'hour', 'now'];
+      var removed = false;
+      for (var i = 0; i < containers.length; i++) {
+        var c = bandContainers[containers[i]];
+        if (c && c.lastElementChild) {
+          c.removeChild(c.lastElementChild);
+          removed = true;
+          break;
+        }
+      }
+      if (!removed) break;
+      total = riverEl.querySelectorAll('.event-row').length;
+    }
+  }
+
+  function currentFilter() {
+    var active = document.querySelector('.filter-chip.active');
+    return active ? active.getAttribute('data-filter') : 'all';
+  }
+
+  function applyFilterToEl(el, filter) {
+    var cat = el.getAttribute('data-cat');
+    el.style.display = (filter === 'all' || cat === filter) ? '' : 'none';
+  }
+
+  function injectEvent() {
+    var t = new Date();
+    var raw = pool[Math.floor(Math.random() * pool.length)];
+    var ev = { t: t, src: raw.src, proj: raw.proj, msg: raw.msg, sev: raw.sev, cat: raw.cat, card: raw.card };
+
+    var row = buildRow(ev);
+    if (!reduceMotion) row.classList.add('entering');
+    applyFilterToEl(row, currentFilter());
+    nowContainer.insertBefore(row, nowContainer.firstChild);
+
+    if (ev.card) {
+      var card = buildCard(ev);
+      if (!reduceMotion) card.classList.add('entering');
+      applyFilterToEl(card, currentFilter());
+      nowContainer.insertBefore(card, row.nextSibling);
+    }
+
+    if (!reduceMotion) {
+      setTimeout(function () {
+        row.classList.remove('entering');
+        if (ev.card) { var c = row.nextSibling; if (c) c.classList.remove('entering'); }
+      }, 650);
+    }
+
+    trimIfNeeded();
+  }
+
+  function scheduleNext() {
+    var delay = 2000 + Math.random() * 2000; // 2-4s
+    setTimeout(function () {
+      injectEvent();
+      scheduleNext();
+    }, delay);
+  }
+  scheduleNext();
+
+  // ---------- Filters ----------
+  var chips = document.querySelectorAll('.filter-chip');
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      chips.forEach(function (c) { c.classList.remove('active'); });
+      chip.classList.add('active');
+      var filter = chip.getAttribute('data-filter');
+      var all = riverEl.querySelectorAll('.event-row, .event-card');
+      all.forEach(function (el) { applyFilterToEl(el, filter); });
+      // hide band dividers with no visible rows
+      bandMeta.forEach(function (b) {
+        var container = bandContainers[b.key];
+        if (!container) return;
+        var divider = riverEl.querySelector('.band-divider[data-band="' + b.key + '"]');
+        var hasVisible = Array.prototype.some.call(container.children, function (el) {
+          return el.style.display !== 'none';
+        });
+        if (divider) divider.style.display = hasVisible ? '' : 'none';
+      });
+    });
+  });
+
+  // ---------- Decision dock ----------
+  var pendingCountEl = document.getElementById('pending-count');
+  function updatePendingCount() {
+    var n = document.querySelectorAll('.decision-card:not(.resolved)').length;
+    pendingCountEl.textContent = n;
+  }
+
+  document.querySelectorAll('.decision-actions .btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var card = btn.closest('.decision-card');
+      var chosenLabel = btn.textContent;
+      var actionsEl = card.querySelector('.decision-actions');
+      var note = document.createElement('div');
+      note.className = 'decision-resolved-note';
+      note.textContent = '✓ Resolved — ' + chosenLabel;
+      actionsEl.parentNode.replaceChild(note, actionsEl);
+      card.classList.add('resolved');
+      updatePendingCount();
+
+      // Reflect the resolution in the river as a live event — resolved decisions read as routine (green)
+      var metaSpans = card.querySelectorAll('.decision-meta span');
+      var src = metaSpans[0].textContent.toLowerCase();
+      var proj = metaSpans[2].textContent;
+      var q = card.querySelector('.decision-q').textContent;
+      var ev = {
+        t: new Date(),
+        src: src,
+        proj: proj,
+        msg: 'Decision answered — "' + q + '" → ' + chosenLabel + '.',
+        sev: 'ok',
+        cat: 'decision'
+      };
+      var row = buildRow(ev);
+      if (!reduceMotion) row.classList.add('entering');
+      applyFilterToEl(row, currentFilter());
+      nowContainer.insertBefore(row, nowContainer.firstChild);
+      if (!reduceMotion) setTimeout(function () { row.classList.remove('entering'); }, 650);
+      trimIfNeeded();
+    });
+  });
+
+  // ---------- Cron countdown (cosmetic) ----------
+  var cronMinsLeft = 12;
+  setInterval(function () {
+    cronMinsLeft = cronMinsLeft > 0 ? cronMinsLeft - 1 : 15;
+    document.getElementById('cron-note').textContent = 'next in ' + cronMinsLeft + 'm';
+  }, 60000);
+
+})();
+</script>
+</body>
+</html>

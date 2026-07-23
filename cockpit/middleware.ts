@@ -19,9 +19,15 @@ export async function middleware(req: NextRequest) {
       const clean = req.nextUrl.clone();
       clean.searchParams.delete("dev-session");
       const res = NextResponse.redirect(clean);
+      // Lax (not Strict) on purpose: this dev bridge exists to be opened from
+      // a clicked link that originates off-site (a terminal, a chat). A Strict
+      // cookie set during that redirect is withheld by the browser on the
+      // immediate follow, bouncing the owner back to the passkey page. Lax is
+      // sent on top-level GET navigations, so the clicked link authenticates.
+      // Dev-only path (hard-guarded above); production sessions are unaffected.
       res.cookies.set(cookieNames.session, t, {
         httpOnly: true,
-        sameSite: "strict",
+        sameSite: "lax",
         path: "/",
         maxAge: 60 * 60,
       });
