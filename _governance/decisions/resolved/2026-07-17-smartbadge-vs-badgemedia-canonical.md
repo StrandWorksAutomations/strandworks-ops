@@ -3,7 +3,9 @@ id: 2026-07-17-smartbadge-vs-badgemedia-canonical
 filed: 2026-07-17
 filed-by: orchestrator (medical-repos governance fan-out, discovery)
 question: Two repos exist for the SmartBadge / Tenetrix Insight product — which is canonical, and what happens to the other?
-ruling: PENDING
+ruling: CLEAR
+ruled: 2026-07-23T16:59:24.183Z
+source: cockpit
 ---
 
 **Context:** Both governed on `governance/install-vaio` branches this session:
