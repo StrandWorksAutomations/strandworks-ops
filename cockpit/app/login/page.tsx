@@ -29,7 +29,7 @@ export default function LoginPage() {
         const detail = await verifyRes.json().then(d => d?.error).catch(() => null);
         throw new Error(detail ? `${detail} (HTTP ${verifyRes.status})` : `verification failed (HTTP ${verifyRes.status})`);
       }
-      router.push("/");
+      router.push("/operate");
       router.refresh();
     } catch (e) {
       // Surface the DOMException name — "NotAllowedError: ..." tells us the
