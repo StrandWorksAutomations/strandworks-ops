@@ -3,7 +3,9 @@ id: 2026-07-17-merge-badgemedia-governance
 filed: 2026-07-17
 filed-by: orchestrator (medical-repos governance fan-out)
 question: Merge the governance-kit install branch into Badgemedia?
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-23T16:58:36.193Z
+source: cockpit
 ---
 
 **Context:** `StrandWorksAutomations/Badgemedia` (Tenetrix Insight — LIVE App
