@@ -3,7 +3,9 @@ id: 2026-07-17-merge-chekov-governance
 filed: 2026-07-17
 filed-by: orchestrator (medical-repos governance fan-out)
 question: Merge the governance-kit install branch into chekov?
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-23T16:58:40.612Z
+source: cockpit
 ---
 
 **Context:** `StrandWorksAutomations/chekov` (inventory mgmt; Flutter + 8
