@@ -3,7 +3,9 @@ id: 2026-07-17-billing-repo-create
 filed: 2026-07-17
 filed-by: orchestrator (medical-repos governance fan-out)
 question: The billing app has no repo — create one (and under what name), or does it live elsewhere?
-ruling: PENDING
+ruling: APPROVE
+ruled: 2026-07-23T16:58:25.524Z
+source: cockpit
 ---
 
 **Context:** The goal named `sw-billing-solutions` as a medical-side repo to
