@@ -98,6 +98,7 @@ Generated 2026-08-11 by generate.py — edit registers/, never this file.
 | Schwab checking ...124 (payment hub) | nearly all service billing runs through Visa debit ...8774 or ACH on this account | all | banking | bank sweep 2026-07-11 covered Feb 19 - Jul 11 (2 txns Feb 1-18 unreachable behind Schwab 200-row render cap); RunPod prepaid top-ups $150 on Jun 4 AND Jun 9 |
 | Vercel | strandworks-cockpit (dashboard.strandautomationworks.com) — owner-only ops cockpit | strandworks-ops | production | deployed 2026-07-12; passkey-gated; rulings commit direct to main via GitHub API |
 | VAIO session broker | tailnet-only AI terminal broker (broker/) in tmux strandworks-broker port 8791 | strandworks-ops cockpit slice 2 | production | started 2026-07-12; http://100.75.203.127:8791 inside tailnet only; log ~/.local/state/strandworks-broker.log; NOTE: broker lists its own tmux session — do not kill "strandworks-broker" from the UI |
+| StrandLink Portal | captive portal for paid Starlink sharing (5-min free trial then hourly rate; nftables enforcement + Stripe/voucher payments + data metering) | HighestPaying repo (branch claude/starlink-sharing-paid-access-cf2pdk) | pre-deployment | built 2026-08-11; runs on a Linux gateway behind Starlink in bypass mode; private use only; secrets in /etc/strandlink/strandlink.env — never in repo |
 
 ## Governance scouts (per repo)
 
