@@ -4,7 +4,7 @@ Generated 2026-08-11 by generate.py — edit registers/, never this file.
 
 ## Money
 
-- Known recurring spend: **$631.31/mo** — **INCOMPLETE: 13 subscriptions have no cost on record**
+- Known recurring spend: **$631.31/mo** — **INCOMPLETE: 14 subscriptions have no cost on record**
 
 ### Subscriptions
 
@@ -46,6 +46,7 @@ Generated 2026-08-11 by generate.py — edit registers/, never this file.
 | UNRECOGNIZED merchants | — | — | — | owner-review | EPOCH.COM *SwearlLLC $95.40 Jun 17; Google One multiple sizes ($5.29/$8.54/$10.59/$105.99/$156.58/$169.59 across May-Jul — more than the single $4.99 AI Plus sub explains; possible Ultra-era charges + storage on 2nd account); 7x APPLE.COM/BILL $20.89 same day Feb 19 |
 | PayPal autopay | — | — | — | UNSWEPT | browser extension is permission-blocked on paypal.com/myaccount (read+screenshot denied) — owner should eyeball Settings→Payments→Automatic payments; bank shows PayPal used as DO backup + PAYPAL INST XFER $16 Mar 30 + one-off PayPal merchants (Dauria LLC $77.43 / Jerrybaba $5) |
 | CGTrader Essentials | Essentials (25 models/month) | UNKNOWN | UNKNOWN | active | signed up 2026-07-16 for Wobble Ward + MedSim asset sourcing; advertised from \$0.40/model; CONFIRM price+renewal on first invoice |
+| Apple Developer Program | individual | — | — | active | recorded 2026-08-11 per owner statement (owner HAS a dev account — stop re-asking); Apple ID jonathanbouren@gmail.com presumed; list price $99/yr — actual charge + renewal date unconfirmed, leave blank; enables TestFlight/App Store + iOS dev builds for WildfireApp- (Expo/EAS) |
 
 ## Flags (owner attention)
 
@@ -67,6 +68,7 @@ Generated 2026-08-11 by generate.py — edit registers/, never this file.
 - ⚠ cost unknown: UNRECOGNIZED merchants
 - ⚠ cost unknown: PayPal autopay
 - ⚠ subscriptions: unparseable cost for CGTrader Essentials: 'UNKNOWN'
+- ⚠ cost unknown: Apple Developer Program
 - ⚠ SINGLE-COPY ASSET RISK: Lens-scenes project at Mac JB-1272 PROJECTS folder
 
 ## Calendar — action needed
