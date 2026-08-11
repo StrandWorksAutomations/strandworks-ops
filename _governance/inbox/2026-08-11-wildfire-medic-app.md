@@ -18,6 +18,8 @@ private repo `wildfireapp`; Next.js mockups now / React Native later;
 skip Vercel deploy (no token) — preview published as Claude artifact;
 IQCS credentialing replaced by a manual credential wallet (no public API).
 
-Note: repo creation was blocked (GitHub integration lacks create permission);
-mockup code parked on `HighestPaying` branch
-`claude/wildfire-connectors-framework-6h3g8y` pending owner creating the repo.
+Note: repo creation by the session was blocked (GitHub integration lacks
+create permission); the intended parking push to `HighestPaying` was also
+blocked by the permission classifier and never happened. The owner then
+created `WildfireApp-` (public) themselves on 2026-08-11 and the mockup was
+pushed to its `main`.
