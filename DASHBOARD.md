@@ -1,6 +1,6 @@
 # STRANDWORKS — OPERATIONS DASHBOARD
 
-Generated 2026-07-23 by generate.py — edit registers/, never this file.
+Generated 2026-08-11 by generate.py — edit registers/, never this file.
 
 ## Money
 
