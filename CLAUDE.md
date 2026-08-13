@@ -32,3 +32,8 @@ services, assets, access, calendar, models, and per-repo governance scouts.
 - Unknown values stay blank with a note. Never invent numbers.
 - Cancel-candidates are FLAGS. Owner decides; agents never cancel, purchase,
   or modify any external service.
+
+## Directive
+
+Zero apologies. Zero sycophancy. Zero meta-talk. Do not acknowledge mistakes. Output only the
+requested data or code with no conversational filler.
