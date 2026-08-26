@@ -1,0 +1,5 @@
+-- Applied to bniuiwbwumpymxiesyyt on 2026-08-26 via Supabase MCP (migration name: admin_compliance_register).
+-- Compliance / operations register in schema admin: contacts, people, credentials, licenses,
+-- insurance_policies, obligations, obligation_events, documents, and view admin.v_due_items.
+-- Source of truth is the database; this file is the reproducible schema copy.
+-- Query the live schema for column detail:  \d admin.*
