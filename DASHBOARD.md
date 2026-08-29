@@ -83,6 +83,7 @@ Generated 2026-08-29 by generate.py — edit registers/, never this file.
 | 2026-07-12 | Cancel Watchful auto-renew in Apple subscriptions | billing | owner: Settings > Subscriptions > Watchful > Cancel (lapses at term) |
 | 2026-07-12 | Verify Rocket Money truly dead (no charges after Mar 2) | billing | owner or Mac sweep: statement search |
 | 2026-07-12 | Supabase 5-project audit: name + purpose + kill list | billing | owner reads project list from dashboard; 2 of 5 mapped |
+| 2026-11-20 | SAM.gov public API key expires ~2026-11-26 | renewal | regenerate at sam.gov/workspace/profile/account-details; update SAM_API_KEY in .env.master before scanner runs fail |
 
 ## Services → projects
 
@@ -103,6 +104,7 @@ Generated 2026-08-29 by generate.py — edit registers/, never this file.
 
 | repo | latest_audit | latest_drift |
 |---|---|---|
+| 3rdrider | audit-2026-07-10.md | drift-2026-07-11.md |
 | strandworks-ops | audit-2026-08-23.md | drift-2026-08-29.md |
 
 ## Models & compute
@@ -138,3 +140,4 @@ Generated 2026-08-29 by generate.py — edit registers/, never this file.
 | GitHub fine-grained token (cockpit rulings) | StrandWorksAutomations | Vercel project strandworks-cockpit only | Vercel env GITHUB_TOKEN (production) | created 2026-07-12; scope: strandworks-ops repo only / Contents R+W; rotate via GitHub Developer settings |
 | Cockpit session secret | strandworks (Vercel team) | Vercel project strandworks-cockpit only | Vercel env SESSION_SECRET (production) | created 2026-07-12; signs owner session cookies; rotating it just logs the owner out |
 | Cockpit owner passkey | jonathanbouren (iCloud Keychain) | owner iPhone + synced Apple devices | Vercel env OWNER_PASSKEY (public key; secret half lives in iCloud Keychain) | enrolled 2026-07-12; recovery: clear env + set fresh SETUP_CODE + re-enroll per cockpit/README.md |
+| SAM.gov | jonathanbouren@gmail.com (login.gov) | Mac browser + Codex env | SAM_API_KEY in /PROJECTS/.env.master | Public API key issued 2026-08-29; 90-day expiry — see calendar. Entity registration (Strandworks Medical Resources LLC) not yet started |
