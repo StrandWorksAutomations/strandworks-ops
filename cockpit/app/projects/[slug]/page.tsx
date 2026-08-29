@@ -11,6 +11,8 @@ import {
 import { parseScouts, scoutForTokens } from "@/lib/scouts";
 import { extractSurfaces } from "@/lib/projects";
 import { loadProjects } from "@/lib/projects-load";
+import { writeMode } from "@/lib/rule-writer";
+import { ProjectEditor } from "../ProjectEditor";
 import { parseChecks, checksForProject, checkStatusClass } from "@/lib/checks";
 
 export const revalidate = 60;
@@ -142,6 +144,23 @@ export default async function ProjectPage({
           project directly. Everything below is register content, unmodified.
         </div>
       </div>
+
+      <ProjectEditor
+        slug={proj.slug}
+        dryRun={writeMode() === "dry-run"}
+        initial={{
+          name: proj.name,
+          role: proj.role,
+          tier: proj.tier,
+          tokens: proj.tokens.join(";"),
+          domains: proj.domains.join(";"),
+          surfaces: proj.surfaces.join(";"),
+          supabase_ref: proj.supabaseRef,
+          vercel_project: proj.vercelProject,
+          linear_project: proj.linearProject,
+          notes: proj.notes,
+        }}
+      />
 
       <div className="section-head">
         <h2>Status &amp; checks</h2>
