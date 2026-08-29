@@ -1,6 +1,6 @@
 # STRANDWORKS — OPERATIONS DASHBOARD
 
-Generated 2026-08-28 by generate.py — edit registers/, never this file.
+Generated 2026-08-29 by generate.py — edit registers/, never this file.
 
 ## Money
 
@@ -75,7 +75,7 @@ Generated 2026-08-28 by generate.py — edit registers/, never this file.
 |---|---|---|---|
 | 2026-07-11 | Cascadeur refund email sent | deadline-watch | confirm refund lands; escalate if no reply in 7 days |
 | 2026-07-12 | Supabase $67 bill review | billing | DONE 2026-07-11 — driver is 5 always-on Micro Compute projects; owner to decide which projects to pause |
-| — | Strandworks LLC filings/renewal dates | business | owner to supply — currently untracked |
+| — | Strandworks LLC filings/renewal dates | business | tracked in Supabase bniuiwbwumpymxiesyyt admin.obligations / admin.v_due_items (2026-08-26); owner still to supply formation state + annual-report date |
 | 2026-07-18 | Cascadeur refund escalation deadline | deadline-watch | if no refund/reply by this date escalate via cascadeur.com customer portal (sub renews 2027-07-08 at $419.76) |
 | 2026-08-04 | ChatGPT Plus renews $21.20 | billing | owner decision: cancel-candidate per own assessment |
 | 2026-08-04 | ShadowVM renews $39.41 | billing | owner decision: consolidation candidate — VM idle since creation |
@@ -103,7 +103,7 @@ Generated 2026-08-28 by generate.py — edit registers/, never this file.
 
 | repo | latest_audit | latest_drift |
 |---|---|---|
-| strandworks-ops | audit-2026-08-23.md | drift-2026-08-28.md |
+| strandworks-ops | audit-2026-08-23.md | drift-2026-08-29.md |
 
 ## Models & compute
 
