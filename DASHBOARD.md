@@ -1,6 +1,6 @@
 # STRANDWORKS — OPERATIONS DASHBOARD
 
-Generated 2026-08-28 by generate.py — edit registers/, never this file.
+Generated 2026-08-29 by generate.py — edit registers/, never this file.
 
 ## Money
 
@@ -75,7 +75,7 @@ Generated 2026-08-28 by generate.py — edit registers/, never this file.
 |---|---|---|---|
 | 2026-07-11 | Cascadeur refund email sent | deadline-watch | confirm refund lands; escalate if no reply in 7 days |
 | 2026-07-12 | Supabase $67 bill review | billing | DONE 2026-07-11 — driver is 5 always-on Micro Compute projects; owner to decide which projects to pause |
-| — | Strandworks LLC filings/renewal dates | business | owner to supply — currently untracked |
+| — | Strandworks LLC filings/renewal dates | business | tracked in Supabase bniuiwbwumpymxiesyyt admin.obligations / admin.v_due_items (2026-08-26); owner still to supply formation state + annual-report date |
 | 2026-07-18 | Cascadeur refund escalation deadline | deadline-watch | if no refund/reply by this date escalate via cascadeur.com customer portal (sub renews 2027-07-08 at $419.76) |
 | 2026-08-04 | ChatGPT Plus renews $21.20 | billing | owner decision: cancel-candidate per own assessment |
 | 2026-08-04 | ShadowVM renews $39.41 | billing | owner decision: consolidation candidate — VM idle since creation |
@@ -83,6 +83,7 @@ Generated 2026-08-28 by generate.py — edit registers/, never this file.
 | 2026-07-12 | Cancel Watchful auto-renew in Apple subscriptions | billing | owner: Settings > Subscriptions > Watchful > Cancel (lapses at term) |
 | 2026-07-12 | Verify Rocket Money truly dead (no charges after Mar 2) | billing | owner or Mac sweep: statement search |
 | 2026-07-12 | Supabase 5-project audit: name + purpose + kill list | billing | owner reads project list from dashboard; 2 of 5 mapped |
+| 2026-11-20 | SAM.gov public API key expires ~2026-11-26 | renewal | regenerate at sam.gov/workspace/profile/account-details; update SAM_API_KEY in .env.master before scanner runs fail |
 
 ## Services → projects
 
@@ -103,6 +104,7 @@ Generated 2026-08-28 by generate.py — edit registers/, never this file.
 
 | repo | latest_audit | latest_drift |
 |---|---|---|
+| 3rdrider | audit-2026-07-10.md | drift-2026-07-11.md |
 | strandworks-ops | audit-2026-08-23.md | drift-2026-08-28.md |
 
 ## Models & compute
@@ -138,3 +140,4 @@ Generated 2026-08-28 by generate.py — edit registers/, never this file.
 | GitHub fine-grained token (cockpit rulings) | StrandWorksAutomations | Vercel project strandworks-cockpit only | Vercel env GITHUB_TOKEN (production) | created 2026-07-12; scope: strandworks-ops repo only / Contents R+W; rotate via GitHub Developer settings |
 | Cockpit session secret | strandworks (Vercel team) | Vercel project strandworks-cockpit only | Vercel env SESSION_SECRET (production) | created 2026-07-12; signs owner session cookies; rotating it just logs the owner out |
 | Cockpit owner passkey | jonathanbouren (iCloud Keychain) | owner iPhone + synced Apple devices | Vercel env OWNER_PASSKEY (public key; secret half lives in iCloud Keychain) | enrolled 2026-07-12; recovery: clear env + set fresh SETUP_CODE + re-enroll per cockpit/README.md |
+| SAM.gov | jonathanbouren@gmail.com (login.gov) | Mac browser + Codex env | SAM_API_KEY in /PROJECTS/.env.master | Public API key issued 2026-08-29; 90-day expiry — see calendar. Entity registration (Strandworks Medical Resources LLC) not yet started |
