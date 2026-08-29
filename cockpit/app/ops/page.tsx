@@ -29,6 +29,9 @@ export default async function OpsHub() {
         <h2>Fabric</h2>
       </div>
       <div className="ledger">
+        <Link href="/business" className="l-row">
+          <span className="l-name">Business dates<span className="l-sub" style={{ display: "block" }}>LLC filings, licences, taxes, insurance — from the compliance register</span></span>
+        </Link>
         <Link href="/status" className="l-row">
           <span className="l-name">
             Status <span className="l-sub">sprint + fabric state</span>

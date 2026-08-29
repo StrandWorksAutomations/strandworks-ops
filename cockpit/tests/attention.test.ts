@@ -93,3 +93,29 @@ describe("buildAttentionQueue", () => {
     expect(buildAttentionQueue({ todayIso: TODAY })).toEqual([]);
   });
 });
+
+describe("business dates (compliance register) in the attention queue", () => {
+  const due = (over: Partial<import("../src/lib/due-items").DueItem>) => ({
+    entity: "Strandworks Medical Resources", kind: "obligation", item: "x", jurisdiction: "KY",
+    dueOn: "2026-09-09", daysLeft: 11, status: "open", feeUsd: 40, alertDaysBefore: 30, ...over,
+  });
+  it("adds items inside their own alert window, skips the rest", () => {
+    const q = buildAttentionQueue({
+      todayIso: "2026-08-29",
+      dueItems: [
+        due({ item: "File Articles", daysLeft: 11 }),
+        due({ item: "KY annual report", dueOn: "2027-06-30", daysLeft: 305, alertDaysBefore: 45 }),
+        due({ item: "Late thing", dueOn: "2026-08-01", daysLeft: -28 }),
+      ],
+    });
+    expect(q.map((i) => i.title)).toEqual(["Late thing", "File Articles"]);
+    expect(q[0].severity).toBe("now");
+    expect(q[1].severity).toBe("soon");
+    expect(q[1].kind).toBe("business");
+    expect(q[1].href).toBe("/business");
+    expect(q[1].detail).toContain("$40.00");
+  });
+  it("tolerates a null (unreachable) register", () => {
+    expect(buildAttentionQueue({ todayIso: "2026-08-29", dueItems: null })).toEqual([]);
+  });
+});

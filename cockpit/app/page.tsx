@@ -6,6 +6,7 @@ import { buildSpendView } from "@/lib/spend";
 import { readCeilingUsd } from "@/lib/git";
 import { buildMoneyView } from "@/lib/money";
 import { buildAttentionQueue, type AttentionItem } from "@/lib/attention";
+import { fetchDueItems } from "@/lib/due-items";
 import { buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
 import { loadProjects } from "@/lib/projects-load";
 import { parseChecks, latestCheck, checkStatusClass } from "@/lib/checks";
@@ -19,6 +20,7 @@ const KIND_TAG: Record<AttentionItem["kind"], string> = {
   deadline: "DATE",
   money: "MONEY",
   asset: "ASSET",
+  business: "BIZ",
 };
 
 function shortDate(iso: string | null): string | null {
@@ -65,7 +67,9 @@ export default async function Today() {
     }
   }
 
+  const dueItems = await fetchDueItems();
   const queue = buildAttentionQueue({
+    dueItems,
     calendarCsv: calCsv,
     subscriptionsCsv: subsCsv,
     assetsCsv,
@@ -154,8 +158,8 @@ export default async function Today() {
           )}
           {queue.length > 10 ? (
             <div className="meta" style={{ textAlign: "center" }}>
-              + {queue.length - 10} more across <Link href="/money">Money</Link> and{" "}
-              <Link href="/registers/calendar">Calendar</Link>
+              + {queue.length - 10} more across <Link href="/money">Money</Link>,{" "}
+              <Link href="/business">Business</Link> and <Link href="/registers/calendar">Calendar</Link>
             </div>
           ) : null}
 
