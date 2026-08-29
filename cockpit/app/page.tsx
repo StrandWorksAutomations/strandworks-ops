@@ -6,7 +6,8 @@ import { buildSpendView } from "@/lib/spend";
 import { readCeilingUsd } from "@/lib/git";
 import { buildMoneyView } from "@/lib/money";
 import { buildAttentionQueue, type AttentionItem } from "@/lib/attention";
-import { fetchDueItems } from "@/lib/due-items";
+import { fetchDueItems, inAlertWindow } from "@/lib/due-items";
+import { fetchPendingQuestionsSafe } from "@/lib/operate-data";
 import { buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
 import { loadProjects } from "@/lib/projects-load";
 import { parseChecks, latestCheck, checkStatusClass } from "@/lib/checks";
@@ -67,9 +68,12 @@ export default async function Today() {
     }
   }
 
-  const dueItems = await fetchDueItems();
+  const [dueItems, agentQuestions] = await Promise.all([fetchDueItems(), fetchPendingQuestionsSafe()]);
+  const dueInWindow = (dueItems ?? []).filter(inAlertWindow).length;
+  const pendingTotal = pendingDecisions.length + (agentQuestions?.length ?? 0);
   const queue = buildAttentionQueue({
     dueItems,
+    agentQuestions: agentQuestions?.map((q) => ({ title: q.title ?? "(untitled question)", agent: q.agent, tier: q.tier })),
     calendarCsv: calCsv,
     subscriptionsCsv: subsCsv,
     assetsCsv,
@@ -105,9 +109,9 @@ export default async function Today() {
           <div className="big">{nowCount}</div>
           <div className="label">need you now</div>
         </div>
-        <Link href="/decisions" className={`tile ${pendingDecisions.length > 0 ? "hot" : "calm"}`}>
-          <div className="big">{pendingDecisions.length}</div>
-          <div className="label">pending decisions</div>
+        <Link href={agentQuestions?.length ? "/operate" : "/decisions"} className={`tile ${pendingTotal > 0 ? "hot" : "calm"}`}>
+          <div className="big">{pendingTotal}</div>
+          <div className="label">pending decisions{agentQuestions?.length ? ` · ${agentQuestions.length} agent` : ""}</div>
         </Link>
         <Link href="/projects" className={`tile ${reporting === 0 ? "warm" : "calm"}`}>
           <div className="big">
@@ -238,9 +242,13 @@ export default async function Today() {
           )}
 
           <div className="section-head">
-            <h2>Fabric</h2>
+            <h2>Fabric &amp; business</h2>
           </div>
           <div className="ledger">
+            <Link href="/business" className="l-row">
+              <span className="l-name">Business dates <span className="l-sub">LLC · licences · taxes · insurance</span></span>
+              <span className={`l-amount ${dueInWindow > 0 ? "" : "dim"}`}>{dueItems === null ? "offline" : `${dueInWindow} due`}</span>
+            </Link>
             <Link href="/status" className="l-row">
               <span className="l-name">Status <span className="l-sub">sprint + fabric state</span></span>
               <span className="l-amount dim">→</span>

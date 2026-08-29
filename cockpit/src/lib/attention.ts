@@ -41,6 +41,7 @@ export type AttentionInputs = {
   subscriptionsCsv?: string | null;
   assetsCsv?: string | null;
   pendingDecisions?: { title: string; file: string }[];
+  agentQuestions?: { title: string; agent?: string | null; tier?: string | null }[] | null;
   dueItems?: DueItem[] | null; // business dates from the compliance register
   todayIso: string;
 };
@@ -57,6 +58,19 @@ export function buildAttentionQueue(inputs: AttentionInputs): AttentionItem[] {
       title: d.title,
       detail: "pending ruling",
       href: "/decisions",
+      kind: "decision",
+    });
+  }
+
+  // 1b. Agent questions pending in the operate lane — same standing as a
+  // decision card: an agent is blocked on the owner.
+  for (const q of inputs.agentQuestions ?? []) {
+    items.push({
+      severity: q.tier === "fyi" ? "watch" : "now",
+      dateIso: null,
+      title: q.title,
+      detail: `${q.agent ?? "agent"} is waiting · ${q.tier ?? "normal"}`,
+      href: "/operate",
       kind: "decision",
     });
   }
