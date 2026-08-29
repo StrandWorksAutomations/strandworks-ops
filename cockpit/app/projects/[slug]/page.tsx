@@ -3,7 +3,6 @@ import { Chrome } from "../../components/Chrome";
 import { readRepoFile } from "@/lib/repo";
 import { redactForDisplay } from "@/lib/redact";
 import {
-  PROJECTS,
   projectBySlug,
   buildProjectFootprint,
   type AttributedRow,
@@ -11,12 +10,13 @@ import {
 } from "@/lib/projects";
 import { parseScouts, scoutForTokens } from "@/lib/scouts";
 import { extractSurfaces } from "@/lib/projects";
+import { loadProjects } from "@/lib/projects-load";
 import { parseChecks, checksForProject, checkStatusClass } from "@/lib/checks";
 
 export const revalidate = 60;
 
-export function generateStaticParams() {
-  return PROJECTS.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  return (await loadProjects()).map((p) => ({ slug: p.slug }));
 }
 
 // A footprint section: attributed register rows shown as cards. Empty ⇒ an
@@ -80,7 +80,8 @@ export default async function ProjectPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const proj = projectBySlug(slug);
+  const PROJECTS = await loadProjects();
+  const proj = projectBySlug(PROJECTS, slug);
   if (!proj) notFound();
 
   const [services, assets, access, models, subscriptions, dashboardMd, checksCsv] = await Promise.all([
@@ -93,11 +94,11 @@ export default async function ProjectPage({
     readRepoFile("registers/checks.csv"),
   ]);
   const inputs: RegisterInputs = { services, assets, access, models, subscriptions };
-  const fp = buildProjectFootprint(proj, inputs);
+  const fp = buildProjectFootprint(proj, inputs, PROJECTS);
   const scouts = parseScouts(dashboardMd);
   const scout = scoutForTokens(scouts, proj.tokens);
   const checks = checksForProject(parseChecks(checksCsv), proj);
-  const surfaces = extractSurfaces(fp.infra);
+  const surfaces = Array.from(new Set([...proj.surfaces, ...extractSurfaces(fp.infra)]));
 
   return (
     <Chrome
@@ -107,6 +108,21 @@ export default async function ProjectPage({
     >
       <div className="card">
         <div className="meta">{proj.role}</div>
+        <dl>
+          {[
+            ["tier", proj.tier || "unclassified"],
+            ["lives at", proj.path ? `/PROJECTS/${proj.path}` : ""],
+            ["remote", proj.remote],
+            ["last commit", proj.lastCommit ? `${proj.lastCommit} (${proj.activity})` : ""],
+            ["domains", proj.domains.join(", ")],
+            ["supabase", proj.supabaseRef],
+            ["vercel", proj.vercelProject],
+            ["linear", proj.linearProject],
+            ["notes", redactForDisplay(proj.notes)],
+          ].filter(([, v]) => v).map(([k, v]) => (
+            <div key={k}><dt>{k}</dt><dd>{k === "remote" ? <a href={`https://github.com/${v}`} target="_blank" rel="noreferrer">{v}</a> : k === "linear" ? <a href={`https://linear.app/strandautomationworks/project/${v}`} target="_blank" rel="noreferrer">{v}</a> : v}</dd></div>
+          ))}
+        </dl>
         <div className="chips">
           <span className="chip">{fp.infra.length} infra</span>
           <span className="chip">{fp.assets.length} assets</span>

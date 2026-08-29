@@ -85,6 +85,84 @@ Generated 2026-08-29 by generate.py — edit registers/, never this file.
 | 2026-07-12 | Supabase 5-project audit: name + purpose + kill list | billing | owner reads project list from dashboard; 2 of 5 mapped |
 | 2026-11-20 | SAM.gov public API key expires ~2026-11-26 | renewal | regenerate at sam.gov/workspace/profile/account-details; update SAM_API_KEY in .env.master before scanner runs fail |
 
+## Projects (footprint)
+
+### flagship (1)
+
+| name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
+|---|---|---|---|---|---|---|---|
+| MedSim-Game | MedSim-Game | 2026-07-14 | idle | lifepak15-replica.vercel.app;pocus-ultrasound.vercel.app | brecweskqoiagnuzcmyr | — | physiology engine is a separate repo consumed as submodule; digital props (m15-monitor-defib / pocus-ultrasound) each own repo under props/; assets on Cloudflare R2 medsim-assets |
+
+### ops (1)
+
+| name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
+|---|---|---|---|---|---|---|---|
+| strandworks-ops | strandworks-ops | 2026-08-29 | active | dashboard.strandautomationworks.com | bniuiwbwumpymxiesyyt | strandworks-cockpit | admin.* compliance/ops schema lives in the legacy shared Supabase project (2026-08-26) |
+
+### tier-2 (7)
+
+| name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
+|---|---|---|---|---|---|---|---|
+| 3rdrider | 3rdrider | 2026-08-17 | active | — | — | — | runnable Lens project NOT in git; nested 3rd-rider MedCapture repo shares the path |
+| haptic-mirror | haptic-mirror | 2026-07-11 | idle | — | — | — | Supabase project haptic-mirror-mmo PAUSED in Strandworks Paused Holding org (2026-07-12) |
+| Tenetrix Insight (BadgeMedia) | BadgeMedia | 2026-08-29 | active | — | — | — | cardio-sim 3D electrical heart on feature/heart3d-electrical-rhythms; dermatomes planned next |
+| SW Billing Integrations | SW_Billing_Automations | 2026-06-20 | idle | — | — | — | NEMSIS conformance + registration prep done Sprint 3 (2026-06-18) |
+| Tenetrix Orchard | tenetrix-orchard | 2026-08-29 | active | — | — | — | Graph-API listener + heartbeat (2026-08-29); Meta token exchange outage handling in progress |
+| Remote/Austere Medical Contracting | contracting-startup | 2026-08-29 | active | med-contracting-plan.vercel.app | — | — | scanner/ phase-0 screening engine built 2026-08-29; passcode registry + Supabase access log on the site |
+| Drift | Drift | 2026-08-29 | active | — | — | — | also the HITL mobile inbox lane (web-ask) — user cannot access it as of 2026-06-18 |
+
+### tier-3 (12)
+
+| name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
+|---|---|---|---|---|---|---|---|
+| liaison-dashboard | liaison-dashboard | 2026-06-11 | idle | liaison-dashboard.vercel.app | ojaykrqpzeebhcmpuxqr | liaison-dashboard | the sales role it was built for is over; dashboard + lists are the assets |
+| SmartBadge | SmartBadge | 2026-06-28 | idle | — | — | — | RFQ reference parts corrected 2026-07; physical card typography floor 6pt |
+| Chekov | chekov | 2026-06-18 | idle | — | — | — | — |
+| Tenetrix Intervention | Tenetrix_Intervention | 2026-07-08 | idle | — | — | — | relationship to MedSim-Game doctrine: MedSim-Game is canon |
+| Toddler Cards | toddler-cards | 2026-08-28 | active | — | — | — | support + privacy pages hosted on the company site |
+| Wildland Medic | wildfire | 2026-08-15 | active | — | — | — | — |
+| Strand Automation Works (public site) | strand-automation-works-new | 2026-07-04 | idle | www.strandautomationworks.com | — | strand-automation-works-new | DO App Platform strand-automation-works may duplicate this (flagged in services.csv) |
+| Wobble Ward | wobble-ward | 2026-08-25 | active | — | — | — | — |
+| God's Mistake | gods-mistake | 2026-08-23 | active | — | — | — | — |
+| Ember & Vellum | ember-and-vellum | 2026-05-27 | dormant | — | — | — | — |
+| highest-paying | highest-paying | 2026-08-13 | active | — | — | — | job-search objective: get home to Berea KY |
+| Zeke's Barber | zekes-barber | 2026-08-03 | active | — | — | — | — |
+
+### tool (6)
+
+| name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
+|---|---|---|---|---|---|---|---|
+| web-qa | web-qa | 2026-07-23 | idle | — | — | — | — |
+| terminal-carousel-3d | terminal-carousel-3d | 2026-06-24 | idle | — | — | — | branch feature/clipboard-selection-pro |
+| barad-dur | barad-dur | 2026-05-27 | dormant | — | — | — | — |
+| bambu-mcp-server | bambu-mcp-server | 2026-05-27 | dormant | — | — | — | — |
+| mcp-namecheap | mcp-namecheap | 2026-05-27 | dormant | — | — | — | — |
+| consensus-engine | consensus-engine | 2026-05-24 | dormant | — | — | — | no git remote |
+
+### reference (1)
+
+| name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
+|---|---|---|---|---|---|---|---|
+| Knowledge_Vault | Knowledge_Vault | 2026-07-07 | idle | — | — | — | — |
+
+### fork (3)
+
+| name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
+|---|---|---|---|---|---|---|---|
+| blend-ai (fork) | blend-ai | 2026-04-19 | dormant | — | — | — | — |
+| gmail-mcp-multi (fork) | gmail-mcp-multi | 2026-05-27 | dormant | — | — | — | — |
+| pxpipe (fork) | pxpipe | 2026-07-05 | idle | — | — | — | — |
+
+### frozen (4)
+
+| name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
+|---|---|---|---|---|---|---|---|
+| MedCapture | MedCapture | 2026-05-27 | dormant | — | — | — | Supabase project MedCapture Production PAUSED in Strandworks Paused Holding org (2026-07-12) |
+| cardiac-monitor-sim | cardiac-monitor-sim | 2026-05-27 | dormant | — | — | — | — |
+| Media_Manager | Media_Manager | 2026-05-27 | dormant | — | — | — | — |
+| local_dam | local_dam | 2026-06-18 | idle | — | — | — | — |
+
+
 ## Services → projects
 
 | service | what_it_runs | project | environment | notes |

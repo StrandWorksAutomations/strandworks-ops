@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { PROJECTS, projectBySlug } from "./fixtures";
 import {
-  PROJECTS,
-  projectBySlug,
   attributeRows,
   buildProjectFootprint,
   type ProjectDef,
@@ -23,6 +22,8 @@ describe("project registry", () => {
   });
   it("resolves by slug, undefined for unknown", () => {
     expect(projectBySlug("haptic-mirror")?.name).toBe("haptic-mirror");
+    expect(projectBySlug("medsim-game")?.tier).toBe("flagship");
+    expect(PROJECTS.length).toBeGreaterThanOrEqual(30);
     expect(projectBySlug("nope")).toBeUndefined();
   });
 });
@@ -37,14 +38,14 @@ describe("attributeRows — register → project mapping", () => {
   ].join("\n");
 
   it("attributes a row whose project column names the project (dedicated)", () => {
-    const rows = attributeRows(services, HAPTIC, ["service", "what_it_runs", "project", "notes"], "project");
+    const rows = attributeRows(services, HAPTIC, ["service", "what_it_runs", "project", "notes"], "project", PROJECTS);
     const supa = rows.find((r) => r.row.service === "Supabase");
     expect(supa).toBeDefined();
     expect(supa!.scope).toBe("dedicated");
   });
 
   it("surfaces all-scope infra as SHARED on a project that isn't named", () => {
-    const rows = attributeRows(services, HAPTIC, ["service", "what_it_runs", "project", "notes"], "project");
+    const rows = attributeRows(services, HAPTIC, ["service", "what_it_runs", "project", "notes"], "project", PROJECTS);
     const gh = rows.find((r) => r.row.service === "GitHub");
     expect(gh).toBeDefined();
     expect(gh!.scope).toBe("shared");
@@ -52,22 +53,22 @@ describe("attributeRows — register → project mapping", () => {
 
   it("does NOT attribute a row that names only a different single project", () => {
     // RunPod is scoped to MedSim-Game + command-station — not haptic-mirror.
-    const rows = attributeRows(services, HAPTIC, ["service", "what_it_runs", "project", "notes"], "project");
+    const rows = attributeRows(services, HAPTIC, ["service", "what_it_runs", "project", "notes"], "project", PROJECTS);
     expect(rows.find((r) => r.row.service === "RunPod")).toBeUndefined();
     // ...but it IS attributed to MedSim-Game as dedicated.
-    const medsimRows = attributeRows(services, MEDSIM, ["service", "what_it_runs", "project", "notes"], "project");
+    const medsimRows = attributeRows(services, MEDSIM, ["service", "what_it_runs", "project", "notes"], "project", PROJECTS);
     const rp = medsimRows.find((r) => r.row.service === "RunPod");
     expect(rp?.scope).toBe("dedicated");
   });
 
   it("attributes strandworks-ops-scoped rows as dedicated to ops", () => {
-    const rows = attributeRows(services, OPS, ["service", "what_it_runs", "project", "notes"], "project");
+    const rows = attributeRows(services, OPS, ["service", "what_it_runs", "project", "notes"], "project", PROJECTS);
     const v = rows.find((r) => r.row.service === "Vercel");
     expect(v?.scope).toBe("dedicated");
   });
 
   it("invents nothing — every attributed row is a verbatim register row", () => {
-    const rows = attributeRows(services, MEDSIM, ["service", "what_it_runs", "project", "notes"], "project");
+    const rows = attributeRows(services, MEDSIM, ["service", "what_it_runs", "project", "notes"], "project", PROJECTS);
     for (const { row } of rows) {
       // every value must have come from the CSV; no synthetic keys added
       expect(Object.keys(row).sort()).toEqual(
@@ -105,7 +106,7 @@ describe("buildProjectFootprint", () => {
   };
 
   it("assembles a footprint with per-register attributed rows", () => {
-    const fp = buildProjectFootprint(HAPTIC, inputs);
+    const fp = buildProjectFootprint(HAPTIC, inputs, PROJECTS);
     expect(fp.infra.length).toBeGreaterThan(0); // Supabase dedicated + GitHub shared
     expect(fp.assets.length).toBe(0); // MedSim asset does not match haptic
     expect(fp.access.length).toBe(1);
@@ -114,7 +115,7 @@ describe("buildProjectFootprint", () => {
   });
 
   it("splits dedicated vs shared spend — shared services are never double-counted", () => {
-    const fp = buildProjectFootprint(HAPTIC, inputs);
+    const fp = buildProjectFootprint(HAPTIC, inputs, PROJECTS);
     // Supabase names haptic-mirror AND liaison → SHARED ($67.18, reported
     // separately); ElevenLabs names only haptic → dedicated $23.32.
     expect(fp.spendMonthlyUsd).toBeCloseTo(23.32, 2);
@@ -126,15 +127,15 @@ describe("buildProjectFootprint", () => {
 
   it("the same shared row shows as shared on BOTH projects, dedicated on neither", () => {
     const liaison = projectBySlug("liaison-dashboard")!;
-    const fpL = buildProjectFootprint(liaison, inputs);
+    const fpL = buildProjectFootprint(liaison, inputs, PROJECTS);
     expect(fpL.subscriptions.find((s) => s.row.service === "Supabase")?.scope).toBe("shared");
     expect(fpL.sharedMonthlyUsd).toBeCloseTo(67.18, 2);
     expect(fpL.spendMonthlyUsd).toBe(0);
   });
 
   it("keeps blank blank — a project with no matches gets empty sections, no invented rows", () => {
-    const lonely: ProjectDef = { slug: "ghost", name: "Ghost", role: "x", tokens: ["zzzznomatch"] };
-    const fp = buildProjectFootprint(lonely, inputs);
+    const lonely: ProjectDef = { ...HAPTIC, slug: "ghost", name: "Ghost", role: "x", tokens: ["zzzznomatch"] };
+    const fp = buildProjectFootprint(lonely, inputs, PROJECTS);
     // only all-scope shared infra (GitHub) can attach; dedicated sections stay empty
     expect(fp.assets).toHaveLength(0);
     expect(fp.access).toHaveLength(0);
@@ -143,7 +144,7 @@ describe("buildProjectFootprint", () => {
   });
 
   it("never renders a full card/account number in any attributed value", () => {
-    const fp = buildProjectFootprint(HAPTIC, inputs);
+    const fp = buildProjectFootprint(HAPTIC, inputs, PROJECTS);
     const all = [...fp.infra, ...fp.access, ...fp.subscriptions]
       .flatMap(({ row }) => Object.values(row))
       .join(" ");
@@ -151,7 +152,7 @@ describe("buildProjectFootprint", () => {
   });
 
   it("tolerates missing registers (null input) without throwing", () => {
-    const fp = buildProjectFootprint(HAPTIC, { services: null, subscriptions: null });
+    const fp = buildProjectFootprint(HAPTIC, { services: null, subscriptions: null }, PROJECTS);
     expect(fp.infra).toHaveLength(0);
     expect(fp.subscriptions).toHaveLength(0);
     expect(fp.spendMonthlyUsd).toBe(0);

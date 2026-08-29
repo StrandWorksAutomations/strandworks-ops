@@ -6,6 +6,7 @@ one command produces the current company picture. Never edits registers.
 Usage: python3 generate.py
 """
 import csv
+import re
 import io
 import os
 from datetime import date
@@ -34,6 +35,74 @@ def table(rows, cols):
     return out.getvalue()
 
 
+# --- projects register: derived columns are refreshed from the sibling repos ---
+# Hand-curated columns are never touched. Derived columns (path/remote/last_commit/
+# activity) are updated ONLY when the repo is present on this machine; a missing
+# repo (e.g. generator run on the droplet) leaves the last known value in place.
+# New repos found beside this one are appended as blank rows for the owner to
+# classify — never invented tiers or roles.
+DERIVED_PROJECT_COLS = ["remote", "last_commit", "activity"]
+PROJECT_COLS = ["slug", "name", "role", "tokens", "tier", "path", "remote", "last_commit",
+                "activity", "domains", "surfaces", "supabase_ref", "vercel_project",
+                "linear_project", "notes"]
+
+
+def _git(repo, *args):
+    import subprocess
+    try:
+        return subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True,
+                              timeout=10).stdout.strip()
+    except Exception:
+        return ""
+
+
+def _activity(last_commit):
+    if not last_commit:
+        return ""
+    try:
+        age = (date.today() - date.fromisoformat(last_commit)).days
+    except ValueError:
+        return ""
+    return "active" if age <= 30 else "idle" if age <= 90 else "dormant"
+
+
+def refresh_projects(projects):
+    work = os.path.dirname(ROOT)
+    by_path = {p["path"]: p for p in projects if p.get("path")}
+    for p in projects:
+        repo = os.path.join(work, p.get("path") or "")
+        if not p.get("path") or not os.path.isdir(os.path.join(repo, ".git")):
+            continue
+        remote = _git(repo, "remote", "get-url", "origin")
+        remote = re.sub(r"^(https://github\.com/|git@github\.com:)", "", remote).removesuffix(".git")
+        last = _git(repo, "log", "-1", "--format=%ad", "--date=short")
+        if remote:
+            p["remote"] = remote
+        if last:
+            p["last_commit"] = last
+            p["activity"] = _activity(last)
+    if os.path.isdir(work):
+        for d in sorted(os.listdir(work)):
+            if d.startswith((".", "_")) or d in by_path:
+                continue
+            if not os.path.isdir(os.path.join(work, d, ".git")):
+                continue
+            row = {c: "" for c in PROJECT_COLS}
+            slug = re.sub(r"[^a-z0-9]+", "-", d.lower()).strip("-")
+            if any(p["slug"] == slug for p in projects):
+                continue
+            row.update(slug=slug, name=d, tokens=d.lower(), path=d,
+                       notes="auto-discovered by generate.py — owner to classify tier/role")
+            projects.append(row)
+            by_path[d] = row
+    with open(os.path.join(REG, "projects.csv"), "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=PROJECT_COLS)
+        w.writeheader()
+        for p in projects:
+            w.writerow({c: p.get(c, "") for c in PROJECT_COLS})
+    return projects
+
+
 def main():
     subs = read("subscriptions.csv")
     services = read("services.csv")
@@ -41,6 +110,7 @@ def main():
     access = read("access.csv")
     cal = read("calendar.csv")
     models = read("models.csv")
+    projects = refresh_projects(read("projects.csv"))
 
     # --- derived figures ---------------------------------------------------
     known_cost = 0.0
@@ -106,6 +176,23 @@ def main():
 
     out.write("\n## Calendar — action needed\n\n")
     out.write(table(upcoming, ["date", "item", "type", "action_needed"]))
+
+    out.write("\n## Projects (footprint)\n\n")
+    tiers = {}
+    for p in projects:
+        tiers.setdefault(p.get("tier") or "unclassified", []).append(p)
+    for t in ["flagship", "ops", "tier-2", "tier-3", "tool", "reference", "fork", "frozen", "unclassified"]:
+        if t not in tiers:
+            continue
+        out.write(f"### {t} ({len(tiers[t])})\n\n")
+        out.write(table(tiers[t], ["name", "path", "last_commit", "activity", "surfaces", "supabase_ref", "vercel_project", "notes"]))
+        out.write("\n")
+    dormant = [p["name"] for p in projects if p.get("activity") == "dormant" and p.get("tier") in ("flagship", "ops", "tier-2")]
+    if dormant:
+        out.write(f"- ⚠ tier-2+ projects with no commit in 90 days: {', '.join(dormant)}\n")
+    unclassified = [p["name"] for p in projects if not p.get("tier")]
+    if unclassified:
+        out.write(f"- ⚠ unclassified repos (owner to set tier): {', '.join(unclassified)}\n")
 
     out.write("\n## Services → projects\n\n")
     out.write(table(services, ["service", "what_it_runs", "project", "environment", "notes"]))

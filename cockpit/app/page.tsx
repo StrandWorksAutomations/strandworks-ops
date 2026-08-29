@@ -6,7 +6,8 @@ import { buildSpendView } from "@/lib/spend";
 import { readCeilingUsd } from "@/lib/git";
 import { buildMoneyView } from "@/lib/money";
 import { buildAttentionQueue, type AttentionItem } from "@/lib/attention";
-import { PROJECTS, buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
+import { buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
+import { loadProjects } from "@/lib/projects-load";
 import { parseChecks, latestCheck, checkStatusClass } from "@/lib/checks";
 import { parseScouts } from "@/lib/scouts";
 import { redactForDisplay } from "@/lib/redact";
@@ -80,9 +81,11 @@ export default async function Today() {
     models: modelsCsv,
     subscriptions: subsCsv,
   };
-  const board = PROJECTS.map((p) => ({
+  const PROJECTS = await loadProjects();
+  const tracked = PROJECTS.filter((p) => ["flagship", "ops", "tier-2"].includes(p.tier));
+  const board = tracked.map((p) => ({
     p,
-    fp: buildProjectFootprint(p, inputs),
+    fp: buildProjectFootprint(p, inputs, PROJECTS),
     check: latestCheck(checks, p),
   })).sort((a, b) => {
     const d = (b.check?.date ?? "").localeCompare(a.check?.date ?? "");
@@ -165,6 +168,7 @@ export default async function Today() {
               <Link key={p.slug} href={`/projects/${p.slug}`} className="l-row" style={{ alignItems: "flex-start" }}>
                 <span className="l-name" style={{ whiteSpace: "normal" }}>
                   {p.name}
+                  {p.activity ? <span className={`badge ${p.activity === "active" ? "good" : p.activity === "dormant" ? "bad" : ""}`}>{p.activity}</span> : null}
                   {check ? (
                     <span className={`badge ${checkStatusClass(check.status)}`}>{check.status || check.kind}</span>
                   ) : (

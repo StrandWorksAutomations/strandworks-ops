@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { parseChecks, checksForProject, latestCheck, checkStatusClass } from "../src/lib/checks";
-import { projectBySlug, extractSurfaces, type AttributedRow } from "../src/lib/projects";
+import { extractSurfaces, type AttributedRow } from "../src/lib/projects";
+import { projectBySlug } from "./fixtures";
 
 const CSV = [
   "date,project,source,kind,status,summary,link",
