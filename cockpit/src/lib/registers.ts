@@ -9,7 +9,8 @@ export type RegisterName =
   | "assets"
   | "access"
   | "calendar"
-  | "models";
+  | "models"
+  | "projects";
 
 export const REGISTERS: { name: RegisterName; title: string; blurb: string }[] = [
   { name: "subscriptions", title: "Subscriptions", blurb: "Recurring spend" },
@@ -18,6 +19,7 @@ export const REGISTERS: { name: RegisterName; title: string; blurb: string }[] =
   { name: "access", title: "Access", blurb: "Key locations (never keys)" },
   { name: "calendar", title: "Calendar", blurb: "Dates & deadlines" },
   { name: "models", title: "Models", blurb: "Model lanes" },
+  { name: "projects", title: "Projects", blurb: "Every repo: tier, infra, last touched" },
 ];
 
 export function isRegisterName(v: string): v is RegisterName {
@@ -50,6 +52,7 @@ const TITLE_FIELD: Record<RegisterName, string> = {
   access: "system",
   calendar: "item",
   models: "name",
+  projects: "name",
 };
 
 export function buildRegisterView(name: RegisterName, csvText: string): RegisterView {

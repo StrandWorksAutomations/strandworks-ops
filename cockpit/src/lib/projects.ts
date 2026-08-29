@@ -15,76 +15,74 @@
 
 import { parseCsv } from "./csv";
 
-// The canonical project list: PORTFOLIO ecosystem apps + the ops/governance
-// repos that the fabric tracks. Slugs are URL-safe. `tokens` are the strings we
-// match against register text (lowercased on both sides). `shared` marks the
-// company-wide "project" buckets that are not a single product.
+// The canonical project list lives in registers/projects.csv (SPEC WS-E): the
+// register is the source of truth, this module only parses it. Hand columns
+// (slug/name/role/tokens/tier/domains/surfaces/supabase_ref/vercel_project/
+// linear_project/notes) are owner-curated; path/remote/last_commit/activity are
+// refreshed mechanically by generate.py from the sibling repos.
 export type ProjectDef = {
   slug: string;
   name: string;
-  role: string; // one-line role from PORTFOLIO / VISION
+  role: string;
   tokens: string[];
+  tier: string; // flagship | ops | tier-2 | tier-3 | tool | reference | fork | frozen | ""
+  path: string;
+  remote: string;
+  lastCommit: string; // YYYY-MM-DD or ""
+  activity: string; // active | idle | dormant | ""
+  domains: string[];
+  surfaces: string[];
+  supabaseRef: string;
+  vercelProject: string;
+  linearProject: string;
+  notes: string;
 };
 
-export const PROJECTS: ProjectDef[] = [
-  {
-    slug: "3rdrider",
-    name: "3rdrider",
-    role: "Smart-glasses copilot for patient interactions; feeds billing + inventory",
-    tokens: ["3rdrider", "3rd rider", "command-station", "command station"],
-  },
-  {
-    slug: "haptic-mirror",
-    name: "haptic-mirror",
-    role: "Medical Simulation — FIELD mode (real-environment AR)",
-    tokens: ["haptic-mirror", "haptic mirror", "haptic"],
-  },
-  {
-    slug: "medsim-game",
-    name: "MedSim-Game",
-    role: "Medical Simulation — GAME mode (Tenetrix Intervention, virtual world)",
-    tokens: ["medsim-game", "medsim game", "medsim", "tenetrix intervention"],
-  },
-  {
-    slug: "liaison-dashboard",
-    name: "liaison-dashboard",
-    role: "Liaison web dashboard (genericization pending Unified exit)",
-    tokens: ["liaison-dashboard", "liaison dashboard", "liaison"],
-  },
-  {
-    slug: "tenetrix-insight",
-    name: "Tenetrix Insight",
-    role: "Deployed phone app (SmartBadge / BadgeMedia); vetted calculators",
-    tokens: ["tenetrix-insight", "tenetrix insight", "smartbadge", "badgemedia"],
-  },
-  {
-    slug: "sw-billing-integrations",
-    name: "SW Billing Integrations",
-    role: "Billing app (receives from Insight + 3rdrider)",
-    tokens: ["sw-billing", "sw billing", "billing-integration", "billing integration"],
-  },
-  {
-    slug: "chekov",
-    name: "Chekov",
-    role: 'Inventory management ("Check Off")',
-    tokens: ["chekov", "check off", "check-off"],
-  },
-  {
-    slug: "medcapture",
-    name: "MedCapture",
-    role: "Paused Supabase project (owner-ruled PAUSE)",
-    tokens: ["medcapture"],
-  },
-  {
-    slug: "strandworks-ops",
-    name: "strandworks-ops",
-    role: "The operations cockpit + Orchestration Fabric (this repo)",
-    tokens: ["strandworks-ops", "strandworks ops", "cockpit", "ops", "broker", "orchestration"],
-  },
-];
+function list(v: string | undefined): string[] {
+  return (v ?? "")
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
-export function projectBySlug(slug: string): ProjectDef | undefined {
-  return PROJECTS.find((p) => p.slug === slug);
+export function parseProjects(csvText: string | null | undefined): ProjectDef[] {
+  if (!csvText) return [];
+  const out: ProjectDef[] = [];
+  for (const r of parseCsv(csvText).rows) {
+    const slug = (r["slug"] ?? "").trim();
+    if (!/^[a-z0-9-]+$/.test(slug)) continue;
+    const tokens = list(r["tokens"]);
+    if (!tokens.includes(slug)) tokens.push(slug);
+    out.push({
+      slug,
+      name: r["name"] || slug,
+      role: r["role"] ?? "",
+      tokens,
+      tier: r["tier"] ?? "",
+      path: r["path"] ?? "",
+      remote: r["remote"] ?? "",
+      lastCommit: r["last_commit"] ?? "",
+      activity: r["activity"] ?? "",
+      domains: list(r["domains"]),
+      surfaces: list(r["surfaces"]),
+      supabaseRef: r["supabase_ref"] ?? "",
+      vercelProject: r["vercel_project"] ?? "",
+      linearProject: r["linear_project"] ?? "",
+      notes: r["notes"] ?? "",
+    });
+  }
+  return out;
+}
+
+export const TIER_ORDER = ["flagship", "ops", "tier-2", "tier-3", "tool", "reference", "fork", "frozen", ""];
+
+export function tierRank(tier: string): number {
+  const i = TIER_ORDER.indexOf(tier);
+  return i === -1 ? TIER_ORDER.length : i;
+}
+
+export function projectBySlug(projects: ProjectDef[], slug: string): ProjectDef | undefined {
+  return projects.find((p) => p.slug === slug);
 }
 
 // Scope of a register row relative to a project.
@@ -122,6 +120,7 @@ export function attributeRows(
   proj: ProjectDef,
   matchFields: string[],
   scopeField: string,
+  all: ProjectDef[] = [proj],
 ): AttributedRow[] {
   const table = parseCsv(csvText);
   const out: AttributedRow[] = [];
@@ -135,7 +134,7 @@ export function attributeRows(
       // Portfolio-wide infra is relevant to every project as SHARED, but only
       // if it doesn't already name a *different* single project. A row whose
       // project column is a shared marker (not a specific project) applies to all.
-      const namesAnotherProject = PROJECTS.some(
+      const namesAnotherProject = all.some(
         (p) => p.slug !== proj.slug && matchesProject(scopeText, p) && !SHARED_SCOPE_RE.test(p.tokens.join(" ")),
       );
       if (!namesAnotherProject) out.push({ row, scope: "shared" });
@@ -175,18 +174,19 @@ function num(raw: string): number | null {
 export function buildProjectFootprint(
   proj: ProjectDef,
   inputs: RegisterInputs,
+  all: ProjectDef[] = [proj],
 ): ProjectFootprint {
   const infra = inputs.services
-    ? attributeRows(inputs.services, proj, ["service", "what_it_runs", "project", "notes"], "project")
+    ? attributeRows(inputs.services, proj, ["service", "what_it_runs", "project", "notes"], "project", all)
     : [];
   const assets = inputs.assets
-    ? attributeRows(inputs.assets, proj, ["asset", "type", "location", "project", "notes"], "project")
+    ? attributeRows(inputs.assets, proj, ["asset", "type", "location", "project", "notes"], "project", all)
     : [];
   const access = inputs.access
-    ? attributeRows(inputs.access, proj, ["system", "account", "machines_with_access", "key_location", "notes"], "notes")
+    ? attributeRows(inputs.access, proj, ["system", "account", "machines_with_access", "key_location", "notes"], "notes", all)
     : [];
   const models = inputs.models
-    ? attributeRows(inputs.models, proj, ["name", "kind", "where", "notes"], "notes")
+    ? attributeRows(inputs.models, proj, ["name", "kind", "where", "notes"], "notes", all)
     : [];
   // subscriptions.csv has NO project column — match on token appearance in the
   // whole row. A row whose text names MORE THAN ONE project is SHARED
@@ -200,7 +200,7 @@ export function buildProjectFootprint(
   if (inputs.subscriptions) {
     for (const row of parseCsv(inputs.subscriptions).rows) {
       const text = rowText(row, ["service", "plan", "notes"]);
-      const matched = PROJECTS.filter((p) => matchesProject(text, p));
+      const matched = all.filter((p) => matchesProject(text, p));
       if (!matched.some((p) => p.slug === proj.slug)) continue;
       const scope: RowScope = matched.length > 1 ? "shared" : "dedicated";
       subscriptions.push({ row, scope });

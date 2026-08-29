@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { redactForDisplay } from "@/lib/redact";
-import { buildProjectFootprint, projectBySlug, type RegisterInputs } from "@/lib/projects";
+import { buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
+import { PROJECTS, projectBySlug } from "./fixtures";
 
 // redactForDisplay is DISPLAY HYGIENE, not a universal secret scanner. The real
 // secret-floor guarantee is the source-side register-content scanner proposed in
@@ -124,7 +125,7 @@ describe("redactForDisplay — known key-prefix tokens are masked", () => {
 // hygiene fires on the actual path — while non-secret identifiers survive.
 function renderFootprintValues(inputs: RegisterInputs, slug: string): string {
   const proj = projectBySlug(slug)!;
-  const fp = buildProjectFootprint(proj, inputs);
+  const fp = buildProjectFootprint(proj, inputs, PROJECTS);
   const sections = [fp.infra, fp.assets, fp.access, fp.models, fp.subscriptions];
   const out: string[] = [];
   for (const section of sections) {

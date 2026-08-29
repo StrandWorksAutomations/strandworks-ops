@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Chrome } from "../components/Chrome";
 import { readRepoFile } from "@/lib/repo";
-import { PROJECTS, buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
+import { buildProjectFootprint, tierRank, type RegisterInputs } from "@/lib/projects";
+import { loadProjects } from "@/lib/projects-load";
 import { parseScouts, scoutForTokens } from "@/lib/scouts";
 import { parseChecks, latestCheck, checkStatusClass } from "@/lib/checks";
 import { redactForDisplay } from "@/lib/redact";
@@ -22,25 +23,32 @@ export default async function ProjectsIndex() {
   const scouts = parseScouts(dashboardMd);
   const checks = parseChecks(checksCsv);
 
+  const PROJECTS = await loadProjects();
   const rows = PROJECTS.map((p) => ({
     p,
-    fp: buildProjectFootprint(p, inputs),
+    fp: buildProjectFootprint(p, inputs, PROJECTS),
     scout: scoutForTokens(scouts, p.tokens),
     check: latestCheck(checks, p),
   })).sort((a, b) => {
-    // most recently reported first, then by dedicated spend
-    const d = (b.check?.date ?? "").localeCompare(a.check?.date ?? "");
-    if (d !== 0) return d;
-    return b.fp.spendMonthlyUsd - a.fp.spendMonthlyUsd;
+    // tier first (flagship → frozen), then most recently touched
+    const t = tierRank(a.p.tier) - tierRank(b.p.tier);
+    if (t !== 0) return t;
+    return (b.p.lastCommit || b.check?.date || "").localeCompare(a.p.lastCommit || a.check?.date || "");
   });
+  const counts = { active: 0, idle: 0, dormant: 0 };
+  for (const { p } of rows) if (p.activity in counts) counts[p.activity as keyof typeof counts]++;
 
   return (
-    <Chrome title="Projects" sub="footprint from the registers" active="/projects">
-      {rows.map(({ p, fp, scout, check }) => (
+    <Chrome title="Projects" sub={`${rows.length} repos · ${counts.active} active · ${counts.idle} idle · ${counts.dormant} dormant`} active="/projects">
+      {rows.map(({ p, fp, scout, check }, i) => (
         <Link key={p.slug} href={`/projects/${p.slug}`}>
+          {i === 0 || tierRank(rows[i - 1].p.tier) !== tierRank(p.tier) ? (
+            <div className="section-head"><h2>{p.tier || "unclassified"}</h2></div>
+          ) : null}
           <div className="card">
             <h3>
               {p.name}
+              {p.activity ? <span className={`badge ${p.activity === "active" ? "good" : p.activity === "dormant" ? "bad" : ""}`}>{p.activity}{p.lastCommit ? ` · ${p.lastCommit.slice(5)}` : ""}</span> : null}
               {check ? (
                 <span className={`badge ${checkStatusClass(check.status)}`}>{check.status || check.kind}</span>
               ) : null}
@@ -60,6 +68,9 @@ export default async function ProjectsIndex() {
               </div>
             ) : null}
             <div className="chips">
+              {p.surfaces.map((s) => <span key={s} className="chip">{s}</span>)}
+              {p.supabaseRef ? <span className="chip">supabase</span> : null}
+              {p.vercelProject ? <span className="chip">vercel</span> : null}
               <span className="chip">{fp.infra.length} infra</span>
               <span className="chip">{fp.assets.length} assets</span>
               <span className="chip">{fp.access.length} access</span>

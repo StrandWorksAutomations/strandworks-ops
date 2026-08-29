@@ -79,9 +79,9 @@ describe("buildRegisterView", () => {
 });
 
 describe("register names", () => {
-  it("recognizes exactly the six repo registers", () => {
+  it("recognizes exactly the seven repo registers", () => {
     expect(REGISTERS.map((r) => r.name).sort()).toEqual(
-      ["access", "assets", "calendar", "models", "services", "subscriptions"].sort()
+      ["access", "assets", "calendar", "models", "projects", "services", "subscriptions"].sort()
     );
     expect(isRegisterName("subscriptions")).toBe(true);
     expect(isRegisterName("../secrets")).toBe(false);
