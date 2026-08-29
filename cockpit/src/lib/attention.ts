@@ -8,6 +8,7 @@
 
 import { parseCsv } from "./csv";
 import { buildMoneyView, type MoneyView } from "./money";
+import { inAlertWindow, type DueItem } from "./due-items";
 
 export type Severity = "now" | "soon" | "watch";
 
@@ -17,7 +18,7 @@ export type AttentionItem = {
   title: string;
   detail: string;
   href: string; // where in the cockpit to act on it
-  kind: "decision" | "deadline" | "money" | "asset";
+  kind: "decision" | "deadline" | "money" | "asset" | "business";
 };
 
 const SEVERITY_RANK: Record<Severity, number> = { now: 0, soon: 1, watch: 2 };
@@ -40,6 +41,7 @@ export type AttentionInputs = {
   subscriptionsCsv?: string | null;
   assetsCsv?: string | null;
   pendingDecisions?: { title: string; file: string }[];
+  dueItems?: DueItem[] | null; // business dates from the compliance register
   todayIso: string;
 };
 
@@ -127,7 +129,23 @@ export function buildAttentionQueue(inputs: AttentionInputs): AttentionItem[] {
     }
   }
 
-  // 4. Single-copy assets — the register's own canonical column says so.
+  // 4. Business dates — compliance/ops obligations inside their own alert
+  // window (each row carries alert_days_before). Overdue → now.
+  for (const d of inputs.dueItems ?? []) {
+    if (!inAlertWindow(d)) continue;
+    items.push({
+      severity: d.dueOn ? dateSeverity(d.dueOn, today) : "soon",
+      dateIso: d.dueOn,
+      title: d.item,
+      detail: [d.entity, d.jurisdiction, d.feeUsd ? `$${d.feeUsd.toFixed(2)}` : null, d.status]
+        .filter(Boolean)
+        .join(" · "),
+      href: "/business",
+      kind: "business",
+    });
+  }
+
+  // 5. Single-copy assets — the register's own canonical column says so.
   if (inputs.assetsCsv) {
     for (const row of parseCsv(inputs.assetsCsv).rows) {
       if (/only-copy/i.test(row["canonical"] ?? "")) {
