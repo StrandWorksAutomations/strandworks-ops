@@ -39,6 +39,17 @@ async function fetchFeeds(sinceIso: string): Promise<FeedRow[]> {
   );
 }
 
+// Agent questions awaiting the owner (DRIFT/web-ask lane). Exposed so the
+// Today page can count + queue them alongside file-based decision cards.
+export async function fetchPendingQuestionsSafe(): Promise<QuestionRow[] | null> {
+  if (!supabaseConfigured()) return null;
+  try {
+    return await fetchPendingQuestions();
+  } catch {
+    return null;
+  }
+}
+
 async function fetchPendingQuestions(): Promise<QuestionRow[]> {
   return sbSelect<QuestionRow>(
     "qa_questions",
