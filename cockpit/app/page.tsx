@@ -13,6 +13,7 @@ import { loadProjects } from "@/lib/projects-load";
 import { parseChecks, latestCheck, checkStatusClass } from "@/lib/checks";
 import { parseScouts } from "@/lib/scouts";
 import { redactForDisplay } from "@/lib/redact";
+import { listBriefings } from "@/lib/briefings";
 
 export const revalidate = 60;
 
@@ -101,6 +102,8 @@ export default async function Today() {
     return b.fp.spendMonthlyUsd - a.fp.spendMonthlyUsd;
   });
   const reporting = board.filter((b) => b.check && daysAgo(b.check.date, todayIso) <= 7).length;
+
+  const briefs = await listBriefings(5).catch(() => []);
 
   return (
     <Chrome title="Today" sub="the whole operation, triaged" active="/">
@@ -219,6 +222,27 @@ export default async function Today() {
               </div>
             </div>
           </Link>
+
+          <div className="section-head">
+            <h2>Briefs</h2>
+            <Link href="/briefings">all →</Link>
+          </div>
+          {briefs.length === 0 ? (
+            <div className="card">
+              <div className="meta">No briefs posted yet.</div>
+            </div>
+          ) : (
+            <div className="ledger">
+              {briefs.map((b) => (
+                <Link key={b.slug} href={`/briefings/${encodeURIComponent(b.slug)}`} className="l-row">
+                  <span className="l-name">
+                    {b.title} <span className="l-sub">{b.source}</span>
+                  </span>
+                  <span className="l-amount dim mono">{b.date.slice(5)} {b.time}</span>
+                </Link>
+              ))}
+            </div>
+          )}
 
           <div className="section-head">
             <h2>Governance scouts</h2>
