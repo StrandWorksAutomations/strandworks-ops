@@ -11,3 +11,4 @@ date,item,type,action_needed
 2026-07-12,Verify Rocket Money truly dead (no charges after Mar 2),billing,owner or Mac sweep: statement search
 2026-07-12,Supabase 5-project audit: name + purpose + kill list,billing,owner reads project list from dashboard; 2 of 5 mapped
 2026-11-20,SAM.gov public API key expires ~2026-11-26,renewal,regenerate at sam.gov/workspace/profile/account-details; update SAM_API_KEY in .env.master before scanner runs fail
+2026-09-30,VA disability claim — file (mental-health basis of Army discharge); unlocks SDVOSB if rated,deadline-watch,owner files; agents only track. VOSB does not need rating — apply via SBA VetCert now
