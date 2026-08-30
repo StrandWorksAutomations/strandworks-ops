@@ -1,6 +1,6 @@
 # STRANDWORKS — OPERATIONS DASHBOARD
 
-Generated 2026-08-29 by generate.py — edit registers/, never this file.
+Generated 2026-08-30 by generate.py — edit registers/, never this file.
 
 ## Money
 
@@ -86,6 +86,7 @@ Generated 2026-08-29 by generate.py — edit registers/, never this file.
 | 2026-11-20 | SAM.gov public API key expires ~2026-11-26 | renewal | regenerate at sam.gov/workspace/profile/account-details; update SAM_API_KEY in .env.master before scanner runs fail |
 | 2026-09-30 | VA disability claim — file (mental-health basis of Army discharge); unlocks SDVOSB if rated | deadline-watch | owner files; agents only track. VOSB does not need rating — apply via SBA VetCert now |
 | 2026-12-01 | Paramedic licence expiry dates — collect exact dates (KY/IL/MI/OR/CO + NREMT + CCP KY/IL) into scanner company.local.yml | todo | owner supplies dates; all good until ≥2027 |
+| 2026-09-06 | Form Strandworks Medical Resources LLC (KY SOS; owner est. $125) then EIN (IRS online) | deadline-watch | owner files; then agent drives SAM.gov entity registration (needs formed entity + physical street address + Articles of Organization upload). Strandworks LLC and Strandworks Automations LLC already exist; medical LLC kept separate for clinical liability |
 
 ## Projects (footprint)
 
@@ -110,7 +111,7 @@ Generated 2026-08-29 by generate.py — edit registers/, never this file.
 | Tenetrix Insight (BadgeMedia) | BadgeMedia | 2026-08-29 | active | — | — | — | cardio-sim 3D electrical heart on feature/heart3d-electrical-rhythms; dermatomes planned next |
 | SW Billing Integrations | SW_Billing_Automations | 2026-06-20 | idle | — | — | — | NEMSIS conformance + registration prep done Sprint 3 (2026-06-18) |
 | Tenetrix Orchard | tenetrix-orchard | 2026-08-29 | active | — | — | — | Graph-API listener + heartbeat (2026-08-29); Meta token exchange outage handling in progress |
-| Remote/Austere Medical Contracting | contracting-startup | 2026-08-29 | active | med-contracting-plan.vercel.app | — | — | scanner/ phase-0 screening engine built 2026-08-29; passcode registry + Supabase access log on the site |
+| Remote/Austere Medical Contracting | contracting-startup | 2026-08-30 | active | med-contracting-plan.vercel.app | — | — | scanner/ phase-0 screening engine built 2026-08-29; passcode registry + Supabase access log on the site |
 | Drift | Drift | 2026-08-29 | active | — | — | — | also the HITL mobile inbox lane (web-ask) — user cannot access it as of 2026-06-18 |
 
 ### tier-3 (12)
