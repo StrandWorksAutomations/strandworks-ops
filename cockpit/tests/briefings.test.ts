@@ -45,8 +45,9 @@ describe("briefings", () => {
     const a = parseBriefing(RAW, "2026-08-30-151442-laptop-tech-scout.md");
     const b = parseBriefing(RAW.replace("time: 15:14", "time: 10:09"), "2026-08-30-100900-laptop-memory-garden.md");
     const c = parseBriefing(RAW.replace("date: 2026-08-30", "date: 2026-08-28"), "2026-08-28-144800-laptop-tech-scout.md");
-    const g = groupByDate([a, b, c]);
+    const g = groupByDate([a, c, b]); // b's local day is 08-30 even though it sorts after a 08-28 item
     expect(g.map((x) => x.date)).toEqual(["2026-08-30", "2026-08-28"]);
     expect(g[0].items.map((x) => x.slug)).toEqual([a.slug, b.slug]);
+    expect(g[1].items.map((x) => x.slug)).toEqual([c.slug]);
   });
 });

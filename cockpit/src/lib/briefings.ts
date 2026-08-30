@@ -68,12 +68,17 @@ export async function readAttachment(b: Briefing): Promise<string | null> {
   return readRepoFile(b.attachment);
 }
 
+// Filenames sort by UTC instant; `date` is the poster's local day. Merge by
+// local day (a late-evening laptop post and an early droplet post can
+// interleave across the UTC boundary) and order days newest-first.
 export function groupByDate(list: Briefing[]): Array<{ date: string; items: Briefing[] }> {
-  const out: Array<{ date: string; items: Briefing[] }> = [];
+  const byDate = new Map<string, Briefing[]>();
   for (const b of list) {
-    const last = out[out.length - 1];
-    if (last && last.date === b.date) last.items.push(b);
-    else out.push({ date: b.date, items: [b] });
+    const arr = byDate.get(b.date);
+    if (arr) arr.push(b);
+    else byDate.set(b.date, [b]);
   }
-  return out;
+  return [...byDate.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([date, items]) => ({ date, items }));
 }
