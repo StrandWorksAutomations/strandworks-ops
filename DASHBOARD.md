@@ -87,6 +87,7 @@ Generated 2026-08-30 by generate.py — edit registers/, never this file.
 | 2026-09-30 | VA disability claim — file (mental-health basis of Army discharge); unlocks SDVOSB if rated | deadline-watch | owner files; agents only track. VOSB does not need rating — apply via SBA VetCert now |
 | 2026-12-01 | Paramedic licence expiry dates — collect exact dates (KY/IL/MI/OR/CO + NREMT + CCP KY/IL) into scanner company.local.yml | todo | owner supplies dates; all good until ≥2027 |
 | 2026-09-06 | Form Strandworks Medical Resources LLC (KY SOS; owner est. $125) then EIN (IRS online) | deadline-watch | owner files; then agent drives SAM.gov entity registration (needs formed entity + physical street address + Articles of Organization upload). Strandworks LLC and Strandworks Automations LLC already exist; medical LLC kept separate for clinical liability |
+| 2026-09-20 | Vendor registrations on login-walled state portals — KY VSS/eMARS; OhioBuys; TN Edison; wvOASIS (needs EIN + SAM UEI) | deadline-watch | owner registers after Strandworks Medical Resources LLC + EIN exist; scanner records these as public_listing gaps until then. Free registrations; no purchase |
 
 ## Projects (footprint)
 
@@ -100,7 +101,7 @@ Generated 2026-08-30 by generate.py — edit registers/, never this file.
 
 | name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
 |---|---|---|---|---|---|---|---|
-| strandworks-ops | strandworks-ops | 2026-08-29 | active | dashboard.strandautomationworks.com | bniuiwbwumpymxiesyyt | strandworks-cockpit | admin.* compliance/ops schema lives in the legacy shared Supabase project (2026-08-26) |
+| strandworks-ops | strandworks-ops | 2026-08-30 | active | dashboard.strandautomationworks.com | bniuiwbwumpymxiesyyt | strandworks-cockpit | admin.* compliance/ops schema lives in the legacy shared Supabase project (2026-08-26) |
 
 ### tier-2 (7)
 
