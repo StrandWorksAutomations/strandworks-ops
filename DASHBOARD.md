@@ -88,6 +88,10 @@ Generated 2026-08-30 by generate.py — edit registers/, never this file.
 | 2026-12-01 | Paramedic licence expiry dates — collect exact dates (KY/IL/MI/OR/CO + NREMT + CCP KY/IL) into scanner company.local.yml | todo | owner supplies dates; all good until ≥2027 |
 | 2026-09-06 | Form Strandworks Medical Resources LLC (KY SOS; owner est. $125) then EIN (IRS online) | deadline-watch | owner files; then agent drives SAM.gov entity registration (needs formed entity + physical street address + Articles of Organization upload). Strandworks LLC and Strandworks Automations LLC already exist; medical LLC kept separate for clinical liability |
 | 2026-09-20 | Vendor registrations on login-walled state portals — KY VSS/eMARS; OhioBuys; TN Edison; wvOASIS (needs EIN + SAM UEI) | deadline-watch | owner registers after Strandworks Medical Resources LLC + EIN exist; scanner records these as public_listing gaps until then. Free registrations; no purchase |
+| 2026-09-14 | DK police vest tender — go/no-go gate: signed manufacturer intent (TYR/Cadre or Mehler) or stand down | deadline-watch | owner + Danish partner decide; see contracting-startup/26-dk-police-tactical-vest-bid.md §7 |
+| 2026-09-25 | DK police vest tender — submit prequalification on EU-Supply (Danish; mandatory form); hard deadline 2026-09-28 10:00 UTC | deadline | Danish partner submits; owner verifies every form field against notice 00586637-2026 the day before |
+| 2026-11-02 | DK police vest tender — Rigspolitiet information meeting week 45 (classified supplement; NDA) if prequalified | deadline-watch | partner attends with manufacturer engineer |
+| 2026-12-15 | DK police vest tender — initial offer + physical samples due (expected date per notice) | deadline-watch | cost model + samples plan must be done by 2026-11-30 |
 
 ## Projects (footprint)
 
