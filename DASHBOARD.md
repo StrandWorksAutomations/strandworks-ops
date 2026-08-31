@@ -1,6 +1,6 @@
 # STRANDWORKS — OPERATIONS DASHBOARD
 
-Generated 2026-08-30 by generate.py — edit registers/, never this file.
+Generated 2026-08-31 by generate.py — edit registers/, never this file.
 
 ## Money
 
@@ -92,6 +92,7 @@ Generated 2026-08-30 by generate.py — edit registers/, never this file.
 | 2026-09-25 | DK police vest tender — submit prequalification on EU-Supply (Danish; mandatory form); hard deadline 2026-09-28 10:00 UTC | deadline | Danish partner submits; owner verifies every form field against notice 00586637-2026 the day before |
 | 2026-11-02 | DK police vest tender — Rigspolitiet information meeting week 45 (classified supplement; NDA) if prequalified | deadline-watch | partner attends with manufacturer engineer |
 | 2026-12-15 | DK police vest tender — initial offer + physical samples due (expected date per notice) | deadline-watch | cost model + samples plan must be done by 2026-11-30 |
+| 2026-09-20 | International vendor registrations — all free: UNGM Basic; UK CDP/Find-a-Tender + FCDO Jaggaer + MOD DSP; TenderNed foreign account; e-Vergabe; GIZ portal; PLACE/Chorus DUME; Mercell; TendSign; Hilma; Doffin; NSPA ePortal + BIS NCP application | deadline-watch | after Medical Resources LLC + EIN exist; full portal map in contracting-startup/scanner/config/jurisdiction_grid.yml; EU CSDP tenders need EU entity/prime (PRAG) — separate owner decision |
 
 ## Projects (footprint)
 
@@ -116,7 +117,7 @@ Generated 2026-08-30 by generate.py — edit registers/, never this file.
 | Tenetrix Insight (BadgeMedia) | BadgeMedia | 2026-08-29 | active | — | — | — | cardio-sim 3D electrical heart on feature/heart3d-electrical-rhythms; dermatomes planned next |
 | SW Billing Integrations | SW_Billing_Automations | 2026-06-20 | idle | — | — | — | NEMSIS conformance + registration prep done Sprint 3 (2026-06-18) |
 | Tenetrix Orchard | tenetrix-orchard | 2026-08-29 | active | — | — | — | Graph-API listener + heartbeat (2026-08-29); Meta token exchange outage handling in progress |
-| Remote/Austere Medical Contracting | contracting-startup | 2026-08-30 | active | med-contracting-plan.vercel.app | — | — | scanner/ phase-0 screening engine built 2026-08-29; passcode registry + Supabase access log on the site |
+| Remote/Austere Medical Contracting | contracting-startup | 2026-08-31 | active | med-contracting-plan.vercel.app | — | — | scanner/ phase-0 screening engine built 2026-08-29; passcode registry + Supabase access log on the site |
 | Drift | Drift | 2026-08-29 | active | — | — | — | also the HITL mobile inbox lane (web-ask) — user cannot access it as of 2026-06-18 |
 
 ### tier-3 (12)
