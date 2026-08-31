@@ -108,7 +108,7 @@ Generated 2026-08-31 by generate.py — edit registers/, never this file.
 |---|---|---|---|---|---|---|---|
 | strandworks-ops | strandworks-ops | 2026-08-31 | active | dashboard.strandautomationworks.com | bniuiwbwumpymxiesyyt | strandworks-cockpit | admin.* compliance/ops schema lives in the legacy shared Supabase project (2026-08-26) |
 
-### tier-2 (7)
+### tier-2 (8)
 
 | name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
 |---|---|---|---|---|---|---|---|
@@ -119,6 +119,7 @@ Generated 2026-08-31 by generate.py — edit registers/, never this file.
 | Tenetrix Orchard | tenetrix-orchard | 2026-08-29 | active | — | — | — | Graph-API listener + heartbeat (2026-08-29); Meta token exchange outage handling in progress |
 | Remote/Austere Medical Contracting | contracting-startup | 2026-08-31 | active | med-contracting-plan.vercel.app | — | — | scanner/ phase-0 screening engine built 2026-08-29; passcode registry + Supabase access log on the site |
 | Drift | Drift | 2026-08-29 | active | — | — | — | also the HITL mobile inbox lane (web-ask) — user cannot access it as of 2026-06-18 |
+| METOC | metoc | 2026-08-31 | active | — | — | — | origin Danish partner 2026-08-29 (governance inbox); AGY research pack + Grok build order written 2026-08-31; research drops to metoc/_incoming; Grok builds metoc/app; no public deploy without owner |
 
 ### tier-3 (12)
 
