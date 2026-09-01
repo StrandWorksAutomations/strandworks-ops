@@ -6,6 +6,7 @@ const TABS = [
   { href: "/briefings", label: "Briefs" },
   { href: "/orchard", label: "Orchard", boundary: true },
   { href: "/money", label: "Money" },
+  { href: "/business", label: "Business" },
   { href: "/projects", label: "Projects" },
   { href: "/decisions", label: "Decide" },
   { href: "/ops", label: "Ops" },

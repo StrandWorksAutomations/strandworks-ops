@@ -61,3 +61,25 @@ export async function sbInsert<T>(table: string, row: Record<string, unknown>): 
   }
   return (await res.json()) as T[];
 }
+
+// CALL a Postgres function through PostgREST (/rpc/<fn>), returning its JSON.
+export async function sbRpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+  const res = await fetch(`${baseUrl()}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(args),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    let msg = text.slice(0, 300);
+    try {
+      const j = JSON.parse(text) as { message?: string };
+      if (j.message) msg = j.message;
+    } catch {
+      /* raw text stays */
+    }
+    throw new Error(`supabase rpc ${fn} failed (${res.status}): ${msg}`);
+  }
+  return (await res.json()) as T;
+}
