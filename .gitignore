@@ -3,3 +3,6 @@
 # from deletion). Only large non-text artifacts are excluded.
 _quarantine/files/binaries/
 .claude/worktrees/
+
+# Bank exports (personal transactions) — drop folder for registers/import_bank.py, never committed
+registers/bank-inbox/
