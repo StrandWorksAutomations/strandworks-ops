@@ -119,7 +119,7 @@ Generated 2026-08-31 by generate.py — edit registers/, never this file.
 | Tenetrix Orchard | tenetrix-orchard | 2026-08-29 | active | — | — | — | Graph-API listener + heartbeat (2026-08-29); Meta token exchange outage handling in progress |
 | Remote/Austere Medical Contracting | contracting-startup | 2026-08-31 | active | med-contracting-plan.vercel.app | — | — | scanner/ phase-0 screening engine built 2026-08-29; passcode registry + Supabase access log on the site |
 | Drift | Drift | 2026-08-29 | active | — | — | — | also the HITL mobile inbox lane (web-ask) — user cannot access it as of 2026-06-18 |
-| METOC | metoc | 2026-08-31 | active | — | — | — | origin Danish partner 2026-08-29; research modules 01-05 + 01R sourcing ledger promoted; POC app complete to C4 2026-08-31 (live-verified brief/PDF/PPTX; basemap worker fix); local/preview only — no public deploy without partners; needs OPEN_METEO_API_KEY before commercial use |
+| METOC | metoc | 2026-08-31 | active | metoc.vercel.app | — | metoc | origin Danish partner 2026-08-29; research modules 01-05 + 01R sourcing ledger promoted; POC app complete to C4 2026-08-31 (live-verified brief/PDF/PPTX; basemap worker fix); deployed to Vercel production alias metoc.vercel.app 2026-08-31 (owner asked for a phone link; unlisted |
 
 ### tier-3 (12)
 
