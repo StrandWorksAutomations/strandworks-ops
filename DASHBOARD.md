@@ -1,6 +1,6 @@
 # STRANDWORKS — OPERATIONS DASHBOARD
 
-Generated 2026-08-31 by generate.py — edit registers/, never this file.
+Generated 2026-09-02 by generate.py — edit registers/, never this file.
 
 ## Money
 
@@ -106,20 +106,20 @@ Generated 2026-08-31 by generate.py — edit registers/, never this file.
 
 | name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
 |---|---|---|---|---|---|---|---|
-| strandworks-ops | strandworks-ops | 2026-08-31 | active | dashboard.strandautomationworks.com | bniuiwbwumpymxiesyyt | strandworks-cockpit | admin.* compliance/ops schema lives in the legacy shared Supabase project (2026-08-26) |
+| strandworks-ops | strandworks-ops | 2026-09-01 | active | dashboard.strandautomationworks.com | bniuiwbwumpymxiesyyt | strandworks-cockpit | admin.* compliance/ops schema lives in the legacy shared Supabase project (2026-08-26) |
 
 ### tier-2 (8)
 
 | name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
 |---|---|---|---|---|---|---|---|
-| 3rdrider | 3rdrider | 2026-08-17 | active | — | — | — | runnable Lens project NOT in git; nested 3rd-rider MedCapture repo shares the path |
-| haptic-mirror | haptic-mirror | 2026-07-11 | idle | — | — | — | Supabase project haptic-mirror-mmo PAUSED in Strandworks Paused Holding org (2026-07-12) |
-| Tenetrix Insight (BadgeMedia) | BadgeMedia | 2026-08-29 | active | — | — | — | cardio-sim 3D electrical heart on feature/heart3d-electrical-rhythms; dermatomes planned next |
+| 3rdrider | 3rdrider | 2026-09-01 | active | — | — | — | runnable Lens project NOT in git; nested 3rd-rider MedCapture repo shares the path |
+| haptic-mirror | haptic-mirror | 2026-09-01 | active | — | — | — | Supabase project haptic-mirror-mmo PAUSED in Strandworks Paused Holding org (2026-07-12) |
+| Tenetrix Insight (BadgeMedia) | BadgeMedia | 2026-09-01 | active | — | — | — | cardio-sim 3D electrical heart on feature/heart3d-electrical-rhythms; dermatomes planned next |
 | SW Billing Integrations | SW_Billing_Automations | 2026-06-20 | idle | — | — | — | NEMSIS conformance + registration prep done Sprint 3 (2026-06-18) |
-| Tenetrix Orchard | tenetrix-orchard | 2026-08-29 | active | — | — | — | Graph-API listener + heartbeat (2026-08-29); Meta token exchange outage handling in progress |
-| Remote/Austere Medical Contracting | contracting-startup | 2026-08-31 | active | med-contracting-plan.vercel.app | — | — | scanner/ phase-0 screening engine built 2026-08-29; passcode registry + Supabase access log on the site |
+| Tenetrix Orchard | tenetrix-orchard | 2026-09-01 | active | — | — | — | Graph-API listener + heartbeat (2026-08-29); Meta token exchange outage handling in progress |
+| Remote/Austere Medical Contracting | contracting-startup | 2026-09-02 | active | med-contracting-plan.vercel.app | — | — | scanner/ phase-0 screening engine built 2026-08-29; passcode registry + Supabase access log on the site |
 | Drift | Drift | 2026-08-29 | active | — | — | — | also the HITL mobile inbox lane (web-ask) — user cannot access it as of 2026-06-18 |
-| METOC | metoc | 2026-08-31 | active | metoc.vercel.app | — | metoc | origin Danish partner 2026-08-29; research modules 01-05 + 01R sourcing ledger promoted; POC app complete to C4 2026-08-31 (live-verified brief/PDF/PPTX; basemap worker fix); deployed to Vercel production alias metoc.vercel.app 2026-08-31 (owner asked for a phone link; unlisted |
+| METOC | metoc | 2026-09-02 | active | metoc.vercel.app | — | metoc | origin Danish partner 2026-08-29; research modules 01-05 + 01R sourcing ledger promoted; POC app complete to C4 2026-08-31 (live-verified brief/PDF/PPTX; basemap worker fix); deployed to Vercel production alias metoc.vercel.app 2026-08-31 (owner asked for a phone link; unlisted; UI/UX+frontend review fixes applied and deployed 2026-09-02; Sentinel-2 10m satellite tier live (CDSE); pushed to private GitHub 2026-09-02 |
 
 ### tier-3 (12)
 
@@ -129,9 +129,9 @@ Generated 2026-08-31 by generate.py — edit registers/, never this file.
 | SmartBadge | SmartBadge | 2026-06-28 | idle | — | — | — | RFQ reference parts corrected 2026-07; physical card typography floor 6pt |
 | Chekov | chekov | 2026-06-18 | idle | — | — | — | — |
 | Tenetrix Intervention | Tenetrix_Intervention | 2026-07-08 | idle | — | — | — | relationship to MedSim-Game doctrine: MedSim-Game is canon |
-| Toddler Cards | toddler-cards | 2026-08-28 | active | — | — | — | support + privacy pages hosted on the company site |
+| Toddler Cards | toddler-cards | 2026-09-01 | active | — | — | — | support + privacy pages hosted on the company site |
 | Wildland Medic | wildfire | 2026-08-15 | active | — | — | — | — |
-| Strand Automation Works (public site) | strand-automation-works-new | 2026-07-04 | idle | www.strandautomationworks.com | — | strand-automation-works-new | DO App Platform strand-automation-works may duplicate this (flagged in services.csv) |
+| Strand Automation Works (public site) | strand-automation-works-new | 2026-09-01 | active | www.strandautomationworks.com | — | strand-automation-works-new | DO App Platform strand-automation-works may duplicate this (flagged in services.csv) |
 | Wobble Ward | wobble-ward | 2026-08-25 | active | — | — | — | — |
 | God's Mistake | gods-mistake | 2026-08-23 | active | — | — | — | — |
 | Ember & Vellum | ember-and-vellum | 2026-05-27 | dormant | — | — | — | — |
@@ -167,7 +167,7 @@ Generated 2026-08-31 by generate.py — edit registers/, never this file.
 
 | name | path | last_commit | activity | surfaces | supabase_ref | vercel_project | notes |
 |---|---|---|---|---|---|---|---|
-| MedCapture | MedCapture | 2026-05-27 | dormant | — | — | — | Supabase project MedCapture Production PAUSED in Strandworks Paused Holding org (2026-07-12) |
+| MedCapture | MedCapture | 2026-09-01 | active | — | — | — | Supabase project MedCapture Production PAUSED in Strandworks Paused Holding org (2026-07-12) |
 | cardiac-monitor-sim | cardiac-monitor-sim | 2026-05-27 | dormant | — | — | — | — |
 | Media_Manager | Media_Manager | 2026-05-27 | dormant | — | — | — | — |
 | local_dam | local_dam | 2026-06-18 | idle | — | — | — | — |
@@ -193,6 +193,7 @@ Generated 2026-08-31 by generate.py — edit registers/, never this file.
 | repo | latest_audit | latest_drift |
 |---|---|---|
 | 3rdrider | audit-2026-07-10.md | drift-2026-07-11.md |
+| haptic-mirror | audit-2026-07-11.md | never |
 | strandworks-ops | audit-2026-08-23.md | drift-2026-08-29.md |
 
 ## Models & compute
