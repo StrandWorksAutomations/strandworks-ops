@@ -1,0 +1,21 @@
+id,item,form,owner,status,started,due,done,location,notes
+1,Intent to File,VA 21-0966,owner,todo,,2026-09-05,,VA.gov,Locks effective date for 12 months. Record ITF date + expiry here and in registers/calendar.csv
+2,Order OMPF (separation packet + mental status eval),milConnect DPRIS / eVetRecs / SF-180,owner,todo,,2026-09-05,,NPRC,Request OMPF AND STRs in one request; sign the same day
+3,Order service treatment records (entrance exam DD2807-1/2808 + audiogram + any BH notes),same request as #2,owner,todo,,2026-09-05,,VA RMC via NPRC request,VA pulls STRs itself after filing; own copy needed to write statements
+4,Download VA health records,My HealtheVet Blue Button,owner,todo,,2026-09-12,,VA.gov,Save PDF to Drive; note any mental-health contact
+5,Appoint accredited VSO,VA 21-22,owner,todo,,2026-09-12,,VA.gov or VSO office,Needs state of residence (Q13). Verify accreditation at va.gov/ogc/apps/accreditation
+6,VA mental-health intake (current diagnosis),10-10EZ if not enrolled; then appointment,owner,todo,,2026-09-19,,VA medical center,Free; notes flow to claim file automatically
+7,Private evaluation + Mental Disorders DBQ + nexus letter,public DBQ + letter,owner,todo,,2026-10-15,,private clinician,Give clinician 05-statements/nexus-letter-request.md + records. Depends on #2/#3 for best result
+8,Personal statement,VA 21-4138,owner (agent edits),draft,2026-09-02,2026-09-26,,va-claim/05-statements/personal-statement-draft.md,Finalize after separation packet read
+9,Buddy statement — mother,VA 21-10210,owner requests,todo,,2026-09-26,,,template in 05-statements
+10,Buddy statement — pre-service friend,VA 21-10210,owner requests,todo,,2026-09-26,,,
+11,Buddy statement — recent colleague/supervisor,VA 21-10210,owner requests,todo,,2026-09-26,,,
+12,Private-records authorization (if VA must pull anything),VA 21-4142 + 21-4142a,owner,todo,,2026-09-26,,,Skip if all records uploaded directly
+13,PTSD/MST statement,VA 21-0781,owner,n/a-until-answered,,,,,Only if Q3 answer is yes
+14,Audiology exam (if tinnitus/hearing symptoms),VA audiology,owner,n/a-until-answered,,,,VA medical center,Only if Q12 answer is yes
+15,File claim (Fully Developed),VA 21-526EZ,owner + VSO,todo,,2026-09-30,,VA.gov,Owner target date; ITF protects effective date if evidence is late — do not let ITF lapse
+16,C&P exam,VA-scheduled,owner,waiting-on-15,,,,,Prep sheet: 05-statements/cp-exam-prep.md
+17,Rating decision received,—,owner,waiting-on-16,,,,VA.gov + mail,If any % service-connected: download decision + benefit letter
+18,SBA VetCert SDVOSB application,veterans.certify.sba.gov,owner,waiting-on-17,,,,SBA,Entity: Strandworks Medical Resources LLC (per calendar register) once formed
+19,Appeal window check (1 year from decision),20-0995 / 20-0996 / 10182,owner + VSO,waiting-on-17,,,,,Only if denied or under-rated
+P1,ABCMR narrative-reason correction (optional),DD Form 149,owner,optional,,,,arba.army.pentagon.mil,After #15 and after separation packet read
