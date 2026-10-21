@@ -1,0 +1,122 @@
+{
+  "checked_at": "2026-10-21T16:27:05.009752+00:00",
+  "checks": [
+    {
+      "url": "https://strandautomationworks.com/",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.strandautomationworks.com/",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://strandautomationworks.com/about",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/#about"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/#about",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.strandautomationworks.com/about",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/#about"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/#about",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://strandautomationworks.com/contact",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/#contact"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/#contact",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.strandautomationworks.com/contact",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/#contact"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/#contact",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://strandautomationworks.com/about/trender",
+      "expected": {
+        "status": 308,
+        "location": "https://tenetrix.org/about"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://tenetrix.org/about",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.strandautomationworks.com/about/trender",
+      "expected": {
+        "status": 308,
+        "location": "https://tenetrix.org/about"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://tenetrix.org/about",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.tenetrix.org/",
+      "expected": {
+        "status": 308,
+        "location": "https://tenetrix.org/"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://tenetrix.org/",
+        "error": null
+      },
+      "drift": false
+    }
+  ]
+}

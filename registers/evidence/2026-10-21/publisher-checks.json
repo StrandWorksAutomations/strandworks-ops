@@ -1,0 +1,69 @@
+{
+  "checked_at": "2026-10-21T16:24:53.330504+00:00",
+  "checks": [
+    {
+      "url": "https://kineticclinician.com/",
+      "status": 200,
+      "title": [
+        "Kinetic Clinician \u2014 Highest-paying nurse and EMS jobs"
+      ],
+      "passed": true
+    },
+    {
+      "url": "https://kineticclinician.com/about/",
+      "status": 200,
+      "title": [
+        "About and methodology \u2014 Kinetic Clinician"
+      ],
+      "passed": true
+    },
+    {
+      "url": "https://kineticclinician.com/privacy/",
+      "status": 200,
+      "title": [
+        "Privacy \u2014 Kinetic Clinician"
+      ],
+      "passed": true
+    },
+    {
+      "url": "https://thekineticmedic.com/",
+      "status": 200,
+      "title": [
+        "The Kinetic Medic \u2014 Prehospital &amp; Tactical Intelligence"
+      ],
+      "passed": true
+    },
+    {
+      "url": "https://thekineticmedic.com/about",
+      "status": 200,
+      "title": [
+        "About \u2014 The Kinetic Medic"
+      ],
+      "passed": true
+    },
+    {
+      "url": "https://thekineticmedic.com/privacy",
+      "status": 200,
+      "title": [
+        "Privacy \u2014 The Kinetic Medic"
+      ],
+      "passed": true
+    },
+    {
+      "url": "https://strandworksmedical.com/",
+      "status": 200,
+      "title": [
+        "Strandworks Medical Resources LLC | Company contact"
+      ],
+      "passed": true
+    },
+    {
+      "url": "https://strandworksmedical.com/services",
+      "status": 200,
+      "title": [
+        "Strandworks Medical Resources LLC | Company contact"
+      ],
+      "passed": true
+    }
+  ]
+}

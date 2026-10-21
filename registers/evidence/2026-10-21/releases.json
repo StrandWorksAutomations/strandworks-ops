@@ -1,0 +1,43 @@
+{
+  "releases": [
+    {
+      "source_repo": "highest-paying",
+      "base_commit": "ec9a7b5251d8f1e383ce3e66e770efbb257568af",
+      "patch": "highest-paying-published-branding.patch",
+      "apply_options": [
+        "--unidiff-zero"
+      ],
+      "deployment_url": "https://highest-paying-kne46fbxw-strandworks.vercel.app",
+      "scope": "Only publisher-name source changes; other unpublished checkout changes excluded."
+    },
+    {
+      "source_repo": "the-kinetic-medic",
+      "base_commit": "8f73033efc2fc6faf0f5862d41fe5c148b699050",
+      "patch": "the-kinetic-medic-published-branding.patch",
+      "apply_options": [
+        "--unidiff-zero"
+      ],
+      "deployment_url": "https://the-kinetic-medic-kaky7e9bc-strandworks.vercel.app",
+      "scope": "Only publisher-name source changes; other unpublished checkout changes excluded."
+    },
+    {
+      "source_repo": "strand-automation-works-new",
+      "source_commit": "5c2efb3",
+      "pull_request": "https://github.com/StrandWorksAutomations/strand-automation-works/pull/29",
+      "deployment_url": "https://strand-automation-works-i4w7bib23-strandworks.vercel.app"
+    },
+    {
+      "source_repo": "strandworks-corporate",
+      "source_commit": "15d05b22a13a631f8c49eb3951d9486e0513f46e",
+      "sites_project": "appgprj_6ad8d62c7e2c8191b18a1f70d8f23500",
+      "audience": "public"
+    },
+    {
+      "source_repo": "contracting-startup/smr-site",
+      "deployment_url": "https://strandworks-medical-bjpwzqvms-strandworks.vercel.app",
+      "holding_sha256": "da4a01734f38967e79fcce818d879f995efc211e2489c59ccc24f64613e24d64",
+      "scope": "Noindex, services-paused holding page only."
+    }
+  ],
+  "build_note": "The existing Kinetic Clinician build-time expiry/staleness gate removed 14 listings when rebuilt on October 21; no scraper or data refresh was run."
+}

@@ -1,0 +1,534 @@
+{
+  "schema_version": 1,
+  "registry_version": "2026-10-21.1",
+  "updated_on": "2026-10-21",
+  "notes": "Owner-directed desired topology, distinct from observed status. No DNS, hosting, redirect or public-link change is implied. null verification timestamps mean no live verification. Legal operator labels do not establish subsidiary ownership or IP transfers. Private SAG material is excluded from public links/live checks. Personal domains are outside this register. Initial scope covers company sites and known companion publications. Existing service subdomains (including carousel, manager, qa and internal dashboards) were not changed or claimed as fully inventoried.",
+  "sites": [
+    {
+      "id": "corporate",
+      "name": "Strandworks corporate",
+      "legal_operator": "Strandworks LLC",
+      "brand": "Strandworks",
+      "source_repo": "strandworks-corporate",
+      "hosting": {
+        "provider": "sites",
+        "project": "appgprj_6ad8d62c7e2c8191b18a1f70d8f23500",
+        "verification_note": "Sites deployment appgdep_6ad8d800fbac81918415f7690a381bb2; source commit 15d05b22a13a631f8c49eb3951d9486e0513f46e. Apex and www are attached to this Site. Namecheap web records changed; existing email records preserved.",
+        "deployment_url": "https://strandworks-corporate.peachy-leaf-5611.chatgpt.site"
+      },
+      "canonical_url": "https://strandworks.org",
+      "aliases": [
+        "www.strandworks.org",
+        "strandworks.net",
+        "www.strandworks.net",
+        "strandautomationworks.com",
+        "www.strandautomationworks.com"
+      ],
+      "visibility": "public",
+      "desired_status": "active",
+      "observed": {
+        "status": "live_verified",
+        "canonical_url": "https://strandworks.org",
+        "note": "Public corporate site and privacy page verified in Chrome; the dated automated HTTP audit also passed. www serves the site with an apex canonical link."
+      },
+      "last_verification": {
+        "at": "2026-10-21T16:14:52.467507+00:00",
+        "method": "browser_check",
+        "result": "pass",
+        "evidence": [
+          "https://strandworks.org/ rendered the corporate homepage in Chrome.",
+          "registers/evidence/2026-10-21/strandworks-desktop.jpg",
+          "Sites custom domain appgdom_6ad8d8488260819199f76b49771e32d9: active; SSL active.",
+          "Apex, www and corporate privacy page rendered in Chrome; automated registry checks also returned 200."
+        ]
+      },
+      "critical_paths": [
+        "/",
+        "/privacy/"
+      ],
+      "policy_paths": [
+        "/privacy/"
+      ],
+      "notes": "Corporate umbrella. www serves the same corporate site with an apex canonical link. Legacy .com is routed by the Tenetrix Vercel project. Leave .net pending per owner instruction on October 21; its BusinessIdentity nameservers and mail records were not changed."
+    },
+    {
+      "id": "tenetrix",
+      "name": "Tenetrix digital showcase",
+      "legal_operator": "Strandworks LLC",
+      "brand": "Tenetrix",
+      "source_repo": "strand-automation-works-new",
+      "hosting": {
+        "provider": "vercel",
+        "project": "strand-automation-works-new",
+        "verification_note": "Vercel strandworks project prj_JAYNMuhzKtAc6IO8x5o5fkIjeKQq; production dpl_J8k1TvDJMTSxZiLiWFmjrZC7fXvB; source commit 5c2efb3. Both Tenetrix hosts and both legacy .com hosts are attached; Google mail records unchanged.",
+        "deployment_url": "https://strand-automation-works-i4w7bib23-strandworks.vercel.app"
+      },
+      "canonical_url": "https://tenetrix.org",
+      "aliases": [
+        "www.tenetrix.org"
+      ],
+      "visibility": "public",
+      "desired_status": "active",
+      "observed": {
+        "status": "live_verified",
+        "canonical_url": "https://tenetrix.org",
+        "note": "Moved from Vercel\u2019s old website project to strand-automation-works-new. Homepage, Insight product, both app privacy pages and terms returned 200 with Tenetrix.org canonicals; www redirects with paths and queries preserved."
+      },
+      "last_verification": {
+        "at": "2026-10-21T16:14:52.467507+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "https://tenetrix.org/ \u2014 200; title Tenetrix | Digital products by Strandworks LLC.",
+          "https://tenetrix.org/tenetrix/privacy and /toddler-cards/privacy \u2014 200.",
+          "registers/evidence/2026-10-21/tenetrix-desktop.jpg"
+        ]
+      },
+      "critical_paths": [
+        "/",
+        "/projects",
+        "/tenetrix/privacy",
+        "/terms",
+        "/privacy",
+        "/policy",
+        "/support",
+        "/toddler-cards",
+        "/toddler-cards/privacy",
+        "/about"
+      ],
+      "policy_paths": [
+        "/tenetrix/privacy",
+        "/terms",
+        "/privacy",
+        "/policy",
+        "/support",
+        "/toddler-cards/privacy"
+      ],
+      "notes": "Tenetrix is the digital brand of Strandworks LLC; no Tenetrix LLC has been formed. Reuse the existing showcase and keep product/policy deep paths. Name clarification does not establish an IP assignment."
+    },
+    {
+      "id": "kinetic-clinician",
+      "name": "Kinetic Clinician",
+      "legal_operator": "Strandworks LLC",
+      "brand": "Kinetic Clinician",
+      "source_repo": "highest-paying",
+      "hosting": {
+        "provider": "vercel",
+        "project": "highest-paying",
+        "verification_note": "Vercel strandworks/highest-paying, production dpl_HUmDWbdjTH2ikPANnTpmUWzzBXLk. Publisher release isolated from production commit ec9a7b5251d8f1e383ce3e66e770efbb257568af plus the archived three-file branding patch; unpublished working-tree changes excluded.",
+        "deployment_url": "https://highest-paying-kne46fbxw-strandworks.vercel.app"
+      },
+      "canonical_url": "https://kineticclinician.com",
+      "aliases": [
+        "www.kineticclinician.com"
+      ],
+      "visibility": "public",
+      "desired_status": "active",
+      "observed": {
+        "status": "live_verified",
+        "canonical_url": "https://kineticclinician.com",
+        "note": "Live homepage, about and privacy publisher labels verified."
+      },
+      "last_verification": {
+        "at": "2026-10-21T16:26:55.342751+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/publisher-checks.json"
+        ]
+      },
+      "critical_paths": [
+        "/",
+        "/about/",
+        "/privacy/"
+      ],
+      "policy_paths": [
+        "/privacy/"
+      ],
+      "notes": "Distinct digital product/publication within Tenetrix. Current source naming corrections are not proof of a live deployment. The October 21 source update changes operator labels only; normal build-time stale-job filtering also reduced the visible count by 14. No live scraper was run."
+    },
+    {
+      "id": "kinetic-medic",
+      "name": "The Kinetic Medic",
+      "legal_operator": "Strandworks LLC",
+      "brand": "The Kinetic Medic",
+      "source_repo": "the-kinetic-medic",
+      "hosting": {
+        "provider": "vercel",
+        "project": "the-kinetic-medic",
+        "verification_note": "Vercel strandworks project prj_MKPHyhj7PoJChgIPYleFaaV0h2vx; production dpl_7k5RHXNPq2N6FZN5mcm5UNvi66No. Built from published source 8f73033efc2fc6faf0f5862d41fe5c148b699050 plus the archived three-file publisher patch; unpublished article changes excluded.",
+        "deployment_url": "https://the-kinetic-medic-kaky7e9bc-strandworks.vercel.app"
+      },
+      "canonical_url": "https://thekineticmedic.com",
+      "aliases": [],
+      "visibility": "public",
+      "desired_status": "active",
+      "observed": {
+        "status": "live_verified",
+        "canonical_url": "https://thekineticmedic.com",
+        "note": "Live homepage, about and privacy publisher labels verified."
+      },
+      "last_verification": {
+        "at": "2026-10-21T16:26:55.342751+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/publisher-checks.json"
+        ]
+      },
+      "critical_paths": [
+        "/",
+        "/about",
+        "/privacy"
+      ],
+      "policy_paths": [
+        "/privacy"
+      ],
+      "notes": "Distinct publication within Tenetrix; preserve editorial identity and companion links. Live footer links to Kinetic Clinician and to Tenetrix Insight on the Apple App Store; it does not currently link to the Tenetrix.org brand homepage. The www subdomain has no DNS record as of October 21; the bare domain is canonical. No www alias is configured or promised."
+    },
+    {
+      "id": "medical",
+      "name": "Strandworks Medical Resources",
+      "legal_operator": "Strandworks Medical Resources LLC",
+      "brand": "Strandworks Medical Resources",
+      "source_repo": "strandworks-medical",
+      "hosting": {
+        "provider": "vercel",
+        "project": "strandworks-medical",
+        "verification_note": "Vercel strandworks/strandworks-medical, production dpl_4ArrCL6cPFYrEZMXjZFrQTNnFi2p. Release contained holding/index.html and hosting config only, with outputDirectory holding. Public service pages were not republished.",
+        "deployment_url": "https://strandworks-medical-bjpwzqvms-strandworks.vercel.app"
+      },
+      "canonical_url": "https://strandworksmedical.com",
+      "aliases": [
+        "www.strandworksmedical.com"
+      ],
+      "visibility": "public",
+      "desired_status": "paused",
+      "observed": {
+        "status": "live_verified",
+        "canonical_url": "https://strandworksmedical.com",
+        "note": "Homepage and /services both serve the noindex, services-paused holding page with the full legal company name."
+      },
+      "last_verification": {
+        "at": "2026-10-21T16:26:55.342751+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/publisher-checks.json"
+        ]
+      },
+      "critical_paths": [
+        "/"
+      ],
+      "policy_paths": [],
+      "notes": "Separate in-person medical services, staffing and contracting venture. Vercel outputDirectory is holding; services remain paused. No service-availability or clinical authorization claim follows from this site."
+    },
+    {
+      "id": "sag-investor",
+      "name": "SAG investor brief",
+      "legal_operator": null,
+      "brand": "SAG International",
+      "source_repo": "sag-international/investor-brief",
+      "hosting": {
+        "provider": "vercel",
+        "project": "sag-investor-brief",
+        "verification_note": "Project/source mapping supplied by the owner session on October 21, 2026; domain attachment and live response are not verified by this register.",
+        "deployment_url": null
+      },
+      "canonical_url": null,
+      "aliases": [],
+      "visibility": "private_conditional",
+      "desired_status": "private_conditional",
+      "observed": {
+        "status": "not_checked",
+        "canonical_url": null,
+        "note": "Desired domain or private deployment has not been live verified."
+      },
+      "last_verification": {
+        "at": null,
+        "method": "not_checked",
+        "result": "unverified",
+        "evidence": []
+      },
+      "critical_paths": [],
+      "policy_paths": [],
+      "notes": "Separate international venture. Legal contracting entity/form remains unverified here. Investor brief is private/conditional and must not receive a public corporate link or a live-check probe."
+    }
+  ],
+  "redirect_rules": [
+    {
+      "id": "legacy-root",
+      "source_hosts": [
+        "strandautomationworks.com",
+        "www.strandautomationworks.com"
+      ],
+      "source_path": "/",
+      "target_url": "https://strandworks.org/",
+      "status_code": 308,
+      "preserve_query": true,
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:27:05.009752+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/live-http-checks.json \u2014 source hosts checked without following redirects."
+        ]
+      },
+      "note": "Old company root becomes corporate landing."
+    },
+    {
+      "id": "legacy-about",
+      "source_hosts": [
+        "strandautomationworks.com",
+        "www.strandautomationworks.com"
+      ],
+      "source_path": "/about",
+      "target_url": "https://strandworks.org/#about",
+      "status_code": 308,
+      "preserve_query": true,
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:27:05.009752+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/live-http-checks.json \u2014 source hosts checked without following redirects."
+        ]
+      },
+      "note": "Corporate landing uses section anchors, not standalone pages."
+    },
+    {
+      "id": "legacy-contact",
+      "source_hosts": [
+        "strandautomationworks.com",
+        "www.strandautomationworks.com"
+      ],
+      "source_path": "/contact",
+      "target_url": "https://strandworks.org/#contact",
+      "status_code": 308,
+      "preserve_query": true,
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:27:05.009752+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/live-http-checks.json \u2014 source hosts checked without following redirects."
+        ]
+      },
+      "note": "Corporate landing uses section anchors, not standalone pages."
+    },
+    {
+      "id": "legacy-trender-about",
+      "source_hosts": [
+        "strandautomationworks.com",
+        "www.strandautomationworks.com"
+      ],
+      "source_path": "/about/trender",
+      "target_url": "https://tenetrix.org/about",
+      "status_code": 308,
+      "preserve_query": true,
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:27:05.009752+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/live-http-checks.json \u2014 source hosts checked without following redirects."
+        ]
+      },
+      "note": "Preserve legacy Trender about-page route."
+    },
+    {
+      "id": "legacy-default",
+      "source_hosts": [
+        "strandautomationworks.com",
+        "www.strandautomationworks.com"
+      ],
+      "source_path": "/:path*",
+      "target_url": "https://tenetrix.org/:path*",
+      "status_code": 308,
+      "preserve_query": true,
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:27:05.009752+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/live-http-checks.json \u2014 source hosts checked without following redirects."
+        ]
+      },
+      "note": "All other product, policy and asset paths preserve path and query on Tenetrix. Includes /projects, /tenetrix/privacy, /terms, /privacy, /policy, /support, /toddler-cards, /images, /videos and /icon.svg."
+    },
+    {
+      "id": "corporate-aliases",
+      "source_hosts": [
+        "strandworks.net",
+        "www.strandworks.net"
+      ],
+      "source_path": "/:path*",
+      "target_url": "https://strandworks.org/:path*",
+      "status_code": 308,
+      "preserve_query": true,
+      "desired_status": "paused",
+      "observed_status": "source_documented",
+      "last_verification": {
+        "at": "2026-10-21T16:14:52.467507+00:00",
+        "method": "source_review",
+        "result": "unverified",
+        "evidence": [
+          "Owner reply: Leave .net pending for now."
+        ]
+      },
+      "note": "Owner explicitly left .net pending on October 21. Do not change BusinessIdentity nameservers, web records or email. Skip live probes until resumed."
+    },
+    {
+      "id": "digital-www",
+      "source_hosts": [
+        "www.tenetrix.org"
+      ],
+      "source_path": "/:path*",
+      "target_url": "https://tenetrix.org/:path*",
+      "status_code": 308,
+      "preserve_query": true,
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:27:05.009752+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/live-http-checks.json \u2014 source hosts checked without following redirects."
+        ]
+      },
+      "note": "Canonical digital host excludes www."
+    },
+    {
+      "id": "kinetic-clinician-www",
+      "source_hosts": [
+        "www.kineticclinician.com"
+      ],
+      "source_path": "/:path*",
+      "target_url": "https://kineticclinician.com/:path*",
+      "status_code": 308,
+      "preserve_query": true,
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:27:05.009752+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/live-http-checks.json \u2014 source hosts checked without following redirects."
+        ]
+      },
+      "note": "Desired www canonicalization; current redirect remains unverified."
+    },
+    {
+      "id": "medical-www",
+      "source_hosts": [
+        "www.strandworksmedical.com"
+      ],
+      "source_path": "/:path*",
+      "target_url": "https://strandworksmedical.com/:path*",
+      "status_code": 308,
+      "preserve_query": true,
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:27:05.009752+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "registers/evidence/2026-10-21/live-http-checks.json \u2014 source hosts checked without following redirects."
+        ]
+      },
+      "note": "Desired www canonicalization; current redirect remains unverified."
+    }
+  ],
+  "links": [
+    {
+      "id": "corporate-digital",
+      "source_site": "corporate",
+      "source_path": "/",
+      "target_site": "tenetrix",
+      "target_path": "/",
+      "purpose": "Digital brand and product showcase",
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:14:52.467507+00:00",
+        "method": "browser_check",
+        "result": "pass",
+        "evidence": [
+          "Corporate homepage shows the destination link in Chrome; see strandworks-desktop.jpg."
+        ]
+      }
+    },
+    {
+      "id": "corporate-medical",
+      "source_site": "corporate",
+      "source_path": "/",
+      "target_site": "medical",
+      "target_path": "/",
+      "purpose": "Separate in-person medical venture; holding/service-paused wording required",
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:14:52.467507+00:00",
+        "method": "browser_check",
+        "result": "pass",
+        "evidence": [
+          "Corporate homepage shows the destination link in Chrome; see strandworks-desktop.jpg."
+        ]
+      }
+    },
+    {
+      "id": "medic-clinician",
+      "source_site": "kinetic-medic",
+      "source_path": "/",
+      "target_site": "kinetic-clinician",
+      "target_path": "/",
+      "purpose": "Companion career tools",
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:26:55.342751+00:00",
+        "method": "http_check",
+        "result": "pass",
+        "evidence": [
+          "Published SiteFooter.tsx links to Kinetic Clinician with referral campaign parameters; companion homepage returns 200."
+        ]
+      }
+    },
+    {
+      "id": "digital-corporate",
+      "source_site": "tenetrix",
+      "source_path": "/",
+      "target_site": "corporate",
+      "target_path": "/",
+      "purpose": "Umbrella company, linked in the Tenetrix navigation and footer",
+      "desired_status": "active",
+      "observed_status": "live_verified",
+      "last_verification": {
+        "at": "2026-10-21T16:14:52.467507+00:00",
+        "method": "browser_check",
+        "result": "pass",
+        "evidence": [
+          "Live Tenetrix navigation and footer link to https://strandworks.org/."
+        ]
+      }
+    }
+  ],
+  "routing_export": {
+    "digital_site": "tenetrix",
+    "corporate_site": "corporate",
+    "legacy_default_rule": "legacy-default"
+  }
+}

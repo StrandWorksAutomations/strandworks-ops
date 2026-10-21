@@ -18,6 +18,24 @@ its purpose is defined below and may be blessed later.)
 
 # strandworks-ops
 
+## Company identities — owner direction October 21, 2026
+
+**Strandworks LLC** is the umbrella company. **Tenetrix** is its digital brand, not a separately formed LLC; **Tenetrix Insight** is a product. **Strandworks Medical Resources LLC** covers the separate in-person medical-services, staffing and contracting business; **SAG International** remains a separate international venture. Do not infer subsidiary ownership, an IP assignment or SAG partner rights from the umbrella description. Existing domain/repository names and dated register events are not separate legal names or proof of a registered assumed name.
+
+## Website and domain register
+
+`registers/websites.json` is the source of truth for site operators, brands, source repositories, hosting, canonical domains, aliases, redirect rules, critical paths and links between sites. Desired routing and observed live state are separate. Strandworks.net remains pending at the owner's October 21 instruction; do not change its DNS until authorized again.
+
+Before changing a domain or a cross-site link:
+
+1. Update the register and record the actual hosting/DNS observations without credentials. Preserve private-site visibility and existing mail service.
+2. Run `python3 registers/website_registry.py validate` and `python3 -m unittest discover -s registers -p 'test_website_registry.py'`.
+3. Regenerate production routing with `python3 registers/website_registry.py export-routing --output ../strand-automation-works-new/domain-routing.json`; run `node scripts/check-domain-routing.cjs` from that website repository.
+4. Regenerate the local map with `python3 registers/website_registry.py render`. Open `registers/websites.html` for the searchable site and redirect map.
+5. After deployment/DNS changes, run `python3 registers/website_registry.py validate --live --max-requests 20 --timeout 5`. This bounded, read-only check reports drift and does not update observations automatically. Save verified outcomes in the register; partial checks are not a complete live audit.
+
+Do one heavy build at a time. Prefer hosted builds, keep browser work to one worker, and stop task-owned preview servers/tabs when finished.
+
 The company's nervous system: registers (flat CSVs in `registers/`) +
 `generate.py` → `DASHBOARD.md`. Single living picture of subscriptions,
 services, assets, access, calendar, models, and per-repo governance scouts.

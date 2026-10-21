@@ -1,0 +1,14 @@
+--- a/src/pages/index.astro
++++ b/src/pages/index.astro
+@@ -107 +107 @@
+-  <footer><a class="footer-brand" href="/">Kinetic Clinician <span>Highest-paying nurse and EMS jobs.</span></a><nav aria-label="More resources"><a href="/jobs/">Jobs</a><a href="/pathways/">Career pathways</a><a href="/training/">Training</a><a href="/#licensing">Licensing by state</a><a href="/offer-check/">Offer checklist</a></nav><nav aria-label="Legal"><a href="/about/">About &amp; sources</a><a href="/privacy/">Privacy</a></nav><p>Operated by Strandworks Medical Resources LLC.</p></footer>
++  <footer><a class="footer-brand" href="/">Kinetic Clinician <span>Highest-paying nurse and EMS jobs.</span></a><nav aria-label="More resources"><a href="/jobs/">Jobs</a><a href="/pathways/">Career pathways</a><a href="/training/">Training</a><a href="/#licensing">Licensing by state</a><a href="/offer-check/">Offer checklist</a></nav><nav aria-label="Legal"><a href="/about/">About &amp; sources</a><a href="/privacy/">Privacy</a></nav><p>Operated by Strandworks LLC.</p></footer>
+--- a/src/pages/about/index.astro
++++ b/src/pages/about/index.astro
+@@ -148 +148 @@
+-        <p>Kinetic Clinician is run by Strandworks Medical Resources LLC.</p>
++        <p>Kinetic Clinician is run by Strandworks LLC through its Tenetrix digital brand.</p>
+--- a/src/pages/privacy/index.astro
++++ b/src/pages/privacy/index.astro
+@@ -99,0 +100 @@
++        <p>Kinetic Clinician is operated by Strandworks LLC through its Tenetrix digital brand.</p>

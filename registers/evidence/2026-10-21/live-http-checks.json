@@ -1,0 +1,408 @@
+{
+  "checked_at": "2026-10-21T16:27:05.009752+00:00",
+  "registry_version": "2026-10-21.1",
+  "read_only": true,
+  "coverage": "complete",
+  "planned_checks": 30,
+  "checked": 30,
+  "pending_urls": [],
+  "drift_count": 0,
+  "skipped_rules": [
+    {
+      "id": "corporate-aliases",
+      "reason": "Owner explicitly left .net pending on October 21. Do not change BusinessIdentity nameservers, web records or email. Skip live probes until resumed."
+    }
+  ],
+  "results": [
+    {
+      "url": "https://strandautomationworks.com/",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.strandautomationworks.com/",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://strandautomationworks.com/about",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/#about"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/#about",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.strandautomationworks.com/about",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/#about"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/#about",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://strandautomationworks.com/contact",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/#contact"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/#contact",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.strandautomationworks.com/contact",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworks.org/#contact"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworks.org/#contact",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://strandautomationworks.com/about/trender",
+      "expected": {
+        "status": 308,
+        "location": "https://tenetrix.org/about"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://tenetrix.org/about",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.strandautomationworks.com/about/trender",
+      "expected": {
+        "status": 308,
+        "location": "https://tenetrix.org/about"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://tenetrix.org/about",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.tenetrix.org/",
+      "expected": {
+        "status": 308,
+        "location": "https://tenetrix.org/"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://tenetrix.org/",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.kineticclinician.com/",
+      "expected": {
+        "status": 308,
+        "location": "https://kineticclinician.com/"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://kineticclinician.com/",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://www.strandworksmedical.com/",
+      "expected": {
+        "status": 308,
+        "location": "https://strandworksmedical.com/"
+      },
+      "observed": {
+        "status": 308,
+        "location": "https://strandworksmedical.com/",
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://strandworks.org/",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://strandworks.org/privacy/",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://tenetrix.org/",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://tenetrix.org/projects",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://tenetrix.org/tenetrix/privacy",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://tenetrix.org/terms",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://tenetrix.org/privacy",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://tenetrix.org/policy",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://tenetrix.org/support",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://tenetrix.org/toddler-cards",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://tenetrix.org/toddler-cards/privacy",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://tenetrix.org/about",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://kineticclinician.com/",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://kineticclinician.com/about/",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://kineticclinician.com/privacy/",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://thekineticmedic.com/",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://thekineticmedic.com/about",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://thekineticmedic.com/privacy",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    },
+    {
+      "url": "https://strandworksmedical.com/",
+      "expected": {
+        "status": 200,
+        "location": null
+      },
+      "observed": {
+        "status": 200,
+        "location": null,
+        "error": null
+      },
+      "drift": false
+    }
+  ]
+}

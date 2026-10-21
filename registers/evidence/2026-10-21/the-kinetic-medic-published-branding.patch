@@ -1,0 +1,15 @@
+--- a/app/about/page.tsx
++++ b/app/about/page.tsx
+@@ -65 +65 @@
+-            Published by Strandworks Medical Resources LLC. Field updates and corrections are welcome
++            Published by Strandworks LLC through its Tenetrix digital brand. Field updates and corrections are welcome
+--- a/app/privacy/page.tsx
++++ b/app/privacy/page.tsx
+@@ -57 +57 @@
+-            Strandworks Medical Resources LLC publishes The Kinetic Medic.
++            Strandworks LLC publishes The Kinetic Medic through its Tenetrix digital brand.
+--- a/app/_components/SiteFooter.tsx
++++ b/app/_components/SiteFooter.tsx
+@@ -38 +38 @@
+-          Published by Strandworks Medical Resources LLC · © {new Date().getFullYear()} The Kinetic Medic · Educational reading, not clinical direction
++          Published by Strandworks LLC · © {new Date().getFullYear()} The Kinetic Medic · Educational reading, not clinical direction
