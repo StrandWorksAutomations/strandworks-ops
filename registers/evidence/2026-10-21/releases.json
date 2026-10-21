@@ -22,9 +22,11 @@
     },
     {
       "source_repo": "strand-automation-works-new",
-      "source_commit": "5c2efb3",
+      "source_commit": "8e0d88830edf8c66175f98881eaa64f882fa9db2",
       "pull_request": "https://github.com/StrandWorksAutomations/strand-automation-works/pull/29",
-      "deployment_url": "https://strand-automation-works-i4w7bib23-strandworks.vercel.app"
+      "deployment_url": "https://strand-automation-works-m46d94gc1-strandworks.vercel.app",
+      "deployment_id": "dpl_BBb3Q52Xi5XSHueBC1YPmuY8jw1V",
+      "scope": "Tenetrix naming/domain migration plus corporate .net HTTPS redirects; final middleware preserves corporate trailing slashes while normalizing other hosts. Isolated committed source excludes existing unrelated dirty changes."
     },
     {
       "source_repo": "strandworks-corporate",

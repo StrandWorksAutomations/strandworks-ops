@@ -1,0 +1,114 @@
+{
+  "checked_at": "2026-10-21T17:40:37.408672+00:00",
+  "parent_delegation": "; <<>> DiG 9.10.6 <<>> @a.gtld-servers.net strandworks.net NS +norecurse +noall +authority +time=2 +tries=1\n; (2 servers found)\n;; global options: +cmd\nstrandworks.net.\t172800\tIN\tNS\tdns1.registrar-servers.com.\nstrandworks.net.\t172800\tIN\tNS\tdns2.registrar-servers.com.",
+  "records": [
+    {
+      "authority": "dns1.registrar-servers.com",
+      "host": "@",
+      "type": "A",
+      "answer": "216.150.16.1\n216.150.1.1"
+    },
+    {
+      "authority": "dns1.registrar-servers.com",
+      "host": "www",
+      "type": "CNAME",
+      "answer": "20562146df265cc3.vercel-dns-017.com."
+    },
+    {
+      "authority": "dns1.registrar-servers.com",
+      "host": "@",
+      "type": "MX",
+      "answer": "10 mailserver.businessidentity.llc."
+    },
+    {
+      "authority": "dns1.registrar-servers.com",
+      "host": "@",
+      "type": "TXT",
+      "answer": "\"v=spf1 a mx include:spf.postal.businessidentity.llc ~all\""
+    },
+    {
+      "authority": "dns1.registrar-servers.com",
+      "host": "_dmarc",
+      "type": "TXT",
+      "answer": "\"v=DMARC1; p=quarantine; rua=mailto:bounce@dmarc.businessidentity.llc; ruf=mailto:bounce@dmarc.businessidentity.llc; fo=1\""
+    },
+    {
+      "authority": "dns1.registrar-servers.com",
+      "host": "mail",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "authority": "dns1.registrar-servers.com",
+      "host": "smtp",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "authority": "dns1.registrar-servers.com",
+      "host": "imap",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "authority": "dns1.registrar-servers.com",
+      "host": "pop3",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "authority": "dns2.registrar-servers.com",
+      "host": "@",
+      "type": "A",
+      "answer": "216.150.16.1\n216.150.1.1"
+    },
+    {
+      "authority": "dns2.registrar-servers.com",
+      "host": "www",
+      "type": "CNAME",
+      "answer": "20562146df265cc3.vercel-dns-017.com."
+    },
+    {
+      "authority": "dns2.registrar-servers.com",
+      "host": "@",
+      "type": "MX",
+      "answer": "10 mailserver.businessidentity.llc."
+    },
+    {
+      "authority": "dns2.registrar-servers.com",
+      "host": "@",
+      "type": "TXT",
+      "answer": "\"v=spf1 a mx include:spf.postal.businessidentity.llc ~all\""
+    },
+    {
+      "authority": "dns2.registrar-servers.com",
+      "host": "_dmarc",
+      "type": "TXT",
+      "answer": "\"v=DMARC1; p=quarantine; rua=mailto:bounce@dmarc.businessidentity.llc; ruf=mailto:bounce@dmarc.businessidentity.llc; fo=1\""
+    },
+    {
+      "authority": "dns2.registrar-servers.com",
+      "host": "mail",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "authority": "dns2.registrar-servers.com",
+      "host": "smtp",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "authority": "dns2.registrar-servers.com",
+      "host": "imap",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "authority": "dns2.registrar-servers.com",
+      "host": "pop3",
+      "type": "A",
+      "answer": "66.223.49.89"
+    }
+  ]
+}

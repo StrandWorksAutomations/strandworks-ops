@@ -58,6 +58,7 @@
       "required": [
         "digital_site",
         "corporate_site",
+        "corporate_alias_rule",
         "legacy_default_rule"
       ],
       "properties": {
@@ -66,6 +67,10 @@
           "minLength": 1
         },
         "corporate_site": {
+          "type": "string",
+          "minLength": 1
+        },
+        "corporate_alias_rule": {
           "type": "string",
           "minLength": 1
         },
@@ -344,7 +349,8 @@
             "not_checked",
             "source_documented",
             "live_verified",
-            "drift"
+            "drift",
+            "propagating"
           ]
         },
         "last_verification": {

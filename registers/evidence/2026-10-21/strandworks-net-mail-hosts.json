@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-10-21T17:36:56.965779+00:00",
+  "authority": "ns1.hosting.businessidentity.llc",
+  "records": [
+    {
+      "host": "smtp",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "host": "imap",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "host": "pop3",
+      "type": "A",
+      "answer": "66.223.49.89"
+    }
+  ],
+  "action": "Copied each existing mail-protocol A record unchanged to Namecheap BasicDNS."
+}

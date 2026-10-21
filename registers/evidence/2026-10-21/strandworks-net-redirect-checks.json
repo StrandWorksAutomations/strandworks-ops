@@ -1,0 +1,257 @@
+{
+  "checked_at": "2026-10-21T17:38:31.618091+00:00",
+  "deployment": "dpl_BBb3Q52Xi5XSHueBC1YPmuY8jw1V",
+  "source_commit": "8e0d88830edf8c66175f98881eaa64f882fa9db2",
+  "public_resolvers": [
+    {
+      "resolver": "1.1.1.1",
+      "name": "strandworks.net",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "resolver": "1.1.1.1",
+      "name": "www.strandworks.net",
+      "type": "A",
+      "answer": "66.223.49.89"
+    },
+    {
+      "resolver": "8.8.8.8",
+      "name": "strandworks.net",
+      "type": "A",
+      "answer": "216.150.16.1\n216.150.1.1"
+    },
+    {
+      "resolver": "8.8.8.8",
+      "name": "www.strandworks.net",
+      "type": "A",
+      "answer": "20562146df265cc3.vercel-dns-017.com.\n216.150.16.129\n216.150.1.129"
+    }
+  ],
+  "checks": [
+    {
+      "url": "https://strandworks.net/",
+      "connection_ip": "216.150.1.1",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://strandworks.net/home?ref=net&ref=two",
+      "connection_ip": "216.150.1.1",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/home?ref=net&ref=two",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://strandworks.net/about/trender?src=net",
+      "connection_ip": "216.150.1.1",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/about/trender?src=net",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://strandworks.net/privacy/?ref=a%2Bb&ref=two",
+      "connection_ip": "216.150.1.1",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/privacy/?ref=a%2Bb&ref=two",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://strandworks.net/images/projects/example.png?src=net",
+      "connection_ip": "216.150.1.1",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/images/projects/example.png?src=net",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://strandworks.net/",
+      "connection_ip": "216.150.16.1",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://strandworks.net/home?ref=net&ref=two",
+      "connection_ip": "216.150.16.1",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/home?ref=net&ref=two",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://strandworks.net/about/trender?src=net",
+      "connection_ip": "216.150.16.1",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/about/trender?src=net",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://strandworks.net/privacy/?ref=a%2Bb&ref=two",
+      "connection_ip": "216.150.16.1",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/privacy/?ref=a%2Bb&ref=two",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://strandworks.net/images/projects/example.png?src=net",
+      "connection_ip": "216.150.16.1",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/images/projects/example.png?src=net",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://www.strandworks.net/",
+      "connection_ip": "216.150.1.193",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://www.strandworks.net/home?ref=net&ref=two",
+      "connection_ip": "216.150.1.193",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/home?ref=net&ref=two",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://www.strandworks.net/about/trender?src=net",
+      "connection_ip": "216.150.1.193",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/about/trender?src=net",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://www.strandworks.net/privacy/?ref=a%2Bb&ref=two",
+      "connection_ip": "216.150.1.193",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/privacy/?ref=a%2Bb&ref=two",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://www.strandworks.net/images/projects/example.png?src=net",
+      "connection_ip": "216.150.1.193",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/images/projects/example.png?src=net",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://www.strandworks.net/",
+      "connection_ip": "216.150.16.193",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://www.strandworks.net/home?ref=net&ref=two",
+      "connection_ip": "216.150.16.193",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/home?ref=net&ref=two",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://www.strandworks.net/about/trender?src=net",
+      "connection_ip": "216.150.16.193",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/about/trender?src=net",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://www.strandworks.net/privacy/?ref=a%2Bb&ref=two",
+      "connection_ip": "216.150.16.193",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/privacy/?ref=a%2Bb&ref=two",
+      "tls_verified": true,
+      "passed": true
+    },
+    {
+      "url": "https://www.strandworks.net/images/projects/example.png?src=net",
+      "connection_ip": "216.150.16.193",
+      "dns_override_for_migration_test": true,
+      "status": "HTTP/2 308",
+      "location": "https://strandworks.org/images/projects/example.png?src=net",
+      "tls_verified": true,
+      "passed": true
+    }
+  ],
+  "regression_checks": [
+    {
+      "url": "https://tenetrix.org/",
+      "status": 200,
+      "location": null,
+      "passed": true
+    },
+    {
+      "url": "https://tenetrix.org/tenetrix/privacy",
+      "status": 200,
+      "location": null,
+      "passed": true
+    },
+    {
+      "url": "https://tenetrix.org/toddler-cards/privacy",
+      "status": 200,
+      "location": null,
+      "passed": true
+    },
+    {
+      "url": "https://tenetrix.org/tenetrix/privacy/?a=b",
+      "status": 308,
+      "location": "https://tenetrix.org/tenetrix/privacy?a=b",
+      "passed": true
+    },
+    {
+      "url": "https://strandautomationworks.com/",
+      "status": 308,
+      "location": "https://strandworks.org/",
+      "passed": true
+    },
+    {
+      "url": "https://strandautomationworks.com/tenetrix/privacy",
+      "status": 308,
+      "location": "https://tenetrix.org/tenetrix/privacy",
+      "passed": true
+    },
+    {
+      "url": "https://strandautomationworks.com/about/trender",
+      "status": 308,
+      "location": "https://tenetrix.org/about",
+      "passed": true
+    }
+  ]
+}

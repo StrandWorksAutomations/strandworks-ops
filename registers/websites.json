@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "registry_version": "2026-10-21.1",
+  "registry_version": "2026-10-21.2",
   "updated_on": "2026-10-21",
   "notes": "Owner-directed desired topology, distinct from observed status. No DNS, hosting, redirect or public-link change is implied. null verification timestamps mean no live verification. Legal operator labels do not establish subsidiary ownership or IP transfers. Private SAG material is excluded from public links/live checks. Personal domains are outside this register. Initial scope covers company sites and known companion publications. Existing service subdomains (including carousel, manager, qa and internal dashboards) were not changed or claimed as fully inventoried.",
   "sites": [
@@ -49,7 +49,7 @@
       "policy_paths": [
         "/privacy/"
       ],
-      "notes": "Corporate umbrella. www serves the same corporate site with an apex canonical link. Legacy .com is routed by the Tenetrix Vercel project. Leave .net pending per owner instruction on October 21; its BusinessIdentity nameservers and mail records were not changed."
+      "notes": "Corporate umbrella. www serves the same corporate site with an apex canonical link. Legacy .com and .net aliases are routed by the Tenetrix Vercel project. The .net registrar and DNS provider are Namecheap; BasicDNS nameservers dns1.registrar-servers.com and dns2.registrar-servers.com. Apex web A records are 216.150.1.1 and 216.150.16.1; www CNAME is 20562146df265cc3.vercel-dns-017.com. Existing MX, SPF, DMARC and mail/smtp/imap/pop3 A records were retained. See corporate-aliases for scoped verification and DNS propagation status."
     },
     {
       "id": "tenetrix",
@@ -60,8 +60,8 @@
       "hosting": {
         "provider": "vercel",
         "project": "strand-automation-works-new",
-        "verification_note": "Vercel strandworks project prj_JAYNMuhzKtAc6IO8x5o5fkIjeKQq; production dpl_J8k1TvDJMTSxZiLiWFmjrZC7fXvB; source commit 5c2efb3. Both Tenetrix hosts and both legacy .com hosts are attached; Google mail records unchanged.",
-        "deployment_url": "https://strand-automation-works-i4w7bib23-strandworks.vercel.app"
+        "verification_note": "Vercel strandworks project prj_JAYNMuhzKtAc6IO8x5o5fkIjeKQq; production dpl_BBb3Q52Xi5XSHueBC1YPmuY8jw1V; source commit 8e0d88830edf8c66175f98881eaa64f882fa9db2. Both Tenetrix hosts, both legacy .com hosts and both corporate .net aliases are attached. Tenetrix Google mail records unchanged; existing .net mail DNS copied to Namecheap BasicDNS.",
+        "deployment_url": "https://strand-automation-works-m46d94gc1-strandworks.vercel.app"
       },
       "canonical_url": "https://tenetrix.org",
       "aliases": [
@@ -75,13 +75,12 @@
         "note": "Moved from Vercel\u2019s old website project to strand-automation-works-new. Homepage, Insight product, both app privacy pages and terms returned 200 with Tenetrix.org canonicals; www redirects with paths and queries preserved."
       },
       "last_verification": {
-        "at": "2026-10-21T16:14:52.467507+00:00",
+        "at": "2026-10-21T17:38:31.618091+00:00",
         "method": "http_check",
         "result": "pass",
         "evidence": [
-          "https://tenetrix.org/ \u2014 200; title Tenetrix | Digital products by Strandworks LLC.",
-          "https://tenetrix.org/tenetrix/privacy and /toddler-cards/privacy \u2014 200.",
-          "registers/evidence/2026-10-21/tenetrix-desktop.jpg"
+          "registers/evidence/2026-10-21/strandworks-net-redirect-checks.json \u2014 seven focused regression checks passed for Tenetrix home/app policies, legacy .com routes and canonical slash behavior.",
+          "Earlier broad migration verification remains in registers/evidence/2026-10-21/live-http-checks.json."
         ]
       },
       "critical_paths": [
@@ -376,17 +375,22 @@
       "target_url": "https://strandworks.org/:path*",
       "status_code": 308,
       "preserve_query": true,
-      "desired_status": "paused",
-      "observed_status": "source_documented",
+      "desired_status": "active",
+      "observed_status": "propagating",
       "last_verification": {
-        "at": "2026-10-21T16:14:52.467507+00:00",
-        "method": "source_review",
-        "result": "unverified",
+        "at": "2026-10-21T17:38:31.618091+00:00",
+        "method": "http_check",
+        "result": "pass",
         "evidence": [
-          "Owner reply: Leave .net pending for now."
+          "registers/evidence/2026-10-21/strandworks-net-dns-before.json",
+          "registers/evidence/2026-10-21/strandworks-net-dns-after.json",
+          "registers/evidence/2026-10-21/strandworks-net-mail-hosts.json",
+          "registers/evidence/2026-10-21/strandworks-net-redirect-checks.json",
+          "TLS-verified HTTPS 308 responses tested against new hosting IPs using curl --resolve; public resolver observations are recorded separately. This does not claim every recursive cache has refreshed.",
+          "20 TLS-verified HTTPS checks passed across apex/www hosting addresses, including trailing slashes, repeated query parameters and asset paths. Seven canonical/legacy regression checks also passed. New release dpl_BBb3Q52Xi5XSHueBC1YPmuY8jw1V."
         ]
       },
-      "note": "Owner explicitly left .net pending on October 21. Do not change BusinessIdentity nameservers, web records or email. Skip live probes until resumed."
+      "note": "Owner authorized activation on October 21. Namecheap BasicDNS now delegates apex and www to the existing Vercel redirect project; published mail records are retained. TLS and permanent 308 redirects passed at the new hosting addresses. Google DNS resolves the new addresses, while Cloudflare and local caches still return the old host; recursive DNS propagation remains in progress."
     },
     {
       "id": "digital-www",
@@ -529,6 +533,7 @@
   "routing_export": {
     "digital_site": "tenetrix",
     "corporate_site": "corporate",
-    "legacy_default_rule": "legacy-default"
+    "legacy_default_rule": "legacy-default",
+    "corporate_alias_rule": "corporate-aliases"
   }
 }

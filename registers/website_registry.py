@@ -233,12 +233,21 @@ def routing_export(data):
     exact = {r["source_path"]: r["target_url"] for r in data["redirect_rules"]
              if set(r["source_hosts"]) == set(hosts) and TOKEN not in r["source_path"]}
     origin = corporate["canonical_url"].rstrip("/")
+    corporate_alias = next((r for r in data["redirect_rules"] if r["id"] == profile["corporate_alias_rule"]), None)
+    if (not corporate_alias or corporate_alias["source_path"] != "/:path*"
+            or corporate_alias["target_url"] != origin + "/:path*"
+            or not set(corporate_alias["source_hosts"]).issubset(corporate["aliases"])):
+        raise ValueError("corporate aliases must preserve all paths to the corporate canonical origin")
+    if corporate_alias["status_code"] != 308 or not corporate_alias["preserve_query"]:
+        raise ValueError("exported corporate routing requires 308 and preserved queries")
     for path, expected in {"/": origin + "/", "/about": origin + "/#about", "/contact": origin + "/#contact"}.items():
         if exact.get(path) != expected:
             raise ValueError(f"legacy exact route {path} must resolve to {expected}")
     return {"canonicalHost": urlsplit(digital["canonical_url"]).hostname,
             "canonicalAliases": digital["aliases"], "legacyHosts": hosts,
-            "corporateOrigin": origin, "legacyExactRoutes": exact,
+            "corporateOrigin": origin,
+            "corporateAliases": corporate_alias["source_hosts"] if corporate_alias["desired_status"] == "active" else [],
+            "legacyExactRoutes": exact,
             "legacyDefaultOrigin": digital["canonical_url"].rstrip("/"),
             "generated_from": "strandworks-ops/registers/websites.json",
             "registry_version": data["registry_version"]}

@@ -24,7 +24,7 @@ its purpose is defined below and may be blessed later.)
 
 ## Website and domain register
 
-`registers/websites.json` is the source of truth for site operators, brands, source repositories, hosting, canonical domains, aliases, redirect rules, critical paths and links between sites. Desired routing and observed live state are separate. Strandworks.net remains pending at the owner's October 21 instruction; do not change its DNS until authorized again.
+`registers/websites.json` is the source of truth for site operators, brands, source repositories, hosting, canonical domains, aliases, redirect rules, critical paths and links between sites. Desired routing and observed live state are separate. The owner resumed Strandworks.net activation in the originating chat on October 21. Its apex and www hosts must permanently redirect to Strandworks.org with paths and queries preserved; preserve existing mail service and verify DNS, TLS and live redirects before recording them as live.
 
 Before changing a domain or a cross-site link:
 

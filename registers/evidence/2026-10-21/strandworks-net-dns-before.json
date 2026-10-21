@@ -1,0 +1,77 @@
+{
+  "checked_at": "2026-10-21T17:14:11.461901+00:00",
+  "authority": "ns1.hosting.businessidentity.llc",
+  "scope": "Existing apex web/mail policy and standard mail hosts/selectors; not a full zone export. Northwest lists no active hosting or email accounts. AXFR refused.",
+  "records": [
+    {
+      "host": "@",
+      "type": "A",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc strandworks.net A +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd\nstrandworks.net.\t60\tIN\tA\t66.223.49.89"
+    },
+    {
+      "host": "@",
+      "type": "AAAA",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc strandworks.net AAAA +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd"
+    },
+    {
+      "host": "@",
+      "type": "MX",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc strandworks.net MX +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd\nstrandworks.net.\t60\tIN\tMX\t10 mailserver.businessidentity.llc."
+    },
+    {
+      "host": "@",
+      "type": "TXT",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc strandworks.net TXT +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd\nstrandworks.net.\t60\tIN\tTXT\t\"v=spf1 a mx include:spf.postal.businessidentity.llc ~all\""
+    },
+    {
+      "host": "@",
+      "type": "CAA",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc strandworks.net CAA +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd"
+    },
+    {
+      "host": "www",
+      "type": "CNAME",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc www.strandworks.net CNAME +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd"
+    },
+    {
+      "host": "www",
+      "type": "A",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc www.strandworks.net A +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd\nwww.strandworks.net.\t60\tIN\tA\t66.223.49.89"
+    },
+    {
+      "host": "_dmarc",
+      "type": "TXT",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc _dmarc.strandworks.net TXT +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd\n_dmarc.strandworks.net.\t60\tIN\tTXT\t\"v=DMARC1; p=quarantine; rua=mailto:bounce@dmarc.businessidentity.llc; ruf=mailto:bounce@dmarc.businessidentity.llc; fo=1\""
+    },
+    {
+      "host": "default._domainkey",
+      "type": "TXT",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc default._domainkey.strandworks.net TXT +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd"
+    },
+    {
+      "host": "postal._domainkey",
+      "type": "TXT",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc postal._domainkey.strandworks.net TXT +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd"
+    },
+    {
+      "host": "mail",
+      "type": "A",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc mail.strandworks.net A +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd\nmail.strandworks.net.\t60\tIN\tA\t66.223.49.89"
+    },
+    {
+      "host": "webmail",
+      "type": "A",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc webmail.strandworks.net A +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd"
+    },
+    {
+      "host": "autodiscover",
+      "type": "CNAME",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc autodiscover.strandworks.net CNAME +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd"
+    },
+    {
+      "host": "autoconfig",
+      "type": "CNAME",
+      "answer": "; <<>> DiG 9.10.6 <<>> @ns1.hosting.businessidentity.llc autoconfig.strandworks.net CNAME +noall +answer +time=2 +tries=1\n; (1 server found)\n;; global options: +cmd"
+    }
+  ]
+}

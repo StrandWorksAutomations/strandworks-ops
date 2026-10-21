@@ -93,8 +93,30 @@ class WebsiteRegisterTests(unittest.TestCase):
         output = registry.routing_export(self.data)
         self.assertEqual(output["canonicalHost"], "tenetrix.org")
         self.assertEqual(output["canonicalAliases"], ["www.tenetrix.org"])
+        self.assertEqual(output["corporateAliases"], ["strandworks.net", "www.strandworks.net"])
         self.assertEqual(output["legacyExactRoutes"]["/about"], "https://strandworks.org/#about")
         self.assertEqual(output["legacyExactRoutes"]["/about/trender"], "https://tenetrix.org/about")
+
+    def test_corporate_aliases_preserve_paths_and_query(self):
+        for host in ("strandworks.net", "www.strandworks.net"):
+            for path in ("/", "/about/trender", "/toddler-cards/support", "/projects/smartbadge/old"):
+                rule, target = registry.resolve_redirect(self.data, "https://" + host + path + "?ref=x&ref=y")
+                self.assertEqual(rule["status_code"], 308)
+                self.assertEqual(target, "https://strandworks.org" + path + "?ref=x&ref=y")
+
+    def test_corporate_export_rejects_path_query_and_status_divergence(self):
+        for change, error in (({"source_path": "/about"}, "corporate aliases must preserve all paths"),
+                              ({"target_url": "https://tenetrix.org/:path*"}, "corporate aliases must preserve all paths"),
+                              ({"preserve_query": False}, "exported corporate routing requires 308"),
+                              ({"status_code": 307}, "exported corporate routing requires 308")):
+            with self.subTest(change=change):
+                data = copy.deepcopy(self.data)
+                next(r for r in data["redirect_rules"] if r["id"] == "corporate-aliases").update(change)
+                self.assertTrue(any(error in problem for problem in registry.validate(data)))
+
+    def test_paused_corporate_aliases_are_excluded_from_export(self):
+        next(r for r in self.data["redirect_rules"] if r["id"] == "corporate-aliases")["desired_status"] = "paused"
+        self.assertEqual(registry.routing_export(self.data)["corporateAliases"], [])
 
     def test_private_investor_link_rejected(self):
         self.data["links"][0]["target_site"] = "sag-investor"
@@ -123,6 +145,7 @@ class WebsiteRegisterTests(unittest.TestCase):
             registry.live_check(self.data, max_requests=41, fetch=fake)
 
     def test_owner_paused_domains_are_not_probed(self):
+        next(r for r in self.data["redirect_rules"] if r["id"] == "corporate-aliases")["desired_status"] = "paused"
         calls = []
         def fake(url, timeout):
             calls.append(url)
