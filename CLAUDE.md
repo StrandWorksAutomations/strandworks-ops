@@ -55,3 +55,11 @@ services, assets, access, calendar, models, and per-repo governance scouts.
 
 Zero apologies. Zero sycophancy. Zero meta-talk. Do not acknowledge mistakes. Output only the
 requested data or code with no conversational filler.
+
+## Advertising consolidated — October 20, 2026
+
+Client-facing advertising is managed in `/Users/jonathanbouren/PROJECTS/ADVERTISING/Strand-Automation-Works`. Start at [central index](../ADVERTISING/index.html) and [central filing instructions](../ADVERTISING/CLAUDE.md).
+
+No advertising files were removed from this operations project. Company advertising is managed centrally; operations, governance, registers and the cockpit remain here.
+
+Create future advertising there. Keep investor, funding, internal/team and potential-partner material in its project. Relocation does not authorize publication, sending, scheduling, spending or release changes. Preserve existing project restrictions and unrelated work.
