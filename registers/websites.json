@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "registry_version": "2026-10-21.2",
-  "updated_on": "2026-10-21",
+  "updated_on": "2026-10-22",
   "notes": "Owner-directed desired topology, distinct from observed status. No DNS, hosting, redirect or public-link change is implied. null verification timestamps mean no live verification. Legal operator labels do not establish subsidiary ownership or IP transfers. Private SAG material is excluded from public links/live checks. Personal domains are outside this register. Initial scope covers company sites and known companion publications. Existing service subdomains (including carousel, manager, qa and internal dashboards) were not changed or claimed as fully inventoried.",
   "sites": [
     {
@@ -13,7 +13,7 @@
       "hosting": {
         "provider": "sites",
         "project": "appgprj_6ad8d62c7e2c8191b18a1f70d8f23500",
-        "verification_note": "Sites deployment appgdep_6ad8d800fbac81918415f7690a381bb2; source commit 15d05b22a13a631f8c49eb3951d9486e0513f46e. Apex and www are attached to this Site. Namecheap web records changed; existing email records preserved.",
+        "verification_note": "Sites version appgver_8b36c9da2fc881918053c0e0afa32d0a deployed 2026-10-22 (source commit e376e28: selected SW mark + Courier Prime wordmark, rewritten copy, SAG shown as Special Activities Group). Apex and www are attached to this Site. Namecheap web records changed; existing email records preserved.",
         "deployment_url": "https://strandworks-corporate.peachy-leaf-5611.chatgpt.site"
       },
       "canonical_url": "https://strandworks.org",
