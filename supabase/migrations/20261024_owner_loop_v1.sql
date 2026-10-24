@@ -177,3 +177,7 @@ revoke all on function public.owner_loop_rule(text,text,text) from public, anon,
 grant execute on function public.owner_loop_rule(text,text,text) to service_role;
 grant execute on function public.owner_loop_ask(text,jsonb), public.owner_loop_inbox(text,text), public.owner_loop_get(text,text),
   public.owner_loop_transition(text,text,text,text,text,text) to anon, authenticated, service_role;
+
+-- owner_loop_v1_revoke_table_grants (same day): tables reachable only via RPCs / service role.
+revoke all on public.owner_loop_items, public.owner_loop_events, public.owner_loop_agent_tokens from anon, authenticated;
+revoke all on sequence public.owner_loop_ref_seq from anon, authenticated;
