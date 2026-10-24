@@ -7,7 +7,11 @@ import { readCeilingUsd } from "@/lib/git";
 import { buildMoneyView } from "@/lib/money";
 import { buildAttentionQueue, type AttentionItem } from "@/lib/attention";
 import { fetchDueItems, inAlertWindow } from "@/lib/due-items";
-import { fetchOwnerLoopItems } from "@/lib/owner-loop-data";
+import { fetchOwnerLoopItems, fetchBusinessLatestEvents } from "@/lib/owner-loop-data";
+import { fetchIntakeOverview } from "@/lib/intake-data";
+import { buildBusinessBoard } from "@/lib/businesses";
+import { BusinessBoard } from "./components/BusinessBoard";
+import { ownerDay } from "@/lib/owner-loop";
 import { buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
 import { loadProjects } from "@/lib/projects-load";
 import { parseChecks, latestCheck, checkStatusClass } from "@/lib/checks";
@@ -15,7 +19,7 @@ import { parseScouts } from "@/lib/scouts";
 import { redactForDisplay } from "@/lib/redact";
 import { listBriefings } from "@/lib/briefings";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const KIND_TAG: Record<AttentionItem["kind"], string> = {
   decision: "DECIDE",
@@ -23,6 +27,7 @@ const KIND_TAG: Record<AttentionItem["kind"], string> = {
   money: "MONEY",
   asset: "ASSET",
   business: "BIZ",
+  email: "EMAIL",
 };
 
 function shortDate(iso: string | null): string | null {
@@ -52,7 +57,7 @@ export default async function Today() {
     ]);
 
   const now = new Date();
-  const todayIso = now.toISOString().slice(0, 10);
+  const todayIso = ownerDay(now.toISOString());
   const money = buildMoneyView(subsCsv);
   const spend = buildSpendView(spendCsv, ceilingUsd);
   const checks = parseChecks(checksCsv);
@@ -70,11 +75,14 @@ export default async function Today() {
     }
   }
 
-  const [dueItems, ownerLoopItems] = await Promise.all([fetchDueItems(), fetchOwnerLoopItems()]);
+  const [dueItems, ownerLoopItems, intake, events, loadedProjects] = await Promise.all([
+    fetchDueItems(), fetchOwnerLoopItems(), fetchIntakeOverview(), fetchBusinessLatestEvents(), loadProjects().catch(() => null),
+  ]);
   const dueInWindow = (dueItems ?? []).filter(inAlertWindow).length;
   const queue = buildAttentionQueue({
     dueItems,
     ownerLoopItems,
+    intakeItems: intake?.reviews ?? null,
     calendarCsv: calCsv,
     subscriptionsCsv: subsCsv,
     assetsCsv,
@@ -85,7 +93,8 @@ export default async function Today() {
   const nowCount = queue.filter((q) => q.severity === "now").length;
   const pendingTotal = queue.filter((q) => q.kind === "decision").length;
   const loopUnavailable = ownerLoopItems === null;
-  const actionCount = (count: number) => loopUnavailable ? (count > 0 ? `${count}+` : "—") : count;
+  const attentionUnavailable = loopUnavailable || intake === null;
+  const actionCount = (count: number, incomplete = attentionUnavailable) => incomplete ? (count > 0 ? `${count}+` : "—") : count;
 
   const inputs: RegisterInputs = {
     services: servicesCsv,
@@ -94,7 +103,9 @@ export default async function Today() {
     models: modelsCsv,
     subscriptions: subsCsv,
   };
-  const PROJECTS = await loadProjects();
+  const PROJECTS = loadedProjects ?? [];
+  const businesses = buildBusinessBoard({ emails: intake?.reviews ?? [], latestEmail: intake?.latest ?? [],
+    items: ownerLoopItems ?? [], events: events ?? [], dueItems: dueItems ?? [], projects: PROJECTS }, now);
   const tracked = PROJECTS.filter((p) => ["flagship", "ops", "tier-2"].includes(p.tier));
   const board = tracked.map((p) => ({
     p,
@@ -111,13 +122,15 @@ export default async function Today() {
 
   return (
     <Chrome title="Today" sub="the whole operation, triaged" active="/">
+      <BusinessBoard cards={businesses} available={{ intake: intake !== null, loop: !loopUnavailable,
+        events: events !== null, dates: dueItems !== null, projects: loadedProjects !== null }} now={now} />
       <div className="grid">
-        <div className={`tile ${nowCount > 0 ? "hot" : loopUnavailable ? "warm" : "calm"}`}>
+        <div className={`tile ${nowCount > 0 ? "hot" : attentionUnavailable ? "warm" : "calm"}`}>
           <div className="big">{actionCount(nowCount)}</div>
-          <div className="label">need you now{loopUnavailable ? " · loop offline" : ""}</div>
+          <div className="label">need you now{attentionUnavailable ? " · incomplete" : ""}</div>
         </div>
         <Link href="/decisions" className={`tile ${pendingTotal > 0 ? "hot" : loopUnavailable ? "warm" : "calm"}`}>
-          <div className="big">{actionCount(pendingTotal)}</div>
+          <div className="big">{actionCount(pendingTotal, loopUnavailable)}</div>
           <div className="label">decisions &amp; follow-up{loopUnavailable ? " · loop offline" : ""}</div>
         </Link>
         <Link href="/projects" className={`tile ${reporting === 0 ? "warm" : "calm"}`}>
@@ -142,14 +155,15 @@ export default async function Today() {
         <div>
           <div className="section-head">
             <h2>Needs you</h2>
-            <span className="meta">{queue.length} {loopUnavailable ? "shown · loop offline" : "open"}</span>
+            <span className="meta">{queue.length} {attentionUnavailable ? "shown · incomplete" : "open"}</span>
           </div>
           {loopUnavailable ? (
             <div className="card">
               <div className="meta">Owner loop unavailable. Decision and agent follow-up counts are incomplete. <Link href="/decisions">Open Decide →</Link></div>
             </div>
           ) : null}
-          {queue.length === 0 && !loopUnavailable ? (
+          {intake === null ? <div className="card" role="status"><div className="meta">Email review queue unavailable. <Link href="/inbox">Open Inbox →</Link></div></div> : null}
+          {queue.length === 0 && !attentionUnavailable ? (
             <div className="card">
               <div className="meta">Nothing needs you. The registers report no open actions.</div>
             </div>
@@ -174,7 +188,7 @@ export default async function Today() {
           ) : null}
           {queue.length > 10 ? (
             <div className="meta" style={{ textAlign: "center" }}>
-              + {queue.length - 10} more across <Link href="/money">Money</Link>,{" "}
+              + {queue.length - 10} more across <Link href="/inbox">Inbox</Link>, <Link href="/decisions">Decide</Link>, <Link href="/money">Money</Link>,{" "}
               <Link href="/business">Business</Link> and <Link href="/registers/calendar">Calendar</Link>
             </div>
           ) : null}

@@ -26,8 +26,20 @@ dates use Supabase through server-only REST calls.
   with business due dates for the next 30 days, with overdue items first.
   The last 30 days of owner-loop events show rulings, pickups and outcomes,
   with project filters across both views.
-- **Today** — includes open owner-loop decisions and stalled rulings in its
-  attention counts and links to Decide. Retired QA questions are excluded.
+- **Inbox** — business, career and license emails needing review, with
+  business filters, editable replies, and an explicit account confirmation
+  before approval. Approved replies are sent from the owner's Gmail by the
+  watcher within about 15 minutes. Save draft, archive and keep-in-inbox
+  actions use the session-checked `/api/inbox/action` route. Seven days of
+  scanned job alerts and filtered noise remain visible for inspection.
+  Email bodies are plain text; no email HTML is rendered.
+- **Today** — a dynamic nine-business board shows review emails, open
+  decisions, stalled rulings, 14-day deadlines plus overdue dates, and latest
+  email/agent/repository activity. Counts open business-filtered Inbox,
+  Decide and Timeline views. The existing attention queue includes review
+  emails, open owner-loop decisions and stalled rulings. Missing sources
+  are shown as unavailable, never as a clear queue. Retired QA questions
+  are excluded. Source mappings live in `src/lib/businesses.ts`.
 - **Governance files** — a collapsed section at the bottom of Decide keeps
   pending files in `_governance/decisions/` as cards with the
   six owner-token buttons (APPROVE / REVISE / PARK / BLESSED / HALT /

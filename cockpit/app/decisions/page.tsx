@@ -9,6 +9,8 @@ import Link from "next/link";
 import { fetchOwnerLoopItems } from "@/lib/owner-loop-data";
 import { groupOwnerLoopItems, isStalled, formatLoopAge, type OwnerLoopItem } from "@/lib/owner-loop";
 import { OwnerLoopCard } from "./OwnerLoopCard";
+import { businessForProject } from "@/lib/businesses";
+import { BusinessFilters } from "../components/BusinessFilters";
 
 export const revalidate = 60;
 export const dynamic = "force-dynamic"; // rulings must disappear immediately
@@ -28,11 +30,16 @@ function ItemMeta({ item }: { item: OwnerLoopItem }) {
   </div>;
 }
 
-export default async function DecisionsPage() {
-  const [loopItems, decisionFiles] = await Promise.all([
+export default async function DecisionsPage({ searchParams }: { searchParams: Promise<{ business?: string | string[]; project?: string | string[] }> }) {
+  const [allLoopItems, decisionFiles, params] = await Promise.all([
     fetchOwnerLoopItems(),
     listRepoDir("_governance/decisions").catch(() => null),
+    searchParams,
   ]);
+  const business = typeof params.business === "string" ? params.business : "";
+  const project = typeof params.project === "string" ? params.project : "";
+  const loopItems = allLoopItems === null ? null : allLoopItems.filter((item) =>
+    (!business || businessForProject(item.project)?.key === business) && (!project || item.project === project));
   const now = new Date();
   const board = groupOwnerLoopItems(loopItems ?? [], now);
   const stalled = (loopItems ?? []).filter((item) => isStalled(item, now));
@@ -75,6 +82,7 @@ export default async function DecisionsPage() {
       sub={loopItems === null ? "Owner loop unavailable" : `${board.needsYou.length} need you · ${board.waiting.length} waiting on agents`}
       active="/decisions"
     >
+      <BusinessFilters path="/decisions" selected={business} />
       <ol className="loop-lifecycle" aria-label="Owner loop lifecycle">
         <li><strong>Open</strong><span>Waiting on Jonathan</span></li>
         <li><strong>Ruled</strong><span>Waiting for agent pickup</span></li>

@@ -5,6 +5,7 @@
 import "server-only";
 import { sbSelect, supabaseConfigured } from "./supabase-rest";
 import type { OwnerLoopItem, OwnerLoopEvent } from "./owner-loop";
+import { BUSINESSES } from "./businesses";
 
 const PAGE_SIZE = 200;
 const ITEM_FIELDS = [
@@ -48,6 +49,21 @@ export async function fetchOwnerLoopEvents(): Promise<OwnerLoopEvent[] | null> {
       "select=id,item_id,at,actor,type,note,item:owner_loop_items(ref,title,project)" +
         `&at=gte.${since}&order=at.desc,id.desc`
     );
+  } catch {
+    return null;
+  }
+}
+
+// The board needs the latest event even when it predates Timeline's 30 days.
+export async function fetchBusinessLatestEvents(): Promise<OwnerLoopEvent[] | null> {
+  if (!supabaseConfigured()) return null;
+  try {
+    const rows = await Promise.all(BUSINESSES.filter((business) => business.projects.length).map((business) =>
+      sbSelect<OwnerLoopEvent>("owner_loop_events",
+        "select=id,item_id,at,actor,type,note,item:owner_loop_items!inner(ref,title,project)" +
+        `&item.project=in.(${business.projects.map(encodeURIComponent).join(",")})&order=at.desc,id.desc&limit=1`),
+    ));
+    return rows.flat();
   } catch {
     return null;
   }

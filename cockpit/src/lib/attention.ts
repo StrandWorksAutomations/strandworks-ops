@@ -10,6 +10,8 @@ import { parseCsv } from "./csv";
 import { buildMoneyView, type MoneyView } from "./money";
 import { inAlertWindow, type DueItem } from "./due-items";
 import { isStalled, type OwnerLoopItem } from "./owner-loop";
+import { reviewEmails, type IntakeReview } from "./intake";
+import { businessName } from "./businesses";
 
 export type Severity = "now" | "soon" | "watch";
 
@@ -19,7 +21,7 @@ export type AttentionItem = {
   title: string;
   detail: string;
   href: string; // where in the cockpit to act on it
-  kind: "decision" | "deadline" | "money" | "asset" | "business";
+  kind: "decision" | "deadline" | "money" | "asset" | "business" | "email";
 };
 
 const SEVERITY_RANK: Record<Severity, number> = { now: 0, soon: 1, watch: 2 };
@@ -43,6 +45,7 @@ export type AttentionInputs = {
   assetsCsv?: string | null;
   pendingDecisions?: { title: string; file: string }[];
   ownerLoopItems?: OwnerLoopItem[] | null;
+  intakeItems?: IntakeReview[] | null;
   dueItems?: DueItem[] | null; // business dates from the compliance register
   todayIso: string;
   now?: Date;
@@ -52,6 +55,16 @@ export function buildAttentionQueue(inputs: AttentionInputs): AttentionItem[] {
   const items: AttentionItem[] = [];
   const today = inputs.todayIso;
   const now = inputs.now ?? new Date(`${today}T00:00:00Z`);
+
+  for (const email of reviewEmails(inputs.intakeItems ?? [])) {
+    items.push({
+      severity: "now", dateIso: email.due_at?.slice(0, 10) ?? null,
+      title: email.subject || "(No subject)",
+      detail: [businessName(email.business), email.priority === "high" ? "High priority" : null,
+        email.action_needed || email.summary || email.from_name || email.from_addr].filter(Boolean).join(" · "),
+      href: `/inbox?business=${encodeURIComponent(email.business)}#${email.id}`, kind: "email",
+    });
+  }
 
   // 1. Pending decisions — always "now": the fabric is waiting on a ruling.
   for (const d of inputs.pendingDecisions ?? []) {

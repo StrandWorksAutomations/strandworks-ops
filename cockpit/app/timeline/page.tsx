@@ -1,4 +1,6 @@
-import { OWNER_TIME_ZONE } from "@/lib/owner-loop";
+import { OWNER_TIME_ZONE, ownerDay } from "@/lib/owner-loop";
+import { businessForProject, businessForEntity } from "@/lib/businesses";
+import { BusinessFilters } from "../components/BusinessFilters";
 import Link from "next/link";
 import { Chrome } from "../components/Chrome";
 import { fetchDueItems } from "@/lib/due-items";
@@ -22,7 +24,7 @@ function timeLabel(iso: string): string {
 export default async function TimelinePage({
   searchParams,
 }: {
-  searchParams: Promise<{ project?: string | string[] }>;
+  searchParams: Promise<{ project?: string | string[]; business?: string | string[]; days?: string | string[] }>;
 }) {
   const [params, items, events, dueItems] = await Promise.all([
     searchParams,
@@ -31,19 +33,28 @@ export default async function TimelinePage({
     fetchDueItems(),
   ]);
   const project = typeof params.project === "string" ? params.project : "";
+  const business = typeof params.business === "string" ? params.business : "";
+  const days = params.days === "14" ? 14 : 30;
   const now = new Date();
+  const end = new Date(`${ownerDay(now.toISOString())}T12:00:00Z`);
+  end.setUTCDate(end.getUTCDate() + days);
+  const endDay = end.toISOString().slice(0, 10);
   const allUpcoming = buildTimelineUpcoming(items ?? [], dueItems ?? [], now);
   const allHistory = groupTimelineEvents(events ?? [], now);
   const projects = Array.from(new Set([
     ...allUpcoming.map((entry) => entry.project),
     ...allHistory.flatMap((group) => group.events.map((event) => event.item?.project ?? "")),
   ].filter(Boolean))).sort();
-  const upcoming = project ? allUpcoming.filter((entry) => entry.project === project) : allUpcoming;
+  const upcoming = allUpcoming.filter((entry) => (!project || entry.project === project)
+    && (!business || (entry.source === "business" ? businessForEntity(entry.project) : businessForProject(entry.project))?.key === business)
+    && (entry.source === "business" ? entry.dueAt.slice(0, 10) : ownerDay(entry.dueAt)) <= endDay
+    && !(days === 14 && entry.source === "owner-loop" && entry.kind === "decision"));
   const upcomingRefs = new Set(upcoming.map((entry) => entry.ref).filter(Boolean));
   const board = groupOwnerLoopItems(items ?? [], now);
   const boardRefs = new Set([...board.needsYou, ...board.waiting, ...board.closed, ...board.alerts].map((item) => item.ref));
   const history = groupTimelineEvents(
-    project ? (events ?? []).filter((event) => event.item?.project === project) : events ?? [],
+    (events ?? []).filter((event) => (!project || event.item?.project === project)
+      && (!business || businessForProject(event.item?.project ?? "")?.key === business)),
     now,
   );
   const historyCount = history.reduce((count, group) => count + group.events.length, 0);
@@ -51,6 +62,8 @@ export default async function TimelinePage({
 
   return (
     <Chrome title="Timeline" sub="dates ahead · rulings and agent outcomes" active="/timeline">
+      <BusinessFilters path="/timeline" selected={business} />
+      {days === 14 ? <p className="meta">Showing deadlines and milestones within 14 days, plus overdue. <Link href={`/timeline${business ? `?business=${business}` : ""}`}>Show 30 days</Link></p> : null}
       <nav className="chips timeline-filters" aria-label="Filter timeline by project">
         <Link href="/timeline" className={`chip${project ? "" : " on"}`} aria-current={project ? undefined : "page"}>
           All projects
@@ -75,7 +88,7 @@ export default async function TimelinePage({
       <section aria-labelledby="timeline-upcoming">
         <div className="section-head">
           <h2 id="timeline-upcoming">Upcoming</h2>
-          <span className="meta">{upcomingUnavailable ? "unavailable" : `${upcoming.length} dates`} · next 30 days + overdue</span>
+          <span className="meta">{upcomingUnavailable ? "unavailable" : `${upcoming.length} dates`} · next {days} days + overdue</span>
         </div>
         {items === null || dueItems === null ? (
           <div className="card" role="status">
@@ -88,7 +101,7 @@ export default async function TimelinePage({
         ) : null}
         {upcoming.length === 0 && !upcomingUnavailable ? (
           <div className="card">
-            <div className="meta">No overdue or upcoming dates in the next 30 days{project ? " for this project" : ""}.</div>
+            <div className="meta">No overdue or upcoming dates in the next {days} days{project || business ? " for this selection" : ""}.</div>
           </div>
         ) : null}
         <ol className="timeline-list">

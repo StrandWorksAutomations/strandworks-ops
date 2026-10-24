@@ -22,6 +22,38 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+/* Owner's business sweep and email review share the existing signal palette. */
+.business-board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 28px; }
+.business-board-head { flex-wrap: wrap; }
+.card.business-status { margin: 0; min-width: 0; }
+.business-status.needs-owner, .inbox-high { border-left: 3px solid var(--bad); }
+.business-status-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.business-status .business-status-head h3 { margin: 0; font-size: 21px; }
+.business-status-head .badge { margin: 0; }
+.card .business-counts { margin: 16px 0; }
+.business-counts > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 0 0 6px; border-top: 1px solid var(--border); }
+.business-counts dt > a, .business-counts dd:not(.business-top) > a { display: flex; align-items: center; gap: 4px; min-height: 44px; }
+.card .business-counts dt { font-family: var(--font-body); color: var(--ink); font-size: 14px; text-transform: none; letter-spacing: 0; margin: 0; }
+.card .business-counts dd { margin: 0; font-family: var(--font-mono); }
+.card .business-counts .business-top { grid-column: 1 / -1; margin: 0; font-family: var(--font-body); font-size: 14px; overflow-wrap: anywhere; }
+.business-counts .business-top a { color: var(--muted); }
+.inbox-card { overflow-wrap: anywhere; scroll-margin-top: 24px; }
+.card.inbox-card h3 { font-size: 23px; margin: 12px 0; }
+.inbox-sender { margin: 12px 0 2px; }
+.inbox-text { white-space: pre-wrap; max-width: 78ch; }
+.inbox-original { font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 22rem; overflow-y: auto; padding: 12px; background: var(--bg); border: 1px solid var(--border); }
+.inbox-reply { font: inherit; line-height: 1.5; width: 100%; resize: vertical; }
+.inbox-card .token-btn { min-height: 44px; white-space: normal; }
+.inbox-card .confirm-row { flex-wrap: wrap; }
+.inbox-card .confirm-row .token-btn { flex: 1 1 140px; padding: 12px 8px; letter-spacing: 0; }
+.inbox-actions { margin-top: 12px; }
+.inbox-compact { list-style: none; margin: 12px 0; padding: 0; }
+.inbox-compact li { padding: 10px 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.inbox-filtered { margin-top: 24px; }
+.inbox-filtered summary { cursor: pointer; min-height: 44px; }
+@media (min-width: 760px) { .business-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1120px) { .business-board { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
 * { box-sizing: border-box; }
 
 body {
