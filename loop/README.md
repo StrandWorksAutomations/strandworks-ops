@@ -13,7 +13,7 @@ A ruling that sits in `ruled` for more than 24 hours shows as STALLED on the das
 ## Agent protocol
 
 - Decision that needs Jonathan: ask in the chat **and** `swd ask "<title>" -b "<context>" -o A="..." -o B="..." -r A [-d YYYY-MM-DD]`.
-- He answers in chat: `swd resolve D-0007 --ruling A`, so the dashboard ledger stays complete.
+- He answers an open decision in chat: `swd resolve D-0007 --ruling A` (his exact answer), so the dashboard ledger stays complete. It cannot override a dashboard ruling.
 - A ruling appears in your context: `swd pickup D-0007`, do the work, then `swd done D-0007 -n "<what changed, link/commit>"`.
 - Dates he must not miss: `swd deadline "<title>" -d 2026-11-01`; `swd milestone ...` for planned delivery points.
 - `swd alert` is for recurring failures (deduped by title, counted). Do not file alerts as decisions.

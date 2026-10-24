@@ -13,6 +13,7 @@ token's SHA-256 is in owner_loop_agent_tokens; the token itself lives only in
 import argparse
 import json
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -21,6 +22,7 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 SUPABASE_URL = "https://bniuiwbwumpymxiesyyt.supabase.co"
 PROJECTS_ROOT = Path("/Users/jonathanbouren/PROJECTS")
@@ -31,6 +33,8 @@ KEY_FILE = Path.home() / ".config/strandworks/owner-loop.apikey"
 STATE_DIR = Path.home() / ".cache/strandworks/owner-loop"
 DASHBOARD = "https://dashboard.strandautomationworks.com/decisions"
 PROMPT_RECHECK_SECONDS = 45
+HOOK_DEADLINE_SECONDS = 4  # hard cap; settings give the hook 6 s
+OWNER_TZ = ZoneInfo("America/New_York")  # Jonathan is in Berea, KY
 
 
 class LoopError(Exception):
@@ -76,7 +80,7 @@ def detect_project(cwd=None):
     try:
         common = subprocess.run(
             ["git", "-C", str(cwd), "rev-parse", "--path-format=absolute", "--git-common-dir"],
-            capture_output=True, text=True, timeout=3,
+            capture_output=True, text=True, timeout=1.5,
         ).stdout.strip()
         if common:
             return Path(common).parent.name
@@ -108,13 +112,14 @@ def parse_due(s):
     if not s:
         return None
     s = s.strip()
-    now = datetime.now().astimezone()
+    now = datetime.now(OWNER_TZ)
     if s.startswith("+") and s[-1] in "dh":
         n = int(s[1:-1])
         return (now + (timedelta(days=n) if s[-1] == "d" else timedelta(hours=n))).isoformat()
-    if len(s) == 10:  # YYYY-MM-DD → end of that local day
-        return datetime.fromisoformat(s).replace(hour=23, minute=59, tzinfo=now.tzinfo).isoformat()
-    return datetime.fromisoformat(s).isoformat()
+    if len(s) == 10:  # YYYY-MM-DD → end of that day in Jonathan's time zone (DST-aware)
+        return datetime.fromisoformat(s).replace(hour=23, minute=59, tzinfo=OWNER_TZ).isoformat()
+    dt = datetime.fromisoformat(s)
+    return (dt if dt.tzinfo else dt.replace(tzinfo=OWNER_TZ)).isoformat()
 
 
 def ago(iso):
@@ -134,8 +139,13 @@ def ago(iso):
     return f"{int(secs // 86400)}d ago"
 
 
+def _options(item):
+    opts = item.get("options")
+    return [o for o in opts if isinstance(o, dict)] if isinstance(opts, list) else []
+
+
 def option_label(item, key):
-    for o in item.get("options") or []:
+    for o in _options(item):
         if str(o.get("key", "")).upper() == str(key or "").upper():
             return f"{key} — {o.get('label', '')}"
     return key or ""
@@ -147,8 +157,10 @@ def fmt_item(i, verbose=False):
     if i.get("due_at"):
         lines.append(f"  due: {i['due_at'][:16].replace('T', ' ')} ({ago(i['due_at'])})")
     if i.get("ruling"):
+        via = i.get("ruled_via") or ""
+        source = "dashboard" if via == "dashboard" else f"given in chat, recorded by {via[5:] or 'an agent'}"
         lines.append(f"  RULING: {option_label(i, i['ruling'])}" + (f" — {i['ruling_note']}" if i.get("ruling_note") else "")
-                     + f"  [{i.get('ruled_via') or ''}, {ago(i.get('ruled_at'))}]")
+                     + f"  [{source}, {ago(i.get('ruled_at'))}]")
     if i.get("picked_up_by"):
         lines.append(f"  picked up by {i['picked_up_by']} {ago(i.get('picked_up_at'))}")
     if i.get("outcome_note"):
@@ -156,7 +168,7 @@ def fmt_item(i, verbose=False):
     if verbose:
         if i.get("body"):
             lines.append("  " + i["body"].replace("\n", "\n  "))
-        for o in i.get("options") or []:
+        for o in _options(i):
             mark = " (recommended)" if o.get("key") == i.get("recommended") else ""
             lines.append(f"  [{o.get('key')}] {o.get('label')}{mark}")
     return "\n".join(lines)
@@ -263,14 +275,18 @@ def hook_context(event, payload):
     if event == "prompt":
         act = [i for i in act if seen.get(i["ref"]) != key(i)]
         mine_open, picked, dated = [], [], []
-    for i in items:
-        seen[i["ref"]] = key(i)
-    state["seen"] = seen
-    try:
-        state_file.write_text(json.dumps(state))
-    except OSError:
-        pass
+
+    def save():
+        for i in items:
+            seen[i["ref"]] = key(i)
+        state["seen"] = seen
+        try:
+            state_file.write_text(json.dumps(state))
+        except OSError:
+            pass
+
     if not (act or mine_open or picked or dated):
+        save()
         return None
 
     out = [f"OWNER LOOP — dashboard state for project '{project}' ({DASHBOARD}):"]
@@ -279,7 +295,10 @@ def hook_context(event, payload):
                    "Run `swd pickup <REF>` when you start acting, and `swd done <REF> --note \"<what you did>\"` when finished. "
                    "If the ruling belongs to a different chat's work, still run pickup and tell Jonathan which session owns it.")
         for i in act:
-            out.append("- " + fmt_item(i, verbose=True).replace("\n", "\n  "))
+            try:
+                out.append("- " + fmt_item(i, verbose=True).replace("\n", "\n  "))
+            except Exception:  # one malformed row must not hide the others
+                out.append(f"- {i.get('ref')} RULED — run `swd show {i.get('ref')}` (could not format)")
     if picked:
         out.append("In progress (picked up, not reported done) — if you own one, finish it and run `swd done`:")
         out += [f"- {i['ref']} {i['title']} — {i.get('picked_up_by')} {ago(i.get('picked_up_at'))}" for i in picked]
@@ -289,7 +308,9 @@ def hook_context(event, payload):
     if dated:
         out.append("Upcoming deadlines/milestones:")
         out += [f"- {i['ref']} {i['title']} — due {i['due_at'][:10]} ({ago(i['due_at'])})" for i in dated]
-    return "\n".join(out)
+    text = "\n".join(out)
+    save()
+    return text
 
 
 def cmd_hook(a):
@@ -298,10 +319,17 @@ def cmd_hook(a):
         payload = json.loads(raw) if raw.strip() else {}
     except ValueError:
         payload = {}
+    def _deadline(*_):
+        raise TimeoutError("owner-loop hook deadline")
+
+    signal.signal(signal.SIGALRM, _deadline)
+    signal.alarm(HOOK_DEADLINE_SECONDS)  # bounds DNS + TLS + git, which socket timeouts do not
     try:
         text = hook_context(a.event, payload)
-    except Exception:  # a hook must never break a session
+    except BaseException:  # a hook must never break a session
         return
+    finally:
+        signal.alarm(0)
     if not text:
         return
     if a.plain:
@@ -348,13 +376,13 @@ def main():
     s.set_defaults(fn=cmd_show)
 
     for name, help_ in (("pickup", "acknowledge a ruling; you are acting on it"),
-                        ("done", "report the outcome"), ("drop", "close without action")):
+                        ("done", "report the outcome"), ("drop", "close a deadline/milestone/alert without action")):
         s = sub.add_parser(name, help=help_)
         s.add_argument("ref")
         s.add_argument("-n", "--note", required=name == "done")
         s.set_defaults(fn=transition(name))
 
-    s = sub.add_parser("resolve", help="Jonathan answered in chat: record his ruling so the dashboard matches")
+    s = sub.add_parser("resolve", help="Jonathan answered an OPEN decision in chat: record his exact answer so the dashboard matches")
     s.add_argument("ref")
     s.add_argument("--ruling", required=True)
     s.add_argument("-n", "--note")
