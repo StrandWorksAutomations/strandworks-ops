@@ -1,0 +1,7 @@
+-- Owner email intake — applied to bniuiwbwumpymxiesyyt on 2026-10-24 as migrations
+-- owner_intake_v1, owner_intake_v1_outbox_job_flag, owner_intake_job_links_feed.
+-- Canonical SQL: supabase_migrations.schema_migrations in that project. Tables:
+-- intake_items, intake_job_links (RLS on, no anon/authenticated grants). Token RPCs
+-- (owner_loop_check_token): intake_add, intake_pending, intake_classify, intake_outbox,
+-- intake_report, intake_job_links_recent. Service-role RPCs: intake_owner_action,
+-- intake_purge_bodies. See intake/README.md.
