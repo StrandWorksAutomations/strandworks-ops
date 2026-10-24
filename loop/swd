@@ -1,0 +1,379 @@
+#!/usr/bin/env python3
+"""swd — the owner loop between Jonathan's dashboard and the working agents.
+
+Agents (Claude, Codex, scouts) file decisions/deadlines here; Jonathan rules on
+them at dashboard.strandautomationworks.com/decisions; every agent session in
+the matching project sees the ruling through the `swd hook` session hooks and
+reports back with `swd pickup` / `swd done`.
+
+Backend: Supabase bniuiwbwumpymxiesyyt, token-gated RPCs owner_loop_* (the
+token's SHA-256 is in owner_loop_agent_tokens; the token itself lives only in
+~/.config/strandworks/owner-loop.token or $OWNER_LOOP_TOKEN). Stdlib only.
+"""
+import argparse
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+SUPABASE_URL = "https://bniuiwbwumpymxiesyyt.supabase.co"
+PROJECTS_ROOT = Path("/Users/jonathanbouren/PROJECTS")
+TOKEN_FILE = Path.home() / ".config/strandworks/owner-loop.token"
+# Publishable key (public by design; every RPC also requires the agent token).
+# Kept out of the repo per strandworks-ops rules.
+KEY_FILE = Path.home() / ".config/strandworks/owner-loop.apikey"
+STATE_DIR = Path.home() / ".cache/strandworks/owner-loop"
+DASHBOARD = "https://dashboard.strandautomationworks.com/decisions"
+PROMPT_RECHECK_SECONDS = 45
+
+
+class LoopError(Exception):
+    pass
+
+
+def token():
+    t = os.environ.get("OWNER_LOOP_TOKEN") or (TOKEN_FILE.read_text().strip() if TOKEN_FILE.exists() else "")
+    if not t:
+        raise LoopError(f"no agent token ({TOKEN_FILE} or $OWNER_LOOP_TOKEN)")
+    return t
+
+
+def rpc(fn, args, timeout=8.0):
+    body = json.dumps({"p_token": token(), **args}).encode()
+    key = os.environ.get("OWNER_LOOP_APIKEY") or (KEY_FILE.read_text().strip() if KEY_FILE.exists() else "")
+    if not key:
+        raise LoopError(f"no publishable key ({KEY_FILE} or $OWNER_LOOP_APIKEY)")
+    req = urllib.request.Request(
+        f"{SUPABASE_URL}/rest/v1/rpc/{fn}",
+        data=body,
+        method="POST",
+        headers={"apikey": key, "Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as res:
+            return json.loads(res.read() or b"null")
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode(errors="replace")
+        try:
+            detail = json.loads(detail).get("message", detail)
+        except ValueError:
+            pass
+        raise LoopError(f"{fn}: {detail}") from None
+    except (urllib.error.URLError, socket.timeout, TimeoutError) as e:
+        raise LoopError(f"{fn}: network error {e}") from None
+
+
+def detect_project(cwd=None):
+    cwd = Path(cwd or os.getcwd()).resolve()
+    if cwd == PROJECTS_ROOT:
+        return "portfolio"
+    try:
+        common = subprocess.run(
+            ["git", "-C", str(cwd), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            capture_output=True, text=True, timeout=3,
+        ).stdout.strip()
+        if common:
+            return Path(common).parent.name
+    except (OSError, subprocess.SubprocessError):
+        pass
+    try:
+        rel = cwd.relative_to(PROJECTS_ROOT)
+        return rel.parts[0] if rel.parts else "portfolio"
+    except ValueError:
+        return "portfolio"
+
+
+def detect_agent():
+    if os.environ.get("CLAUDECODE"):
+        return "claude"
+    if any(k.startswith("CODEX") for k in os.environ):
+        return "codex"
+    return os.environ.get("OWNER_LOOP_AGENT", "agent")
+
+
+def detect_session():
+    for k in ("CLAUDE_CODE_SESSION_ID", "CLAUDE_SESSION_ID", "CODEX_THREAD_ID", "CODEX_SESSION_ID"):
+        if os.environ.get(k):
+            return os.environ[k]
+    return None
+
+
+def parse_due(s):
+    if not s:
+        return None
+    s = s.strip()
+    now = datetime.now().astimezone()
+    if s.startswith("+") and s[-1] in "dh":
+        n = int(s[1:-1])
+        return (now + (timedelta(days=n) if s[-1] == "d" else timedelta(hours=n))).isoformat()
+    if len(s) == 10:  # YYYY-MM-DD → end of that local day
+        return datetime.fromisoformat(s).replace(hour=23, minute=59, tzinfo=now.tzinfo).isoformat()
+    return datetime.fromisoformat(s).isoformat()
+
+
+def ago(iso):
+    if not iso:
+        return "—"
+    dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+    secs = (datetime.now(timezone.utc) - dt).total_seconds()
+    if abs(secs) < 60:
+        return "just now"
+    if secs < 0:
+        d = -secs
+        return f"in {int(d // 86400)}d" if d >= 86400 else f"in {int(d // 3600)}h"
+    if secs < 3600:
+        return f"{int(secs // 60)}m ago"
+    if secs < 86400:
+        return f"{int(secs // 3600)}h ago"
+    return f"{int(secs // 86400)}d ago"
+
+
+def option_label(item, key):
+    for o in item.get("options") or []:
+        if str(o.get("key", "")).upper() == str(key or "").upper():
+            return f"{key} — {o.get('label', '')}"
+    return key or ""
+
+
+def fmt_item(i, verbose=False):
+    head = f"{i['ref']} [{i['status']}] ({i['project']}, {i['kind']}, from {i['origin_agent']}, {ago(i['created_at'])})"
+    lines = [head, f"  {i['title']}"]
+    if i.get("due_at"):
+        lines.append(f"  due: {i['due_at'][:16].replace('T', ' ')} ({ago(i['due_at'])})")
+    if i.get("ruling"):
+        lines.append(f"  RULING: {option_label(i, i['ruling'])}" + (f" — {i['ruling_note']}" if i.get("ruling_note") else "")
+                     + f"  [{i.get('ruled_via') or ''}, {ago(i.get('ruled_at'))}]")
+    if i.get("picked_up_by"):
+        lines.append(f"  picked up by {i['picked_up_by']} {ago(i.get('picked_up_at'))}")
+    if i.get("outcome_note"):
+        lines.append(f"  outcome: {i['outcome_note']}")
+    if verbose:
+        if i.get("body"):
+            lines.append("  " + i["body"].replace("\n", "\n  "))
+        for o in i.get("options") or []:
+            mark = " (recommended)" if o.get("key") == i.get("recommended") else ""
+            lines.append(f"  [{o.get('key')}] {o.get('label')}{mark}")
+    return "\n".join(lines)
+
+
+# ---------- commands ----------
+
+def cmd_ask(a):
+    options = []
+    for raw in a.option or []:
+        key, _, label = raw.partition("=")
+        if not label:
+            raise LoopError(f"--option must be KEY=label, got {raw!r}")
+        options.append({"key": key.strip().upper(), "label": label.strip()})
+    kind = a.kind
+    if kind == "decision" and not options:
+        raise LoopError("a decision needs at least two --option KEY=label choices (use --kind alert/deadline otherwise)")
+    item = {
+        "kind": kind,
+        "project": a.project or detect_project(),
+        "title": a.title,
+        "body": a.body,
+        "options": options,
+        "recommended": (a.recommend or "").upper() or None,
+        "origin_agent": a.agent or detect_agent(),
+        "origin_host": socket.gethostname().split(".")[0],
+        "origin_session": a.session or detect_session(),
+        "origin_cwd": os.getcwd(),
+        "due_at": parse_due(a.due),
+    }
+    res = rpc("owner_loop_ask", {"p_item": item})
+    if a.json:
+        print(json.dumps(res, indent=2))
+        return
+    tag = " (already open — bumped repeat count)" if res.get("deduped") else ""
+    print(f"{res['ref']} filed{tag}: {res['title']}\n  dashboard: {DASHBOARD}")
+    if kind == "decision":
+        print(f"  Also ask Jonathan in this chat. If he answers here: swd resolve {res['ref']} --ruling <KEY|text>")
+
+
+def cmd_inbox(a):
+    items = rpc("owner_loop_inbox", {"p_project": a.project or detect_project()})
+    if a.json:
+        print(json.dumps(items, indent=2))
+        return
+    if not items:
+        print("owner loop: nothing pending for this project.")
+        return
+    for i in items:
+        print(fmt_item(i, verbose=a.verbose))
+        print()
+
+
+def cmd_show(a):
+    i = rpc("owner_loop_get", {"p_ref": a.ref})
+    if a.json:
+        print(json.dumps(i, indent=2))
+        return
+    print(fmt_item(i, verbose=True))
+    for e in i.get("events", []):
+        print(f"  · {e['at'][:16].replace('T', ' ')} {e['actor']} {e['type']}" + (f": {e['note']}" if e.get("note") else ""))
+
+
+def transition(action):
+    def run(a):
+        res = rpc("owner_loop_transition", {
+            "p_ref": a.ref, "p_action": action, "p_actor": a.agent or detect_agent(),
+            "p_note": getattr(a, "note", None), "p_ruling": getattr(a, "ruling", None),
+        })
+        print(fmt_item(res))
+    return run
+
+
+# ---------- hook (Claude Code + Codex SessionStart / UserPromptSubmit) ----------
+
+def _state_path(session):
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    safe = "".join(c for c in (session or "nosession") if c.isalnum() or c in "-_")[:80]
+    return STATE_DIR / f"{safe}.json"
+
+
+def hook_context(event, payload):
+    cwd = payload.get("cwd") or os.getcwd()
+    session = payload.get("session_id") or payload.get("thread_id") or detect_session()
+    project = detect_project(cwd)
+    state_file = _state_path(session)
+    try:
+        state = json.loads(state_file.read_text())
+    except (OSError, ValueError):
+        state = {"seen": {}, "checked": 0}
+    if event == "prompt" and time.time() - state.get("checked", 0) < PROMPT_RECHECK_SECONDS:
+        return None
+    items = rpc("owner_loop_inbox", {"p_project": project}, timeout=3.0)
+    state["checked"] = time.time()
+    seen = state.get("seen", {})
+
+    def key(i):
+        return f"{i['status']}|{i.get('ruled_at') or ''}"
+
+    act = [i for i in items if i["status"] == "ruled"]
+    mine_open = [i for i in items if i["status"] == "open" and i["kind"] == "decision"]
+    picked = [i for i in items if i["status"] == "picked_up"]
+    dated = [i for i in items if i["kind"] in ("deadline", "milestone") and i.get("due_at")]
+    if event == "prompt":
+        act = [i for i in act if seen.get(i["ref"]) != key(i)]
+        mine_open, picked, dated = [], [], []
+    for i in items:
+        seen[i["ref"]] = key(i)
+    state["seen"] = seen
+    try:
+        state_file.write_text(json.dumps(state))
+    except OSError:
+        pass
+    if not (act or mine_open or picked or dated):
+        return None
+
+    out = [f"OWNER LOOP — dashboard state for project '{project}' ({DASHBOARD}):"]
+    if act:
+        out.append("Jonathan has RULED on these. Act on each ruling now (it is his decision, not a suggestion). "
+                   "Run `swd pickup <REF>` when you start acting, and `swd done <REF> --note \"<what you did>\"` when finished. "
+                   "If the ruling belongs to a different chat's work, still run pickup and tell Jonathan which session owns it.")
+        for i in act:
+            out.append("- " + fmt_item(i, verbose=True).replace("\n", "\n  "))
+    if picked:
+        out.append("In progress (picked up, not reported done) — if you own one, finish it and run `swd done`:")
+        out += [f"- {i['ref']} {i['title']} — {i.get('picked_up_by')} {ago(i.get('picked_up_at'))}" for i in picked]
+    if mine_open:
+        out.append("Still waiting on Jonathan (do not re-ask; mention briefly only if blocking your work):")
+        out += [f"- {i['ref']} {i['title']} ({ago(i['created_at'])})" for i in mine_open]
+    if dated:
+        out.append("Upcoming deadlines/milestones:")
+        out += [f"- {i['ref']} {i['title']} — due {i['due_at'][:10]} ({ago(i['due_at'])})" for i in dated]
+    return "\n".join(out)
+
+
+def cmd_hook(a):
+    try:
+        raw = sys.stdin.read() if not sys.stdin.isatty() else ""
+        payload = json.loads(raw) if raw.strip() else {}
+    except ValueError:
+        payload = {}
+    try:
+        text = hook_context(a.event, payload)
+    except Exception:  # a hook must never break a session
+        return
+    if not text:
+        return
+    if a.plain:
+        print(text)
+        return
+    # Same envelope for Claude Code and Codex: injected as context, not shown as an error.
+    name = "SessionStart" if a.event == "session-start" else "UserPromptSubmit"
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": name, "additionalContext": text}}))
+
+
+def main():
+    p = argparse.ArgumentParser(prog="swd", description="Owner loop: dashboard decisions <-> agents")
+    p.add_argument("--agent", help="claude|codex|<name> (auto-detected)")
+    p.add_argument("--json", action="store_true")
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    s = sub.add_parser("ask", help="file a decision for Jonathan (also ask in chat)")
+    s.add_argument("title")
+    s.add_argument("-b", "--body", help="context in markdown: what, why now, consequence of each option")
+    s.add_argument("-o", "--option", action="append", help="KEY=label, repeatable")
+    s.add_argument("-r", "--recommend", help="recommended option key")
+    s.add_argument("-p", "--project", help="defaults to the current repo")
+    s.add_argument("-d", "--due", help="YYYY-MM-DD, ISO time, +3d or +12h")
+    s.add_argument("-k", "--kind", default="decision", choices=["decision", "deadline", "milestone", "alert"])
+    s.add_argument("--session")
+    s.set_defaults(fn=cmd_ask)
+
+    for name, kind in (("deadline", "deadline"), ("milestone", "milestone"), ("alert", "alert")):
+        s = sub.add_parser(name, help=f"put a {kind} on the dashboard timeline")
+        s.add_argument("title")
+        s.add_argument("-b", "--body")
+        s.add_argument("-p", "--project")
+        s.add_argument("-d", "--due", required=kind != "alert")
+        s.add_argument("--session")
+        s.set_defaults(fn=cmd_ask, kind=kind, option=None, recommend=None)
+
+    s = sub.add_parser("inbox", help="rulings to act on, open asks, upcoming deadlines")
+    s.add_argument("-p", "--project")
+    s.add_argument("-v", "--verbose", action="store_true")
+    s.set_defaults(fn=cmd_inbox)
+
+    s = sub.add_parser("show", help="one item with its history")
+    s.add_argument("ref")
+    s.set_defaults(fn=cmd_show)
+
+    for name, help_ in (("pickup", "acknowledge a ruling; you are acting on it"),
+                        ("done", "report the outcome"), ("drop", "close without action")):
+        s = sub.add_parser(name, help=help_)
+        s.add_argument("ref")
+        s.add_argument("-n", "--note", required=name == "done")
+        s.set_defaults(fn=transition(name))
+
+    s = sub.add_parser("resolve", help="Jonathan answered in chat: record his ruling so the dashboard matches")
+    s.add_argument("ref")
+    s.add_argument("--ruling", required=True)
+    s.add_argument("-n", "--note")
+    s.set_defaults(fn=transition("resolve"))
+
+    s = sub.add_parser("hook", help="session hook: print dashboard state into the agent's context")
+    s.add_argument("--event", choices=["session-start", "prompt"], default="session-start")
+    s.add_argument("--plain", action="store_true", help="print text instead of the hook JSON envelope")
+    s.set_defaults(fn=cmd_hook)
+
+    a = p.parse_args()
+    if getattr(a, "kind", None) and a.cmd in ("deadline", "milestone", "alert"):
+        a.kind = a.cmd
+    try:
+        a.fn(a)
+    except LoopError as e:
+        print(f"swd: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
