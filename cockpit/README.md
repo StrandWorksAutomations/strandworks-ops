@@ -1,7 +1,8 @@
-# Strandworks Cockpit — Slice 1 (See + Decide)
+# Strandworks Cockpit
 
 Owner-only, phone-first web cockpit for this repo, per SPEC v1.0.0.
-Git is the only data store; every cockpit write is a commit.
+Registers and governance files live in Git. The owner loop and business due
+dates use Supabase through server-only REST calls.
 
 ## What it does
 
@@ -15,7 +16,20 @@ Git is the only data store; every cockpit write is a commit.
   `_governance/reports/*.md` rendered (HTML in markdown is escaped). Pages
   are ISR'd with `revalidate: 60`; in production the data source is the
   GitHub contents API, so views are current within a minute of any push.
-- **Decide** — pending files in `_governance/decisions/` as cards with the
+- **Owner loop / Decide** — decisions from `owner_loop_items` move through
+  open (waiting on Jonathan), ruled (waiting for pickup), picked up (agent
+  acting), and done (outcome reported). Unclaimed rulings older than 24 hours
+  are flagged as stalled. Option, free-text and DROP rulings require an
+  explicit confirm and call `owner_loop_rule` through `/api/loop/rule`.
+  Alerts have a separate strip; closed outcomes remain visible for 14 days.
+- **Timeline** — owner-loop deadlines, milestones and open decisions merge
+  with business due dates for the next 30 days, with overdue items first.
+  The last 30 days of owner-loop events show rulings, pickups and outcomes,
+  with project filters across both views.
+- **Today** — includes open owner-loop decisions and stalled rulings in its
+  attention counts and links to Decide. Retired QA questions are excluded.
+- **Governance files** — a collapsed section at the bottom of Decide keeps
+  pending files in `_governance/decisions/` as cards with the
   six owner-token buttons (APPROVE / REVISE / PARK / BLESSED / HALT /
   CLEAR). A tap (plus an explicit confirm) writes `ruling`, `ruled`,
   `source: cockpit` into the file and moves it to
@@ -40,6 +54,7 @@ Git is the only data store; every cockpit write is a commit.
 | `COCKPIT_DATA_BACKEND` | force `fs` or `github` (default: `github` on Vercel, `fs` locally). |
 | `COCKPIT_WRITE_MODE` | force `dry-run` or `github` (default: `github` iff `GITHUB_TOKEN` set). |
 | `COCKPIT_REPO_ROOT` | fs-backend repo root override (default: parent of `cockpit/`). |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | server-only owner-loop and business due-date access. Missing or unreachable → explicit unavailable state, never a false empty queue. Never expose the service role to browser code. |
 
 ## Local dev
 

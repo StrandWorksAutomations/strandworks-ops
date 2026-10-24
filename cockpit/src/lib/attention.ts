@@ -9,6 +9,7 @@
 import { parseCsv } from "./csv";
 import { buildMoneyView, type MoneyView } from "./money";
 import { inAlertWindow, type DueItem } from "./due-items";
+import { isStalled, type OwnerLoopItem } from "./owner-loop";
 
 export type Severity = "now" | "soon" | "watch";
 
@@ -41,14 +42,16 @@ export type AttentionInputs = {
   subscriptionsCsv?: string | null;
   assetsCsv?: string | null;
   pendingDecisions?: { title: string; file: string }[];
-  agentQuestions?: { title: string; agent?: string | null; tier?: string | null }[] | null;
+  ownerLoopItems?: OwnerLoopItem[] | null;
   dueItems?: DueItem[] | null; // business dates from the compliance register
   todayIso: string;
+  now?: Date;
 };
 
 export function buildAttentionQueue(inputs: AttentionInputs): AttentionItem[] {
   const items: AttentionItem[] = [];
   const today = inputs.todayIso;
+  const now = inputs.now ?? new Date(`${today}T00:00:00Z`);
 
   // 1. Pending decisions — always "now": the fabric is waiting on a ruling.
   for (const d of inputs.pendingDecisions ?? []) {
@@ -62,15 +65,22 @@ export function buildAttentionQueue(inputs: AttentionInputs): AttentionItem[] {
     });
   }
 
-  // 1b. Agent questions pending in the operate lane — same standing as a
-  // decision card: an agent is blocked on the owner.
-  for (const q of inputs.agentQuestions ?? []) {
+  // 1b. The owner loop includes both rulings needed and rulings with no agent
+  // acknowledgement after 24 hours. Completed handoffs need no owner action.
+  for (const item of inputs.ownerLoopItems ?? []) {
+    const stalled = isStalled(item, now);
+    if (!(item.kind === "decision" && item.status === "open") && !stalled) continue;
     items.push({
-      severity: q.tier === "fyi" ? "watch" : "now",
-      dateIso: null,
-      title: q.title,
-      detail: `${q.agent ?? "agent"} is waiting · ${q.tier ?? "normal"}`,
-      href: "/operate",
+      severity: "now",
+      dateIso: item.due_at?.slice(0, 10) ?? null,
+      title: item.title,
+      detail: [
+        item.ref,
+        item.project,
+        item.origin_agent ?? "agent",
+        stalled ? "STALLED — no agent picked it up" : "waiting for your ruling",
+      ].join(" · "),
+      href: "/decisions",
       kind: "decision",
     });
   }

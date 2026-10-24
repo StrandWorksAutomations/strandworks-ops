@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildAttentionQueue } from "../src/lib/attention";
+import type { OwnerLoopItem } from "../src/lib/owner-loop";
 
 const TODAY = "2026-07-13";
 
@@ -7,6 +8,18 @@ const CAL_HEADER = "date,item,type,action_needed";
 const SUB_HEADER =
   "service,plan,cost_monthly_usd,billing_cadence,renewal_date,payment_last4,status,notes";
 const ASSET_HEADER = "asset,type,location,size,hash,project,canonical,notes";
+
+function loopItem(over: Partial<OwnerLoopItem> = {}): OwnerLoopItem {
+  return {
+    id: "item-1", ref: "D-0001", kind: "decision", project: "portfolio",
+    title: "Choose the next step", body: null, options: [], recommended: null,
+    origin_agent: "codex", due_at: null, status: "open", ruling: null,
+    ruling_note: null, ruled_via: null, ruled_at: null, picked_up_at: null,
+    picked_up_by: null, outcome_note: null, done_at: null, repeat_count: 1,
+    created_at: "2026-07-10T12:00:00Z", updated_at: "2026-07-10T12:00:00Z",
+    ...over,
+  };
+}
 
 describe("buildAttentionQueue", () => {
   it("turns open calendar actions into items and skips DONE rows", () => {
@@ -91,6 +104,43 @@ describe("buildAttentionQueue", () => {
 
   it("is empty with no inputs", () => {
     expect(buildAttentionQueue({ todayIso: TODAY })).toEqual([]);
+  });
+
+  it("counts open owner-loop decisions and stalled rulings alongside governance decisions", () => {
+    const q = buildAttentionQueue({
+      todayIso: TODAY,
+      now: new Date("2026-07-13T12:00:00Z"),
+      pendingDecisions: [{ title: "Governance ruling", file: "ruling.md" }],
+      ownerLoopItems: [
+        loopItem({ due_at: "2026-07-14T12:00:00Z" }),
+        loopItem({ ref: "D-0002", title: "Follow up", status: "ruled", ruled_at: "2026-07-12T11:59:59Z", origin_agent: "claude", project: "medical" }),
+        loopItem({ ref: "D-0003", status: "ruled", ruled_at: "2026-07-13T10:00:00Z" }),
+        loopItem({ ref: "D-0004", status: "picked_up", ruled_at: "2026-07-10T10:00:00Z" }),
+        loopItem({ ref: "D-0005", status: "done" }),
+        loopItem({ ref: "D-0006", status: "dropped" }),
+        loopItem({ ref: "D-0007", kind: "alert" }),
+        loopItem({ ref: "D-0008", kind: "deadline" }),
+      ],
+    });
+    expect(q).toHaveLength(3);
+    expect(q.every((item) => item.severity === "now" && item.kind === "decision" && item.href === "/decisions")).toBe(true);
+    expect(q.find((item) => item.title === "Choose the next step")?.detail).toBe("D-0001 · portfolio · codex · waiting for your ruling");
+    expect(q.find((item) => item.title === "Follow up")?.detail).toBe("D-0002 · medical · claude · STALLED — no agent picked it up");
+  });
+
+  it("uses the supplied clock for stalled handoffs and falls back to today at midnight", () => {
+    const ownerLoopItems = [loopItem({ status: "ruled", ruled_at: "2026-07-12T00:00:00Z" })];
+    expect(buildAttentionQueue({ todayIso: TODAY, ownerLoopItems })).toHaveLength(0);
+    expect(buildAttentionQueue({ todayIso: TODAY, ownerLoopItems, now: new Date("2026-07-13T00:00:01Z") })).toHaveLength(1);
+  });
+
+  it("keeps known actions when owner-loop data is unavailable", () => {
+    const q = buildAttentionQueue({
+      todayIso: TODAY,
+      ownerLoopItems: null,
+      pendingDecisions: [{ title: "Governance ruling", file: "ruling.md" }],
+    });
+    expect(q.map((item) => item.title)).toEqual(["Governance ruling"]);
   });
 });
 

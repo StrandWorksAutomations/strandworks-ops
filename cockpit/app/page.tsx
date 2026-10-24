@@ -7,7 +7,7 @@ import { readCeilingUsd } from "@/lib/git";
 import { buildMoneyView } from "@/lib/money";
 import { buildAttentionQueue, type AttentionItem } from "@/lib/attention";
 import { fetchDueItems, inAlertWindow } from "@/lib/due-items";
-import { fetchPendingQuestionsSafe } from "@/lib/operate-data";
+import { fetchOwnerLoopItems } from "@/lib/owner-loop-data";
 import { buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
 import { loadProjects } from "@/lib/projects-load";
 import { parseChecks, latestCheck, checkStatusClass } from "@/lib/checks";
@@ -51,7 +51,8 @@ export default async function Today() {
       readCeilingUsd(),
     ]);
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const todayIso = now.toISOString().slice(0, 10);
   const money = buildMoneyView(subsCsv);
   const spend = buildSpendView(spendCsv, ceilingUsd);
   const checks = parseChecks(checksCsv);
@@ -69,19 +70,22 @@ export default async function Today() {
     }
   }
 
-  const [dueItems, agentQuestions] = await Promise.all([fetchDueItems(), fetchPendingQuestionsSafe()]);
+  const [dueItems, ownerLoopItems] = await Promise.all([fetchDueItems(), fetchOwnerLoopItems()]);
   const dueInWindow = (dueItems ?? []).filter(inAlertWindow).length;
-  const pendingTotal = pendingDecisions.length + (agentQuestions?.length ?? 0);
   const queue = buildAttentionQueue({
     dueItems,
-    agentQuestions: agentQuestions?.map((q) => ({ title: q.title ?? "(untitled question)", agent: q.agent, tier: q.tier })),
+    ownerLoopItems,
     calendarCsv: calCsv,
     subscriptionsCsv: subsCsv,
     assetsCsv,
     pendingDecisions,
     todayIso,
+    now,
   });
   const nowCount = queue.filter((q) => q.severity === "now").length;
+  const pendingTotal = queue.filter((q) => q.kind === "decision").length;
+  const loopUnavailable = ownerLoopItems === null;
+  const actionCount = (count: number) => loopUnavailable ? (count > 0 ? `${count}+` : "—") : count;
 
   const inputs: RegisterInputs = {
     services: servicesCsv,
@@ -108,13 +112,13 @@ export default async function Today() {
   return (
     <Chrome title="Today" sub="the whole operation, triaged" active="/">
       <div className="grid">
-        <div className={`tile ${nowCount > 0 ? "hot" : "calm"}`}>
-          <div className="big">{nowCount}</div>
-          <div className="label">need you now</div>
+        <div className={`tile ${nowCount > 0 ? "hot" : loopUnavailable ? "warm" : "calm"}`}>
+          <div className="big">{actionCount(nowCount)}</div>
+          <div className="label">need you now{loopUnavailable ? " · loop offline" : ""}</div>
         </div>
-        <Link href={agentQuestions?.length ? "/operate" : "/decisions"} className={`tile ${pendingTotal > 0 ? "hot" : "calm"}`}>
-          <div className="big">{pendingTotal}</div>
-          <div className="label">pending decisions{agentQuestions?.length ? ` · ${agentQuestions.length} agent` : ""}</div>
+        <Link href="/decisions" className={`tile ${pendingTotal > 0 ? "hot" : loopUnavailable ? "warm" : "calm"}`}>
+          <div className="big">{actionCount(pendingTotal)}</div>
+          <div className="label">decisions &amp; follow-up{loopUnavailable ? " · loop offline" : ""}</div>
         </Link>
         <Link href="/projects" className={`tile ${reporting === 0 ? "warm" : "calm"}`}>
           <div className="big">
@@ -138,13 +142,18 @@ export default async function Today() {
         <div>
           <div className="section-head">
             <h2>Needs you</h2>
-            <span className="meta">{queue.length} open</span>
+            <span className="meta">{queue.length} {loopUnavailable ? "shown · loop offline" : "open"}</span>
           </div>
-          {queue.length === 0 ? (
+          {loopUnavailable ? (
+            <div className="card">
+              <div className="meta">Owner loop unavailable. Decision and agent follow-up counts are incomplete. <Link href="/decisions">Open Decide →</Link></div>
+            </div>
+          ) : null}
+          {queue.length === 0 && !loopUnavailable ? (
             <div className="card">
               <div className="meta">Nothing needs you. The registers report no open actions.</div>
             </div>
-          ) : (
+          ) : queue.length > 0 ? (
             <div className="queue">
               {queue.slice(0, 10).map((q, i) => (
                 <Link key={i} href={q.href} className={`q-item ${q.severity}`}>
@@ -162,7 +171,7 @@ export default async function Today() {
                 </Link>
               ))}
             </div>
-          )}
+          ) : null}
           {queue.length > 10 ? (
             <div className="meta" style={{ textAlign: "center" }}>
               + {queue.length - 10} more across <Link href="/money">Money</Link>,{" "}

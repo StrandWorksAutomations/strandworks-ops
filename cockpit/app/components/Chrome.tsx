@@ -1,16 +1,4 @@
-import Link from "next/link";
-
-const TABS = [
-  { href: "/operate", label: "Operate" },
-  { href: "/", label: "Today" },
-  { href: "/briefings", label: "Briefs" },
-  { href: "/orchard", label: "Orchard", boundary: true },
-  { href: "/money", label: "Money" },
-  { href: "/business", label: "Business" },
-  { href: "/projects", label: "Projects" },
-  { href: "/decisions", label: "Decide" },
-  { href: "/ops", label: "Ops" },
-];
+import { Navigation } from "./Navigation";
 
 export function Chrome({
   title,
@@ -40,27 +28,7 @@ export function Chrome({
         </div>
       </header>
       {children}
-      <nav className="nav" aria-label="Cockpit sections">
-        {TABS.map((t) => (
-          t.boundary ? (
-            <a
-              key={t.href}
-              href={t.href}
-              className={t.href === active ? "active" : ""}
-            >
-              {t.label}
-            </a>
-          ) : (
-            <Link
-              key={t.href}
-              href={t.href}
-              className={t.href === active ? "active" : ""}
-            >
-              {t.label}
-            </Link>
-          )
-        ))}
-      </nav>
+      <Navigation active={active} />
     </div>
   );
 }
