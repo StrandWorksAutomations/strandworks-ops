@@ -441,3 +441,12 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* Share: Kinetic Clinician group job posts */
+.share-body { white-space: pre-wrap; font: inherit; margin: 10px 0; padding: 12px; border-radius: 8px; background: rgba(255,255,255,.04); overflow-wrap: anywhere; }
+.share-fieldset { border: 0; padding: 0; margin: 12px 0 4px; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.share-fieldset legend { font-size: .8rem; opacity: .75; margin-bottom: 6px; }
+.share-check { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
+.share-history { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.share-card .confirm-row, .share-group .confirm-row { flex-wrap: wrap; }
+.badge.ok { color: var(--good); border-color: var(--good); }
