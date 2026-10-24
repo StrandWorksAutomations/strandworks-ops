@@ -242,6 +242,17 @@ def transition(action):
     return run
 
 
+# ---------- email intake (classifier side; see intake/README.md) ----------
+
+def cmd_intake_pending(a):
+    print(json.dumps(rpc("intake_pending", {"p_limit": a.limit}, timeout=20), indent=2))
+
+
+def cmd_intake_classify(a):
+    raw = Path(a.file).read_text() if a.file else sys.stdin.read()
+    print(json.dumps(rpc("intake_classify", {"p_id": a.id, "p": json.loads(raw)}, timeout=20)))
+
+
 # ---------- hook (Claude Code + Codex SessionStart / UserPromptSubmit) ----------
 
 def _state_path(session):
@@ -387,6 +398,15 @@ def main():
     s.add_argument("--ruling", required=True)
     s.add_argument("-n", "--note")
     s.set_defaults(fn=transition("resolve"))
+
+    s = sub.add_parser("intake-pending", help="unclassified intake mail (JSON) for the classifier run")
+    s.add_argument("--limit", type=int, default=40)
+    s.set_defaults(fn=cmd_intake_pending)
+
+    s = sub.add_parser("intake-classify", help="record a classification for one intake message (JSON on stdin or --file)")
+    s.add_argument("id")
+    s.add_argument("--file")
+    s.set_defaults(fn=cmd_intake_classify)
 
     s = sub.add_parser("hook", help="session hook: print dashboard state into the agent's context")
     s.add_argument("--event", choices=["session-start", "prompt"], default="session-start")
