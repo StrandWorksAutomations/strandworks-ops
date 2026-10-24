@@ -212,7 +212,7 @@ describe("buildTimelineUpcoming", () => {
 });
 
 describe("groupTimelineEvents", () => {
-  it("includes last 30 days through now, groups by UTC day and sorts newest first", () => {
+  it("includes last 30 days through now, groups by Eastern day and sorts newest first", () => {
     const result = groupTimelineEvents([
       event({ id: "earlier-today", at: "2026-10-24T01:00:00Z" }),
       event({ id: "boundary", at: "2026-09-24T12:00:00Z" }),
@@ -223,9 +223,10 @@ describe("groupTimelineEvents", () => {
       event({ id: "future", at: "2026-10-24T12:00:01Z" }),
       event({ id: "invalid", at: "invalid" }),
     ], NOW);
-    expect(result.map((group) => group.day)).toEqual(["2026-10-24", "2026-10-23", "2026-09-24"]);
-    expect(result[0].events.map((entry) => entry.id)).toEqual(["now", "utc-day", "earlier-today"]);
-    expect(result[2].events[0].id).toBe("boundary");
+    expect(result.map((group) => group.day)).toEqual(["2026-10-24", "2026-10-23", "2026-10-22", "2026-09-24"]);
+    expect(result[0].events.map((entry) => entry.id)).toEqual(["now"]);
+    expect(result[1].events.map((entry) => entry.id)).toEqual(["utc-day", "earlier-today"]);
+    expect(result[3].events[0].id).toBe("boundary");
   });
 });
 

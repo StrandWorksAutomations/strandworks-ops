@@ -1,3 +1,4 @@
+import { OWNER_TIME_ZONE } from "@/lib/owner-loop";
 import Link from "next/link";
 import { Chrome } from "../components/Chrome";
 import { fetchDueItems } from "@/lib/due-items";
@@ -8,13 +9,13 @@ export const dynamic = "force-dynamic";
 
 function dayLabel(day: string): string {
   return new Intl.DateTimeFormat("en-US", {
-    weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "UTC",
+    weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: OWNER_TIME_ZONE,
   }).format(new Date(`${day}T12:00:00Z`));
 }
 
 function timeLabel(iso: string): string {
   return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: OWNER_TIME_ZONE,
   }).format(new Date(iso));
 }
 
@@ -96,7 +97,7 @@ export default async function TimelinePage({
               <div className="timeline-entry-head">
                 <time dateTime={entry.dueAt} className="timeline-date">
                   {dayLabel(new Date(entry.dueAt).toISOString().slice(0, 10))}
-                  {entry.source === "owner-loop" ? ` · ${timeLabel(entry.dueAt)} UTC` : ""}
+                  {entry.source === "owner-loop" ? ` · ${timeLabel(entry.dueAt)} ET` : ""}
                 </time>
                 {entry.overdue ? <span className="badge bad">OVERDUE</span> : null}
               </div>
@@ -115,7 +116,7 @@ export default async function TimelinePage({
       <section aria-labelledby="timeline-history">
         <div className="section-head">
           <h2 id="timeline-history">History</h2>
-          <span className="meta">{events === null ? "unavailable" : `${historyCount} events`} · last 30 days · UTC</span>
+          <span className="meta">{events === null ? "unavailable" : `${historyCount} events`} · last 30 days · Eastern</span>
         </div>
         {events === null ? (
           <div className="card" role="status">

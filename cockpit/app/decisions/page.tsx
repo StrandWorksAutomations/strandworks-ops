@@ -1,3 +1,4 @@
+import { OWNER_TIME_ZONE } from "@/lib/owner-loop";
 import { Chrome } from "../components/Chrome";
 import { readRepoFile, listRepoDir } from "@/lib/repo";
 import { parseDecision, isPending, extractOptions, type Decision } from "@/lib/decisions";
@@ -14,8 +15,8 @@ export const dynamic = "force-dynamic"; // rulings must disappear immediately
 
 function dateLabel(iso: string): string {
   return new Date(iso).toLocaleString("en-US", {
-    month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC",
-  }) + " UTC";
+    month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: OWNER_TIME_ZONE,
+  }) + " ET";
 }
 
 function ItemMeta({ item }: { item: OwnerLoopItem }) {

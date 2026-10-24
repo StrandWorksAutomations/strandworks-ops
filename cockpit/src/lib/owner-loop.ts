@@ -65,6 +65,14 @@ export function validateOwnerLoopRuleInput(raw: unknown): OwnerLoopRuleValidatio
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Jonathan works from Berea, KY.
+export const OWNER_TIME_ZONE = "America/New_York";
+
+export function ownerDay(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: OWNER_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(new Date(iso));
+}
+
 function timestamp(iso: string | null): number {
   const value = iso ? Date.parse(iso) : NaN;
   return Number.isFinite(value) ? value : Infinity;
@@ -140,7 +148,7 @@ export function buildTimelineUpcoming(items: OwnerLoopItem[], dueItems: DueItem[
   const result: TimelineEntry[] = [];
   const nowMs = now.getTime();
   const through = nowMs + 30 * DAY_MS;
-  const today = now.toISOString().slice(0, 10);
+  const today = ownerDay(now.toISOString());
   for (const item of items) {
     if (!item.due_at || item.status === "done" || item.status === "dropped") continue;
     if (item.kind !== "deadline" && item.kind !== "milestone"
@@ -191,7 +199,7 @@ export function groupTimelineEvents(events: OwnerLoopEvent[], now: Date): Timeli
   }).sort((a, b) => timestamp(b.at) - timestamp(a.at));
   const days = new Map<string, OwnerLoopEvent[]>();
   for (const event of ordered) {
-    const day = new Date(event.at).toISOString().slice(0, 10);
+    const day = ownerDay(event.at);
     if (!days.has(day)) days.set(day, []);
     days.get(day)!.push(event);
   }
