@@ -5,10 +5,14 @@
 // handled mail with a label. It never deletes mail and never sends anything that
 // was not approved on the dashboard.
 //
-// Install: see intake/README.md. Script properties (Project Settings → Script
-// properties): SW_TOKEN (agent token), SW_APIKEY (Supabase publishable key).
+// Install: see intake/README.md. Run setup() once: it makes this mailbox's own
+// access token (kept in Script Properties, never shown) and logs only its SHA-256
+// fingerprint, which is registered on the dashboard side. Then run test().
 
 const SUPABASE = 'https://bniuiwbwumpymxiesyyt.supabase.co/rest/v1/rpc/';
+// Publishable key: public by design (it also ships in kineticclinician.com's pages);
+// every call is authorised by the mailbox token, not by this key.
+const APIKEY = 'sb_publishable_6ddcYmFiLrHFewt-a1A5NQ_FwMsN43X';
 const SEARCH = 'in:inbox newer_than:2d -label:SW-seen -category:promotions -category:social -category:forums -from:me';
 const MAX_THREADS = 40;
 const BODY_LIMIT = 12000;
@@ -28,7 +32,7 @@ function rpc_(fn, args) {
   const res = UrlFetchApp.fetch(SUPABASE + fn, {
     method: 'post',
     contentType: 'application/json',
-    headers: { apikey: prop_('SW_APIKEY') },
+    headers: { apikey: APIKEY },
     payload: JSON.stringify(Object.assign({ p_token: prop_('SW_TOKEN') }, args)),
     muteHttpExceptions: true,
   });
@@ -125,11 +129,29 @@ function run() {
   }
 }
 
-/** Run once after pasting the properties: creates the 15-minute trigger and tests the connection. */
+function sha256Hex_(text) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, text, Utilities.Charset.UTF_8)
+    .map((b) => ('0' + (b & 0xff).toString(16)).slice(-2)).join('');
+}
+
+/** Run once: creates this mailbox's token, the labels and the 15-minute trigger. */
 function setup() {
+  const props = PropertiesService.getScriptProperties();
+  let token = props.getProperty('SW_TOKEN');
+  if (!token) {
+    token = 'wt_' + Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+    props.setProperty('SW_TOKEN', token);
+  }
+  Object.values(LABELS).forEach(label_);
   ScriptApp.getProjectTriggers().filter((t) => t.getHandlerFunction() === 'run').forEach((t) => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('run').timeBased().everyMinutes(15).create();
-  Object.values(LABELS).forEach(label_);
-  run();
-  Logger.log('Watcher installed for ' + account_());
+  Logger.log('Mailbox: ' + account_());
+  Logger.log('Token fingerprint (register this): ' + sha256Hex_(token));
+}
+
+/** After the fingerprint is registered: one run now, logging what happened. */
+function test() {
+  Logger.log('Uploaded ' + collect_() + ' message(s) from ' + account_());
+  outbox_();
+  Logger.log('Outbox checked.');
 }

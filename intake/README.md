@@ -16,13 +16,13 @@ Gmail ◄── watcher.gs sends approved reply from that account, archives hand
 - Nothing is sent without an approval click on the dashboard. Nothing is deleted. Email bodies of handled mail are cleared after 45 days (`intake_purge_bodies`).
 - Job links feed the Kinetic Clinician importer through `intake_job_links_recent` (highest-paying branch `feature/intake-job-links`).
 
-## Install the watcher in a Gmail account (owner, about 3 minutes per account)
+## Install the watcher in a Gmail account (about 2 minutes per account)
 
 1. Signed in to that Gmail account, open https://script.google.com → New project → name it "Strandworks inbox watcher".
-2. Replace the editor contents with `watcher.gs` from this folder. Save.
-3. Project Settings (gear) → Script properties → add `SW_TOKEN` and `SW_APIKEY`. Values: the files `~/.config/strandworks/watcher-<account>.token` and `~/.config/strandworks/owner-loop.apikey` on the laptop (never paste them anywhere else).
-4. Optional but better: Services (+) → Gmail API → Add (lets the watcher see the inbox tab of each message).
-5. Select function `setup` → Run → approve Google's permission screen (it needs Gmail read/send/modify and external requests). It creates a 15-minute trigger and runs once.
+2. Replace the editor contents with `watcher.gs`. Save. Optional: Services (+) → Gmail API → Add.
+3. Run `setup` and approve Google's permission screen (Gmail read/send/modify, external requests, triggers). The log prints the mailbox and a token fingerprint.
+4. Register the fingerprint: `insert into owner_loop_agent_tokens(token_sha256,label) values ('<fingerprint>','Gmail watcher <mailbox>')` (project bniuiwbwumpymxiesyyt). The token itself never leaves the script.
+5. Run `test`: the log shows how many messages were sent to the dashboard.
 
 ## admin@kineticclinician.com (Namecheap Private Email)
 
