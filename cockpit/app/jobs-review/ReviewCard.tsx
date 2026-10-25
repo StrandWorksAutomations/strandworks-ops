@@ -24,6 +24,13 @@ export function JobPreview({ s }: { s: KcSubmission }) {
   );
 }
 
+// The recruiter page promises "we'll email you why"; this opens that email ready to send.
+function rejectMailto(s: KcSubmission, reason: string) {
+  const subject = `Your Kinetic Clinician job post: ${s.title}`;
+  const body = `Hi ${s.recruiter_name},\n\nThanks for posting "${s.title}" (${s.employer}, ${s.location}) on Kinetic Clinician. We couldn't put it on the board:\n\n${reason}\n\nIf you can fix that, you're welcome to post it again at ${KC_SITE}/recruiters/post/.\n\nKinetic Clinician`;
+  return `mailto:${s.work_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 export function ReviewCard({ s, received }: { s: KcSubmission; received: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -62,7 +69,14 @@ export function ReviewCard({ s, received }: { s: KcSubmission; received: string 
         <dt>Agency</dt><dd>{s.agency_name}</dd>
       </dl>
       <p className="meta">Before approving: open the apply link, confirm the employer is real and the pay matches the posting.</p>
-      {done ? <p className="ok-text" role="status">{done}</p> : rejecting ? (
+      {done ? (
+        <p className="ok-text" role="status">
+          {done}
+          {done === "Rejected." ? (
+            <> <a href={rejectMailto(s, reason)}>Email the reason to {s.recruiter_name} ↗</a></>
+          ) : null}
+        </p>
+      ) : rejecting ? (
         <div className="confirm-row">
           <select className="answer-input" value={reason} onChange={(e) => setReason(e.target.value)} aria-label="Reason">
             {REJECT_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
