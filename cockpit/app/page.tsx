@@ -11,6 +11,7 @@ import { fetchOwnerLoopItems, fetchBusinessLatestEvents } from "@/lib/owner-loop
 import { fetchIntakeOverview } from "@/lib/intake-data";
 import { buildBusinessBoard } from "@/lib/businesses";
 import { BusinessBoard } from "./components/BusinessBoard";
+import { countPendingJobSubmissions } from "@/lib/kc-jobs-review-data";
 import { ownerDay } from "@/lib/owner-loop";
 import { buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
 import { loadProjects } from "@/lib/projects-load";
@@ -75,8 +76,9 @@ export default async function Today() {
     }
   }
 
-  const [dueItems, ownerLoopItems, intake, events, loadedProjects] = await Promise.all([
+  const [dueItems, ownerLoopItems, intake, events, loadedProjects, jobsPending] = await Promise.all([
     fetchDueItems(), fetchOwnerLoopItems(), fetchIntakeOverview(), fetchBusinessLatestEvents(), loadProjects().catch(() => null),
+    countPendingJobSubmissions(),
   ]);
   const dueInWindow = (dueItems ?? []).filter(inAlertWindow).length;
   const queue = buildAttentionQueue({
@@ -123,7 +125,7 @@ export default async function Today() {
   return (
     <Chrome title="Today" sub="the whole operation, triaged" active="/">
       <BusinessBoard cards={businesses} available={{ intake: intake !== null, loop: !loopUnavailable,
-        events: events !== null, dates: dueItems !== null, projects: loadedProjects !== null }} now={now} />
+        events: events !== null, dates: dueItems !== null, projects: loadedProjects !== null }} now={now} jobsPending={jobsPending} />
       <div className="grid">
         <div className={`tile ${nowCount > 0 ? "hot" : attentionUnavailable ? "warm" : "calm"}`}>
           <div className="big">{actionCount(nowCount)}</div>

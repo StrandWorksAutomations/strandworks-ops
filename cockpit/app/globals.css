@@ -482,3 +482,14 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 .share-history { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .share-card .confirm-row, .share-group .confirm-row { flex-wrap: wrap; }
 .badge.ok { color: var(--good); border-color: var(--good); }
+
+/* Job review: preview of a recruiter job as it will render on the KC board. */
+.job-preview { display: grid; grid-template-columns: minmax(84px, auto) 1fr; gap: 12px; border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin: 10px 0; }
+.job-preview-pay { font-weight: 700; font-variant-numeric: tabular-nums; }
+.job-preview-title { margin: 0 0 4px; font-size: 1rem; }
+.job-preview-line { margin: 0 0 6px; opacity: .85; }
+.job-preview-desc { margin: 8px 0; white-space: pre-wrap; }
+.review-fields { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0; }
+.review-fields dt { opacity: .7; }
+.review-fields dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .job-preview { grid-template-columns: 1fr; } }
