@@ -32,7 +32,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${body.variable} ${display.variable} ${mono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${body.variable} ${display.variable} ${mono.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{var z=localStorage.getItem("cockpit-text-zoom");if(z)document.documentElement.style.setProperty("--text-zoom",z)}catch(e){}',
+          }}
+        />
+      </head>
       <body style={{ fontFamily: "var(--font-body)" }}>{children}</body>
     </html>
   );

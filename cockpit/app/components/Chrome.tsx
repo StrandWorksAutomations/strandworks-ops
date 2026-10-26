@@ -1,4 +1,5 @@
 import { Navigation } from "./Navigation";
+import { TextSize } from "./TextSize";
 
 export function Chrome({
   title,
@@ -22,6 +23,7 @@ export function Chrome({
         </div>
         <div className="topbar-right">
           <span className="today">{today}</span>
+          <TextSize />
           <form action="/api/auth/logout" method="post">
             <button className="lock-btn">Lock</button>
           </form>

@@ -64,6 +64,7 @@ body {
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  zoom: var(--text-zoom, 1.12);
 }
 
 a { color: var(--brass); text-decoration: none; }
@@ -117,6 +118,9 @@ h1, h2, h3 {
   background: none; border: 1px solid var(--border); border-radius: 999px;
   padding: 4px 10px; cursor: pointer;
 }
+.text-size { display: flex; gap: 4px; }
+.text-size .lock-btn { font-size: 12px; letter-spacing: 0; padding: 3px 9px; }
+.lock-btn:disabled { opacity: 0.35; cursor: default; }
 .lock-btn:hover { color: var(--ink); border-color: var(--border-strong); }
 
 /* ---- bottom nav ---- */
