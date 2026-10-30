@@ -497,3 +497,11 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 .review-fields dt { opacity: .7; }
 .review-fields dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 520px) { .job-preview { grid-template-columns: 1fr; } }
+
+/* Facebook reply review (/replies) */
+.reply-post { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--brass); white-space: pre-wrap; overflow-wrap: anywhere; }
+.reply-draft { width: 100%; margin-top: 4px; font-size: 16px; line-height: 1.45; resize: vertical; }
+.reply-label { display: block; margin-top: 12px; }
+.reply-jobs { margin: 8px 0; }
+.reply-jobs ul { margin: 4px 0 0; padding-left: 18px; }
+.reply-jobs li { margin: 4px 0; overflow-wrap: anywhere; }

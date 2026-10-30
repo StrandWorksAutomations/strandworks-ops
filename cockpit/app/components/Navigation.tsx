@@ -16,6 +16,7 @@ const TABS = [
   { href: "/decisions", label: "Decide" },
   { href: "/share", label: "Share" },
   { href: "/jobs-review", label: "Job review" },
+  { href: "/replies", label: "Replies" },
   { href: "/ops", label: "Ops" },
 ];
 
