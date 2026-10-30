@@ -41,10 +41,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="shell">
+    <div className="gate">
       <div className="center-screen">
         <div>
-          <h1 style={{ fontSize: 24, margin: 0 }}>Strandworks Cockpit</h1>
+          <h1 className="sw-wordmark gate-title">STRANDWORKS <span>// COCKPIT</span></h1>
           <p style={{ color: "var(--muted)" }}>Owner-only. Passkey required.</p>
         </div>
         <button className="btn-primary" onClick={login} disabled={busy}>

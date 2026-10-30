@@ -55,7 +55,7 @@ export function InboxCard({ item }: { item: IntakeItem }) {
     {item.action_needed ? <p className="inbox-text"><strong>Action needed: </strong>{item.action_needed}</p> : null}
     {item.due_at ? <p className="meta">Due <time dateTime={item.due_at}>{intakeDate(item.due_at)}</time></p> : null}
     <details className="loop-request"><summary>Original email</summary>
-      <pre className="inbox-original" tabIndex={0} aria-label="Original email text">{item.body_text || `Original text is unavailable.${item.snippet ? ` Preview:\n\n${item.snippet}` : ""}`}</pre>
+      <pre className="inbox-original" tabIndex={0} aria-label="Original email text">{item.body_text?.replace(/\r\n?/g, "\n").replace(/^\n+/, "") || `Original text is unavailable.${item.snippet ? ` Preview:\n\n${item.snippet}` : ""}`}</pre>
     </details>
     {replyStatusLabel(item) ? <p className={item.reply_status === "failed" ? "error-text" : "meta"} role="status">{replyStatusLabel(item)}</p> : null}
     {!handled ? <>

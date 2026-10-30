@@ -19,3 +19,13 @@ export async function fetchReplies(): Promise<{ replies: KcReply[]; actions: KcR
 export async function queueReplyAction(v: { id: string; action: ReplyActionKind; revision: number; draft?: string }): Promise<void> {
   await sbInsert("kc_fb_reply_actions", { item_id: v.id, action: v.action, base_revision: v.revision, draft: v.draft ?? null });
 }
+
+/** Replies waiting for the owner, for the Today board; null when unavailable. */
+export async function countRepliesToReview(): Promise<number | null> {
+  if (!supabaseConfigured()) return null;
+  try {
+    return (await sbSelect<{ id: string }>("kc_fb_replies", "select=id&status=in.(needs_review,needs_context,approved)&delivery_state=is.null&limit=200")).length;
+  } catch {
+    return null;
+  }
+}

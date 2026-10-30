@@ -6,6 +6,10 @@ const orchardOrigin =
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Orchard's sign-in redirect leaves out its /orchard base path; send it to the real page.
+  async redirects() {
+    return [{ source: "/auth/signin", destination: "/orchard/auth/signin", permanent: false }];
+  },
   async rewrites() {
     return [
       {

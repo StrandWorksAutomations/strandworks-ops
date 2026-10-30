@@ -1,6 +1,8 @@
 import { Navigation } from "./Navigation";
 import { TextSize } from "./TextSize";
 
+// Shared frame for every page except Operate, styled to match it: the
+// STRANDWORKS // PAGE bar, the section rail, then the page.
 export function Chrome({
   title,
   sub,
@@ -14,11 +16,13 @@ export function Chrome({
 }) {
   const today = new Date().toISOString().slice(0, 10);
   return (
-    <div className="shell">
+    <div className="sw-root">
       <header className="topbar">
-        <div>
-          <div className="eyebrow">Strandworks ops</div>
-          <h1>{title}</h1>
+        <div className="sw-brand">
+          <div className="sw-wordmark">
+            STRANDWORKS <span>// </span>
+            <h1>{title}</h1>
+          </div>
           {sub ? <div className="sub">{sub}</div> : null}
         </div>
         <div className="topbar-right">
@@ -29,8 +33,10 @@ export function Chrome({
           </form>
         </div>
       </header>
-      {children}
-      <Navigation active={active} />
+      <div className="sw-shell">
+        <Navigation active={active} />
+        <main className="shell">{children}</main>
+      </div>
     </div>
   );
 }

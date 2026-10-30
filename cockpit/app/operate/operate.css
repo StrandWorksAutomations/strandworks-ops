@@ -108,11 +108,17 @@
   .op-shell { grid-template-columns: 200px minmax(0, 1fr) 260px; }
 }
 @media (max-width: 900px) {
-  .op-shell { grid-template-columns: 1fr; }
+  .op-shell { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .op-topbar { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+  .op-wordmark-sub, .op-clock { display: none; }
+  .op-rail-left, .op-rail-right, .op-river-col { min-width: 0; overflow-wrap: anywhere; }
   .op-rail-right { order: 3; position: static; }
   .op-rail-left { order: 1; display: flex; flex-wrap: wrap; gap: 12px; }
   .op-rail-left > * { flex: 1 1 220px; }
   .op-river-col { order: 2; }
+  .op-rail-left > .op-nav-card { flex-basis: 100%; overflow-x: auto; }
+  .op-nav-list { display: flex; gap: 2px; }
+  .op-nav-list li a { white-space: nowrap; }
 }
 
 /* ---------- Cards ---------- */

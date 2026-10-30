@@ -5,6 +5,7 @@
 // posts answers to /api/operate/answer. All colour comes from event severity.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { TABS } from "../components/tabs";
 import {
   groupIntoBands,
   type OperateSnapshot,
@@ -14,13 +15,6 @@ import {
 } from "@/lib/operate";
 
 const POLL_MS = 7000;
-const NAV = [
-  { label: "Operate", href: "/operate", active: true },
-  { label: "Projects", href: "/projects", active: false },
-  { label: "Decisions", href: "/decisions", active: false },
-  { label: "Records", href: "/registers", active: false },
-  { label: "Systems", href: "/ops", active: false },
-];
 const FILTERS: { key: "all" | RiverCategory; label: string }[] = [
   { key: "all", label: "ALL" },
   { key: "agent", label: "AGENTS" },
@@ -140,14 +134,12 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
         <div className="op-rail-left">
           <nav className="op-card op-nav-card" aria-label="Sections">
             <ul className="op-nav-list">
-              {NAV.map((n) => (
-                <li key={n.href}>
-                  <Link href={n.href} className={n.active ? "op-active" : ""}>
-                    <span className="op-n-dot" />
-                    {n.label}
-                  </Link>
-                </li>
-              ))}
+              {TABS.map((n) => {
+                const current = n.href === "/operate";
+                const props = { href: n.href, className: current ? "op-active" : "", "aria-current": current ? "page" as const : undefined };
+                const label = <><span className="op-n-dot" />{n.label}</>;
+                return <li key={n.href}>{n.boundary ? <a {...props}>{label}</a> : <Link {...props}>{label}</Link>}</li>;
+              })}
             </ul>
           </nav>
 

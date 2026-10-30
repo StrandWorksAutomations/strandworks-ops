@@ -47,7 +47,7 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="shell">
+    <div className="gate">
       <div className="center-screen">
         <div>
           <h1 style={{ fontSize: 24, margin: 0 }}>Owner setup</h1>

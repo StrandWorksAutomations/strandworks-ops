@@ -2,24 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { TABS } from "./tabs";
 
-const TABS = [
-  { href: "/operate", label: "Operate" },
-  { href: "/inbox", label: "Inbox" },
-  { href: "/", label: "Today" },
-  { href: "/timeline", label: "Timeline" },
-  { href: "/briefings", label: "Briefs" },
-  { href: "/orchard", label: "Orchard", boundary: true },
-  { href: "/money", label: "Money" },
-  { href: "/business", label: "Business" },
-  { href: "/projects", label: "Projects" },
-  { href: "/decisions", label: "Decide" },
-  { href: "/share", label: "Share" },
-  { href: "/jobs-review", label: "Job review" },
-  { href: "/replies", label: "Replies" },
-  { href: "/ops", label: "Ops" },
-];
-
+// Left rail on wide screens; a sideways-scrolling strip under the top bar on phones.
 export function Navigation({ active }: { active: string }) {
   const activeLink = useRef<HTMLAnchorElement>(null);
 
@@ -28,18 +13,20 @@ export function Navigation({ active }: { active: string }) {
   }, [active]);
 
   return (
-    <nav className="nav" aria-label="Cockpit sections">
-      {TABS.map((tab) => {
-        const current = tab.href === active;
-        const props = {
-          href: tab.href,
-          className: current ? "active" : "",
-          "aria-current": current ? "page" as const : undefined,
-          ref: current ? activeLink : undefined,
-        };
-        return tab.boundary ? <a key={tab.href} {...props}>{tab.label}</a>
-          : <Link key={tab.href} {...props}>{tab.label}</Link>;
-      })}
+    <nav className="sw-nav" aria-label="Cockpit sections">
+      <ul>
+        {TABS.map((tab) => {
+          const current = tab.href === active;
+          const props = {
+            href: tab.href,
+            className: current ? "active" : "",
+            "aria-current": current ? "page" as const : undefined,
+            ref: current ? activeLink : undefined,
+          };
+          const label = <><span className="sw-dot" aria-hidden="true" />{tab.label}</>;
+          return <li key={tab.href}>{tab.boundary ? <a {...props}>{label}</a> : <Link {...props}>{label}</Link>}</li>;
+        })}
+      </ul>
     </nav>
   );
 }

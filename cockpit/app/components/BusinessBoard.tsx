@@ -13,10 +13,12 @@ function Metric({ label, count, href, top, topHref, highPriority = 0 }: {
   </div>;
 }
 
-export function BusinessBoard({ cards, available, now, jobsPending }: {
+export function BusinessBoard({ cards, available, now, jobsPending, repliesPending }: {
   cards: ReturnType<typeof buildBusinessBoard>;
   /** Recruiter job submissions waiting in /jobs-review (Kinetic Clinician card); null = unavailable, undefined = hide. */
   jobsPending?: number | null;
+  /** Facebook reply drafts waiting in /replies (Kinetic Clinician card); null = unavailable, undefined = hide. */
+  repliesPending?: number | null;
   available: { intake: boolean; loop: boolean; events: boolean; dates: boolean; projects: boolean };
   now: Date;
 }) {
@@ -49,6 +51,8 @@ export function BusinessBoard({ cards, available, now, jobsPending }: {
               href={`/timeline?${filter}&days=14`} top={card.dates[0] ? `${card.dates[0].title}${card.dates[0].overdue ? " · Overdue" : ""}` : undefined} />
             {key === "kinetic-clinician" && jobsPending !== undefined
               ? <Metric label="Recruiter jobs to review" count={jobsPending ?? "—"} href="/jobs-review" /> : null}
+            {key === "kinetic-clinician" && repliesPending !== undefined
+              ? <Metric label="Facebook replies to review" count={repliesPending ?? "—"} href="/replies" /> : null}
           </dl>
           <div className="meta">Last activity: {card.lastActivity ? <time dateTime={card.lastActivity}>{formatLoopAge(card.lastActivity, now)}</time> : incomplete ? "unavailable" : "none recorded"}{incomplete && card.lastActivity ? " · partial sources" : ""}</div>
         </article>;
