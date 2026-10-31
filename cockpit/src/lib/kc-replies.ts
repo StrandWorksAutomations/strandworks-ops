@@ -68,6 +68,17 @@ export function safeLinks(links: unknown): KcJobLink[] {
     !!l && typeof l.label === "string" && typeof l.url === "string" && /^https:\/\/[^\s]+$/.test(l.url)).slice(0, 12);
 }
 
+/**
+ * What the owner already decided for a reply whose action the Mac has not applied yet:
+ * "closed" (dismissed or posted), "approved", or null. The page shows that decision at once
+ * instead of waiting up to 15 minutes for the sync.
+ */
+export function pendingDecision(actions: Pick<KcReplyAction, "item_id" | "action" | "applied_at">[], id: string): "closed" | "approved" | null {
+  const open = actions.filter((a) => a.item_id === id && !a.applied_at).map((a) => a.action);
+  if (open.includes("dismiss") || open.includes("posted")) return "closed";
+  return open.includes("approve") ? "approved" : null;
+}
+
 export function isManual(reply: Pick<KcReply, "source_kind">): boolean {
   return reply.source_kind !== "owned_page";
 }

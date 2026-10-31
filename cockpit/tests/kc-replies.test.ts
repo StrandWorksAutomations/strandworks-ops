@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.stubGlobal("React", React);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-import { safeLinks, validateReplyAction } from "../src/lib/kc-replies";
+import { pendingDecision, safeLinks, validateReplyAction } from "../src/lib/kc-replies";
 import { JobLinks } from "../app/replies/ReplyCard";
 
 const id = "0123456789abcdef01234567";
@@ -35,5 +35,18 @@ describe("job links", () => {
     expect(html).not.toContain("javascript:");
     expect(safeLinks("nope")).toEqual([]);
     expect(renderToStaticMarkup(React.createElement(JobLinks, { reply: { job_links: [] } }))).toBe("");
+  });
+});
+
+describe("pending decisions", () => {
+  const a = (action: "approve" | "dismiss" | "posted" | "save", applied_at: string | null = null, item_id = id) => ({ item_id, action, applied_at });
+  it("a queued dismiss or posted closes the reply before the Mac applies it", () => {
+    expect(pendingDecision([a("dismiss")], id)).toBe("closed");
+    expect(pendingDecision([a("approve"), a("posted")], id)).toBe("closed");
+    expect(pendingDecision([a("approve")], id)).toBe("approved");
+  });
+  it("ignores applied actions and other replies", () => {
+    expect(pendingDecision([a("dismiss", "2026-10-30T00:00:00Z"), a("dismiss", null, "f".repeat(24))], id)).toBeNull();
+    expect(pendingDecision([a("save")], id)).toBeNull();
   });
 });

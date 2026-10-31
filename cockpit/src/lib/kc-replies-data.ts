@@ -24,7 +24,12 @@ export async function queueReplyAction(v: { id: string; action: ReplyActionKind;
 export async function countRepliesToReview(): Promise<number | null> {
   if (!supabaseConfigured()) return null;
   try {
-    return (await sbSelect<{ id: string }>("kc_fb_replies", "select=id&status=in.(needs_review,needs_context,approved)&delivery_state=is.null&limit=200")).length;
+    const [open, closing] = await Promise.all([
+      sbSelect<{ id: string }>("kc_fb_replies", "select=id&status=in.(needs_review,needs_context,approved)&delivery_state=is.null&limit=200"),
+      sbSelect<{ item_id: string }>("kc_fb_reply_actions", "select=item_id&applied_at=is.null&action=in.(dismiss,posted)&limit=200"),
+    ]);
+    const closed = new Set(closing.map((a) => a.item_id));
+    return open.filter((r) => !closed.has(r.id)).length;
   } catch {
     return null;
   }
