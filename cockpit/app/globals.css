@@ -538,7 +538,8 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 .reply-summary { margin: 6px 0 0; overflow-wrap: anywhere; }
 .reply-thread { white-space: pre-wrap; overflow-wrap: anywhere; }
 .reply-reasons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
-.reply-reasons .chip { min-height: 40px; padding: 8px 12px; cursor: pointer; }
+.reply-reasons .chip { min-height: 40px; padding: 8px 12px; cursor: pointer; background: var(--panel-2); font-size: 12px; }
+.reply-reasons .chip:hover { color: var(--ink); border-color: var(--border-strong); }
 .reply-reasons .chip:disabled { opacity: 0.4; cursor: default; }
 .reply-results { color: var(--good); }
 .group-table { width: 100%; border-collapse: collapse; }
