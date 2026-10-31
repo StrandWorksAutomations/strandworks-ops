@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DRAFT_MAX, STATUS_LABEL, isManual, safeLinks, type KcReply, type ReplyActionKind } from "@/lib/kc-replies";
+import { DISMISS_REASONS, DRAFT_MAX, SNOOZE_HOURS, STATUS_LABEL, isManual, safeLinks, type KcReply, type ReplyActionKind } from "@/lib/kc-replies";
 
 // The employer pages behind the facts in the draft. Shown to the owner only; never part of the reply.
 export function JobLinks({ reply }: { reply: Pick<KcReply, "job_links"> }) {
@@ -20,7 +20,7 @@ export function JobLinks({ reply }: { reply: Pick<KcReply, "job_links"> }) {
 
 // Copies synchronously (select + execCommand) so it still counts as part of the click,
 // then opens the post; both must happen inside the click for the browser to allow them.
-function copyAndOpen(field: HTMLTextAreaElement | null, text: string, url: string): boolean {
+export function copyAndOpen(field: HTMLTextAreaElement | null, text: string, url: string): boolean {
   let copied = false;
   if (field) {
     field.focus();
@@ -42,17 +42,18 @@ export function ReplyCard({ reply, approvedPending = false, waiting, lastResult,
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
   const manual = isManual(reply);
   const approved = approvedText !== null;
   const edited = draft.trim() !== (approvedText ?? reply.draft).trim();
   const finished = reply.status === "posted" || reply.status === "dismissed" || !!reply.delivery_state;
 
-  async function act(action: ReplyActionKind): Promise<boolean> {
+  async function act(action: ReplyActionKind, extra: { reason?: string; hours?: number } = {}): Promise<boolean> {
     setBusy(true);
     setError(null);
     const res = await fetch("/api/replies", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: reply.id, action, revision: reply.revision, ...(action === "save" || action === "approve" ? { draft } : {}) }),
+      body: JSON.stringify({ id: reply.id, action, revision: reply.revision, ...extra, ...(action === "save" || action === "approve" ? { draft } : {}) }),
     }).catch(() => null);
     const json = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
     setBusy(false);
@@ -71,8 +72,8 @@ export function ReplyCard({ reply, approvedPending = false, waiting, lastResult,
     if (!manual) setDone("Approved. The Page sends it within 15 minutes.");
   }
 
-  async function close(action: "dismiss" | "posted") {
-    if (await act(action)) { setGone(true); router.refresh(); }
+  async function close(action: "dismiss" | "posted" | "snooze", extra: { reason?: string; hours?: number } = {}) {
+    if (await act(action, extra)) { setGone(true); router.refresh(); }
   }
 
   if (gone) return null;
@@ -83,8 +84,13 @@ export function ReplyCard({ reply, approvedPending = false, waiting, lastResult,
         <span className={`badge ${approved ? "ok" : reply.status === "needs_context" ? "warn" : ""}`}>{reply.delivery_state ?? (approved ? "approved" : STATUS_LABEL[reply.status] ?? reply.status)}</span>
         <span>{reply.source_name}</span>
         <span>{received}</span>
+        {reply.kind === "follow_up" ? <span className="chip">reply to your comment</span> : null}
         {reply.promotion !== "allowed" ? <span className="chip">help only, no links</span> : null}
       </div>
+      {reply.summary ? <p className="reply-summary"><span className="meta">Points to </span>{reply.summary}</p> : null}
+      {reply.kind === "follow_up" && reply.context ? (
+        <details><summary className="meta">The thread so far</summary><p className="meta reply-thread">{reply.context}</p></details>
+      ) : null}
       <blockquote className="reply-post">{reply.post_text}</blockquote>
       <a href={reply.source_url} target="_blank" rel="noopener noreferrer">Open the post on Facebook ↗</a>
       <label className="meta reply-label" htmlFor={`draft-${reply.id}`}>{approved ? "Approved reply" : "Suggested reply"}</label>
@@ -107,7 +113,19 @@ export function ReplyCard({ reply, approvedPending = false, waiting, lastResult,
             <button className="token-btn approve" disabled={busy || !draft.trim()} onClick={approve}>{manual ? "Approve, copy and open post" : edited ? "Save and approve" : "Approve"}</button>
             {edited ? <button className="token-btn" disabled={busy} onClick={() => act("save").then((ok) => ok && setDone("Edit saved."))}>Save edit</button> : null}
           </>}
-          <button className="token-btn halt" disabled={busy} onClick={() => close("dismiss")}>Dismiss</button>
+          <button className="token-btn halt" disabled={busy} aria-expanded={asking} onClick={() => setAsking(!asking)}>Dismiss</button>
+        </div>
+      )}
+      {!finished && asking ? (
+        <div className="reply-reasons" role="group" aria-label="Why dismiss it?">
+          <span className="meta">Why? The drafter learns from this.</span>
+          {DISMISS_REASONS.map((r) => <button key={r} className="chip" disabled={busy} onClick={() => close("dismiss", { reason: r })}>{r}</button>)}
+          <button className="chip" disabled={busy} onClick={() => close("dismiss")}>Skip</button>
+        </div>
+      ) : null}
+      {finished ? null : (
+        <div className="reply-reasons">
+          {SNOOZE_HOURS.map((h) => <button key={h} className="chip" disabled={busy} onClick={() => close("snooze", { hours: h })}>Snooze {h === 24 ? "a day" : `${h / 24} days`}</button>)}
         </div>
       )}
       {waiting && !done ? <p className="meta" role="status">Queued for the Mac: {waiting}</p> : null}

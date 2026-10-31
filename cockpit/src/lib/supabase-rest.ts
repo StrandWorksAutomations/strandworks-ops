@@ -62,6 +62,21 @@ export async function sbInsert<T>(table: string, row: Record<string, unknown>): 
   return (await res.json()) as T[];
 }
 
+// PATCH rows matching `query` (a PostgREST filter such as "id=eq.2026-W44"), returning them.
+export async function sbUpdate<T>(table: string, query: string, patch: Record<string, unknown>): Promise<T[]> {
+  const res = await fetch(`${baseUrl()}/rest/v1/${table}?${query}`, {
+    method: "PATCH",
+    headers: { ...authHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify(patch),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`supabase update ${table} failed (${res.status}): ${text.slice(0, 200)}`);
+  }
+  return (await res.json()) as T[];
+}
+
 // CALL a Postgres function through PostgREST (/rpc/<fn>), returning its JSON.
 export async function sbRpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   const res = await fetch(`${baseUrl()}/rest/v1/rpc/${fn}`, {

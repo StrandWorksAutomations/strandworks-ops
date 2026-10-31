@@ -534,3 +534,16 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 /* Login and first-run setup: a narrow centered panel outside the section rail. */
 .gate { max-width: 420px; margin: 0 auto; padding: 0 16px; }
 .gate-title { justify-content: center; margin: 0; font-size: 15px; }
+
+.reply-summary { margin: 6px 0 0; overflow-wrap: anywhere; }
+.reply-thread { white-space: pre-wrap; overflow-wrap: anywhere; }
+.reply-reasons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.reply-reasons .chip { min-height: 40px; padding: 8px 12px; cursor: pointer; }
+.reply-reasons .chip:disabled { opacity: 0.4; cursor: default; }
+.reply-results { color: var(--good); }
+.group-table { width: 100%; border-collapse: collapse; }
+.group-table th, .group-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.group-table td.num, .group-table th.num { text-align: right; white-space: nowrap; }
+.group-wrap { overflow-x: auto; }
+.join-list { list-style: none; margin: 0; padding: 0; }
+.join-list li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
