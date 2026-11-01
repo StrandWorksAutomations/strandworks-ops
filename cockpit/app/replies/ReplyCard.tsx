@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DISMISS_REASONS, DRAFT_MAX, SNOOZE_HOURS, STATUS_LABEL, isManual, safeLinks, type KcReply, type ReplyActionKind } from "@/lib/kc-replies";
+import { DISMISS_REASONS, DRAFT_MAX, SNOOZE_HOURS, STATUS_LABEL, facebookGroupId, isManual, pageAccessHelp, pageAccessLabel, pageAccessReady, safeLinks, type KcPageAccess, type KcReply, type ReplyActionKind } from "@/lib/kc-replies";
 
 // The employer pages behind the facts in the draft. Shown to the owner only; never part of the reply.
 export function JobLinks({ reply }: { reply: Pick<KcReply, "job_links"> }) {
@@ -33,7 +33,7 @@ export function copyAndOpen(field: HTMLTextAreaElement | null, text: string, url
   return copied || !!navigator.clipboard;
 }
 
-export function ReplyCard({ reply, approvedPending = false, waiting, lastResult, received }: { reply: KcReply; approvedPending?: boolean; waiting: string | null; lastResult: string | null; received: string }) {
+export function ReplyCard({ reply, pageAccess, approvedPending = false, waiting, lastResult, received }: { reply: KcReply; pageAccess?: KcPageAccess | null; approvedPending?: boolean; waiting: string | null; lastResult: string | null; received: string }) {
   const router = useRouter();
   const field = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState(reply.approved_draft ?? reply.draft);
@@ -44,6 +44,7 @@ export function ReplyCard({ reply, approvedPending = false, waiting, lastResult,
   const [done, setDone] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const manual = isManual(reply);
+  const pageReady = !manual || pageAccessReady(pageAccess, facebookGroupId(reply.source_url));
   const approved = approvedText !== null;
   const edited = draft.trim() !== (approvedText ?? reply.draft).trim();
   const finished = reply.status === "posted" || reply.status === "dismissed" || !!reply.delivery_state;
@@ -62,10 +63,11 @@ export function ReplyCard({ reply, approvedPending = false, waiting, lastResult,
   }
 
   async function approve() {
+    if (!pageReady) return;
     const text = draft.trim();
     if (manual) {
       const copied = copyAndOpen(field.current, text, reply.source_url);
-      setDone(copied ? "Copied and opened the post. Paste it as a comment, then tap “I posted it”." : "Opened the post. Copy failed; select the reply and copy it.");
+      setDone(copied ? "Copied and opened the post. Confirm the comment box says Kinetic Clinician, paste the reply, then tap “I posted as Kinetic Clinician”." : "Opened the post. Copy failed; select the reply and copy it.");
     }
     if (!(await act("approve"))) { setDone(null); return; }
     setApprovedText(text);
@@ -81,7 +83,7 @@ export function ReplyCard({ reply, approvedPending = false, waiting, lastResult,
   return (
     <article className="card share-card" id={reply.id}>
       <div className="loop-meta">
-        <span className={`badge ${approved ? "ok" : reply.status === "needs_context" ? "warn" : ""}`}>{reply.delivery_state ?? (approved ? "approved" : STATUS_LABEL[reply.status] ?? reply.status)}</span>
+        <span className={`badge ${!pageReady ? "warn" : approved ? "ok" : reply.status === "needs_context" ? "warn" : ""}`}>{reply.delivery_state ?? (!pageReady ? "held for Page access" : approved ? "approved" : STATUS_LABEL[reply.status] ?? reply.status)}</span>
         <span>{reply.source_name}</span>
         <span>{received}</span>
         {reply.kind === "follow_up" ? <span className="chip">reply to your comment</span> : null}
@@ -93,6 +95,10 @@ export function ReplyCard({ reply, approvedPending = false, waiting, lastResult,
       ) : null}
       <blockquote className="reply-post">{reply.post_text}</blockquote>
       <a href={reply.source_url} target="_blank" rel="noopener noreferrer">Open the post on Facebook ↗</a>
+      {manual ? <p className={pageReady ? "meta" : "error-text"} role={pageReady ? undefined : "status"}>
+        <strong>{pageAccessLabel(pageAccess)}.</strong> {pageAccessHelp(pageAccess)}
+        {pageAccess?.note ? <> {pageAccess.note}</> : null}
+      </p> : null}
       <label className="meta reply-label" htmlFor={`draft-${reply.id}`}>{approved ? "Approved reply" : "Suggested reply"}</label>
       <textarea ref={field} id={`draft-${reply.id}`} className="answer-input reply-draft" value={draft} maxLength={DRAFT_MAX} rows={7}
         readOnly={finished || busy} onChange={(e) => setDraft(e.target.value)} />
@@ -106,11 +112,11 @@ export function ReplyCard({ reply, approvedPending = false, waiting, lastResult,
       {finished ? null : (
         <div className="confirm-row">
           {approved && !edited ? <>
-            {manual ? <button className="token-btn" disabled={busy} onClick={() => setDone(copyAndOpen(field.current, approvedText ?? draft, reply.source_url) ? "Copied and opened the post." : "Opened the post. Copy failed; select the reply and copy it.")}>Copy and open again</button> : null}
-            {manual ? <button className="token-btn approve" disabled={busy} onClick={() => close("posted")}>I posted it</button>
+            {manual ? <button className="token-btn" disabled={busy || !pageReady} onClick={() => setDone(copyAndOpen(field.current, approvedText ?? draft, reply.source_url) ? "Copied and opened the post. Confirm the comment box says Kinetic Clinician." : "Opened the post. Copy failed; select the reply and copy it.")}>Copy and open again</button> : null}
+            {manual ? <button className="token-btn approve" disabled={busy || !pageReady} onClick={() => close("posted")}>I posted as Kinetic Clinician</button>
               : <span className="meta">Sends from the Page automatically.</span>}
           </> : <>
-            <button className="token-btn approve" disabled={busy || !draft.trim()} onClick={approve}>{manual ? "Approve, copy and open post" : edited ? "Save and approve" : "Approve"}</button>
+            <button className="token-btn approve" disabled={busy || !draft.trim() || !pageReady} onClick={approve}>{manual ? "Approve, copy and open post" : edited ? "Save and approve" : "Approve"}</button>
             {edited ? <button className="token-btn" disabled={busy} onClick={() => act("save").then((ok) => ok && setDone("Edit saved."))}>Save edit</button> : null}
           </>}
           <button className="token-btn halt" disabled={busy} aria-expanded={asking} onClick={() => setAsking(!asking)}>Dismiss</button>

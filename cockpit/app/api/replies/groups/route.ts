@@ -1,4 +1,4 @@
-// The owner joined a Facebook group by hand: queue it for the scan list.
+// Add a group to the scan list. This does not verify Page membership or commenting.
 // The Mac applies it on its next sync; nothing here touches Facebook.
 import { NextRequest, NextResponse } from "next/server";
 import { verifySessionToken, cookieNames } from "@/lib/session";

@@ -2,7 +2,7 @@
 // next sync (page_api.py run, every 15 minutes); nothing here posts.
 import { NextRequest, NextResponse } from "next/server";
 import { verifySessionToken, cookieNames } from "@/lib/session";
-import { validateReplyAction } from "@/lib/kc-replies";
+import { ReplyAccessError, validateReplyAction } from "@/lib/kc-replies";
 import { queueReplyAction } from "@/lib/kc-replies-data";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
   try {
     await queueReplyAction(parsed.value);
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof ReplyAccessError) return NextResponse.json({ error: error.message }, { status: 409 });
     return NextResponse.json({ error: "Couldn't save that. Try again." }, { status: 502 });
   }
 }

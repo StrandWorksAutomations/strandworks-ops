@@ -40,6 +40,13 @@ dates use Supabase through server-only REST calls.
   emails, open owner-loop decisions and stalled rulings. Missing sources
   are shown as unavailable, never as a clear queue. Retired QA questions
   are excluded. Source mappings live in `src/lib/businesses.ts`.
+- **Replies** — group replies are held separately until a current Facebook check
+  confirms the Kinetic Clinician Page's comment box in that exact group. Personal
+  membership and pending Page join requests are shown separately from usable Page
+  access. Approval and marking posted recheck the Page identity, group, composer
+  label and seven-day check age on the server. The local sync enforces the same
+  gate. Group replies remain manual; adding a group to the scan list grants no
+  Facebook membership or commenting access.
 - **Governance files** — a collapsed section at the bottom of Decide keeps
   pending files in `_governance/decisions/` as cards with the
   six owner-token buttons (APPROVE / REVISE / PARK / BLESSED / HALT /

@@ -4,11 +4,38 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.stubGlobal("React", React);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-import { pendingDecision, resultLine, safeLinks, snoozedUntil, validateGroupJoined, validatePagePostAction, validateReplyAction, type KcReply } from "../src/lib/kc-replies";
+import { KINETIC_PAGE_ID, facebookGroupId, pageAccessLabel, pageAccessReady, pendingDecision, replyPageAccess, resultLine, safeLinks, snoozedUntil, validateGroupJoined, validatePagePostAction, validateReplyAction, type KcPageAccess, type KcReply } from "../src/lib/kc-replies";
 import { JobLinks, ReplyCard } from "../app/replies/ReplyCard";
 import { GroupsPanel } from "../app/replies/GroupsPanel";
 
 const id = "0123456789abcdef01234567";
+const readyAccess: KcPageAccess = { status: "ready", actor_id: KINETIC_PAGE_ID, checked_at: new Date().toISOString(), proof_url: "https://www.facebook.com/groups/1/posts/2/", composer_label: "Comment as Kinetic Clinician", note: "Comment box showed Kinetic Clinician." };
+
+describe("Kinetic Clinician group access", () => {
+  it("never treats personal membership, a pending request, or an unchecked Page as ready", () => {
+    expect(pageAccessReady(undefined)).toBe(false);
+    for (const status of ["unknown", "pending", "profile_only", "unavailable"] as const) {
+      expect(pageAccessReady({ ...readyAccess, status })).toBe(false);
+    }
+    expect(pageAccessReady({ ...readyAccess, actor_id: "100028984382783" })).toBe(false);
+    expect(pageAccessReady({ ...readyAccess, checked_at: null })).toBe(false);
+    expect(pageAccessReady({ ...readyAccess, checked_at: "2020-01-01T00:00:00Z" })).toBe(false);
+    expect(pageAccessReady({ ...readyAccess, composer_label: "Comment as Jonathan Bouren" })).toBe(false);
+    expect(pageAccessReady({ ...readyAccess, proof_url: "https://example.com/groups/1/" })).toBe(false);
+    expect(pageAccessReady(readyAccess, "other-group")).toBe(false);
+    expect(pageAccessReady(readyAccess, "1")).toBe(true);
+  });
+  it("resolves the actual group, ignoring unknown or unrelated ready groups", () => {
+    const reply = { source_kind: "public_group" as const, source_url: "https://www.facebook.com/groups/1/posts/2/" };
+    const group = { id: "1", name: "EMS Jobs", meta: "", lane: "ems", status: "joined" as const, url: "https://www.facebook.com/groups/1/", stats: {} };
+    expect(replyPageAccess(reply, [group])?.status).toBe("unknown");
+    expect(replyPageAccess(reply, [{ ...group, stats: { page_access: readyAccess } }])).toEqual(readyAccess);
+    expect(replyPageAccess(reply, [{ ...group, id: "2", stats: { page_access: readyAccess } }])?.status).toBe("unknown");
+    expect(replyPageAccess({ ...reply, source_kind: "owned_page" }, [])).toBeNull();
+    expect(facebookGroupId("https://facebook.com.evil.example/groups/1/posts/2/")).toBeNull();
+    expect(pageAccessLabel({ ...readyAccess, status: "pending" })).toBe("Page join request pending");
+  });
+});
 
 describe("kc reply actions", () => {
   it("needs a known reply, action and revision", () => {
@@ -91,6 +118,11 @@ describe("results, weekly post and groups", () => {
     expect(html).toContain("AMR: Paramedic, Columbus, OH");
     expect(html).toContain("reply to your comment");
     expect(html).toContain("Snooze a day");
+    expect(html).toContain("Page access needs checking");
+    expect(html).toMatch(/disabled=""[^>]*>Approve, copy and open post/);
+    const readyHtml = renderToStaticMarkup(React.createElement(ReplyCard, { reply, pageAccess: readyAccess, waiting: null, lastResult: null, received: "" }));
+    expect(readyHtml).toContain("Kinetic Clinician can comment");
+    expect(readyHtml).not.toMatch(/disabled=""[^>]*>Approve, copy and open post/);
   });
   it("groups list joined stats and groups to join", () => {
     const html = renderToStaticMarkup(React.createElement(GroupsPanel, { groups: [
@@ -100,6 +132,9 @@ describe("results, weekly post and groups", () => {
     expect(html).toContain("EMS Jobs");
     expect(html).toContain("paused");
     expect(html).toContain("Groups to join (1)");
-    expect(html).toContain("I joined it");
+    expect(html).toContain("Add to scan list");
+    expect(html).not.toContain("I joined it");
+    expect(html).toContain("Page access needs checking");
+    expect(html).toContain("0 groups checked for commenting as Kinetic Clinician");
   });
 });

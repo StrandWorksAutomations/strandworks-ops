@@ -33,11 +33,22 @@ export type KcReply = {
 };
 
 /** What happened after a group reply was posted, from the scan's read-only rechecks. */
-export type KcResults = { checks: number; checked_at: string; found: boolean; gone: boolean; reactions: number; replies: number };
+export type KcResults = { checks: number; checked_at: string; found: boolean; gone: boolean; reactions: number; replies: number; page_access?: KcPageAccess };
+
+export const KINETIC_PAGE_ID = "61595378964295";
+export type KcPageAccess = {
+  status: "unknown" | "ready" | "pending" | "profile_only" | "unavailable";
+  actor_id: string;
+  checked_at: string | null;
+  note: string;
+  proof_url: string;
+  composer_label?: string;
+};
+export const UNKNOWN_PAGE_ACCESS: KcPageAccess = { status: "unknown", actor_id: KINETIC_PAGE_ID, checked_at: null, note: "", proof_url: "" };
 
 export type KcGroup = {
   id: string; name: string; meta: string; lane: string; status: "joined" | "to_join"; url: string;
-  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean };
+  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess };
 };
 
 export type KcPagePost = { id: string; draft: string; links: KcJobLink[]; status: "draft" | "approved" | "posted" | "dismissed"; created_at: string };
@@ -55,6 +66,7 @@ export const SNOOZE_HOURS = [24, 72] as const;
 export const PAGE_URL = "https://www.facebook.com/61595378964295";
 export type ReplyActionKind = (typeof REPLY_ACTIONS)[number];
 export const DRAFT_MAX = 4000;
+export class ReplyAccessError extends Error {}
 
 export const STATUS_LABEL: Record<string, string> = {
   needs_review: "to review",
@@ -112,6 +124,45 @@ export function pendingDecision(actions: Pick<KcReplyAction, "item_id" | "action
 
 export function isManual(reply: Pick<KcReply, "source_kind">): boolean {
   return reply.source_kind !== "owned_page";
+}
+
+export function facebookGroupId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" || !["www.facebook.com", "facebook.com", "m.facebook.com"].includes(parsed.hostname)) return null;
+    return parsed.pathname.match(/^\/groups\/([0-9A-Za-z._-]+)(?:\/|$)/)?.[1] ?? null;
+  } catch { return null; }
+}
+
+/** Personal membership never proves that the Kinetic Clinician Page can comment. */
+export function pageAccessReady(access: KcPageAccess | null | undefined, groupId?: string | null): boolean {
+  return access?.status === "ready" && access.actor_id === KINETIC_PAGE_ID
+    && !!access.checked_at && /(?:Z|[+-]\d{2}:\d{2})$/.test(access.checked_at) && Number.isFinite(Date.parse(access.checked_at))
+    && Date.now() - Date.parse(access.checked_at) <= 7 * 86400_000 && Date.parse(access.checked_at) <= Date.now()
+    && /^(Comment|Answer|Write a comment|Write an answer) as Kinetic Clinician$/i.test(access.composer_label ?? "")
+    && !!facebookGroupId(access.proof_url) && (!groupId || facebookGroupId(access.proof_url) === groupId);
+}
+
+export function replyPageAccess(reply: Pick<KcReply, "source_kind" | "source_url">, groups: KcGroup[]): KcPageAccess | null {
+  if (!isManual(reply)) return null;
+  const groupId = facebookGroupId(reply.source_url);
+  return groups.find((g) => g.id === groupId)?.stats.page_access ?? UNKNOWN_PAGE_ACCESS;
+}
+
+export function pageAccessLabel(access: KcPageAccess | null | undefined): string {
+  if (pageAccessReady(access)) return "Kinetic Clinician can comment";
+  if (access?.status === "pending") return "Page join request pending";
+  if (access?.status === "profile_only") return "Personal profile only";
+  if (access?.status === "unavailable") return "Page access unavailable";
+  return "Page access needs checking";
+}
+
+export function pageAccessHelp(access: KcPageAccess | null | undefined): string {
+  if (pageAccessReady(access)) return "On Facebook, confirm the comment box says Kinetic Clinician before pasting.";
+  if (access?.status === "pending") return "The group admin must approve Kinetic Clinician's join request before this reply can be used.";
+  if (access?.status === "profile_only") return "This group does not currently allow Kinetic Clinician to participate. Your personal membership cannot give the Page access.";
+  if (access?.status === "unavailable") return "Facebook is not currently allowing Kinetic Clinician to comment in this group. Recheck access before using this reply.";
+  return "Open Facebook as Kinetic Clinician and check this group's membership and comment box. Joining as Jonathan does not join the Page.";
 }
 
 /** Snoozed until a later time, by the synced row or an action the Mac has not applied yet. */

@@ -1,6 +1,6 @@
 import "server-only";
 import { sbInsert, sbSelect, sbUpdate, supabaseConfigured } from "./supabase-rest";
-import { REPLY_COLUMNS, type KcGroup, type KcPagePost, type KcReply, type KcReplyAction, type PagePostAction, type ReplyActionInput } from "./kc-replies";
+import { REPLY_COLUMNS, ReplyAccessError, facebookGroupId, isManual, pageAccessReady, replyPageAccess, type KcGroup, type KcPagePost, type KcReply, type KcReplyAction, type PagePostAction, type ReplyActionInput } from "./kc-replies";
 
 export type RepliesData = { replies: KcReply[]; actions: KcReplyAction[]; groups: KcGroup[]; pagePosts: KcPagePost[] };
 
@@ -21,6 +21,17 @@ export async function fetchReplies(): Promise<RepliesData | null> {
 }
 
 export async function queueReplyAction(v: ReplyActionInput): Promise<void> {
+  if (v.action === "approve" || v.action === "posted") {
+    const [reply] = await sbSelect<KcReply>("kc_fb_replies", `select=${REPLY_COLUMNS}&id=eq.${v.id}&limit=1`);
+    if (!reply) throw new ReplyAccessError("This reply is no longer available. Refresh the page.");
+    if (isManual(reply)) {
+      const groupId = facebookGroupId(reply.source_url);
+      const groups = groupId ? await sbSelect<KcGroup>("kc_fb_groups", `select=id,stats&id=eq.${encodeURIComponent(groupId)}&limit=1`) : [];
+      if (!pageAccessReady(replyPageAccess(reply, groups), groupId)) {
+        throw new ReplyAccessError("Kinetic Clinician's access to comment in this group has not been confirmed. The existing draft is preserved; check the group's Page access first.");
+      }
+    }
+  }
   await sbInsert("kc_fb_reply_actions", { item_id: v.id, action: v.action, base_revision: v.revision, draft: v.draft ?? null,
     reason: v.reason ?? null, snooze_until: v.snooze_until ?? null });
 }
@@ -31,7 +42,7 @@ export async function updatePagePost(v: { id: string; action: PagePostAction; dr
   await sbUpdate("kc_fb_page_posts", `id=eq.${v.id}`, { ...(v.draft ? { draft: v.draft } : {}), ...(status ? { status } : {}), updated_at: new Date().toISOString() });
 }
 
-/** The owner joined a group by hand; the Mac moves it onto the scan list on its next sync. */
+/** Add the group to the scan list. This is never a claim about Page membership or commenting. */
 export async function queueGroupJoined(groupId: string): Promise<void> {
   await sbInsert("kc_fb_group_actions", { group_id: groupId, action: "joined" });
 }
