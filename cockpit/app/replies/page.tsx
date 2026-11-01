@@ -1,6 +1,6 @@
 import { Chrome } from "../components/Chrome";
 import { fetchReplies } from "@/lib/kc-replies-data";
-import { facebookGroupId, isManual, pageAccessReady, pendingDecision, replyPageAccess, resultLine, snoozedUntil } from "@/lib/kc-replies";
+import { PAGE_URL, facebookGroupId, isManual, pageAccessReady, pendingDecision, replyGroupIds, replyPageAccess, resultLine, snoozedUntil } from "@/lib/kc-replies";
 import { OWNER_TIME_ZONE } from "@/lib/owner-loop";
 import { ReplyCard } from "./ReplyCard";
 import { PagePostCard } from "./PagePostCard";
@@ -27,7 +27,7 @@ export default async function RepliesPage() {
   const live = data.replies.filter((r) => ["needs_review", "needs_context", "approved"].includes(r.status) && !r.delivery_state && decided(r.id) !== "closed");
   const later = live.filter((r) => snoozedUntil(r, data.actions));
   const open = live.filter((r) => !later.includes(r));
-  const usable = open.filter((r) => !isManual(r) || pageAccessReady(replyPageAccess(r, data.groups), facebookGroupId(r.source_url)));
+  const usable = open.filter((r) => !isManual(r) || pageAccessReady(replyPageAccess(r, data.groups), facebookGroupId(r.source_url), replyGroupIds(r, data.groups)));
   const blocked = open.filter((r) => !usable.includes(r));
   const done = data.replies.filter((r) => !live.includes(r));
   const weekly = data.pagePosts.find((p) => p.status === "draft" || p.status === "approved");
@@ -39,8 +39,9 @@ export default async function RepliesPage() {
     <Chrome title="Replies" sub={`${usable.length} ready to review · ${blocked.length} held for Page access · synced ${when(synced) || "never"}`} active="/replies">
       <section className="section">
         <div className="section-head"><h2>Waiting for you</h2><span className="meta">group replies are posted by hand</span></div>
+        <p className="meta">Before pasting, use Facebook’s account picture → See all profiles → <a href={PAGE_URL} target="_blank" rel="noopener noreferrer">Kinetic Clinician</a>. The comment box must show the Page’s name.</p>
         {usable.length === 0 ? <p className="meta card">No replies ready to post as Kinetic Clinician. {blocked.length ? "Replies held for group access are below." : "The group scan is scheduled at 8am, 1pm and 7pm."}</p>
-          : usable.map((r) => <ReplyCard key={`${r.id}-${r.revision}`} reply={r} pageAccess={replyPageAccess(r, data.groups)} approvedPending={decided(r.id) === "approved"} waiting={waiting(r.id)} lastResult={lastResult(r.id)} received={when(r.created_at)} />)}
+          : usable.map((r) => <ReplyCard key={`${r.id}-${r.revision}`} reply={r} pageAccess={replyPageAccess(r, data.groups)} groupAliases={replyGroupIds(r, data.groups)} approvedPending={decided(r.id) === "approved"} waiting={waiting(r.id)} lastResult={lastResult(r.id)} received={when(r.created_at)} />)}
         {later.length ? <details className="card">
           <summary className="meta">Snoozed ({later.length})</summary>
           <ul className="share-history">{later.map((r) => <li key={r.id}>{r.title} <span className="meta"> · back {when(snoozedUntil(r, data.actions))}</span></li>)}</ul>
@@ -48,7 +49,7 @@ export default async function RepliesPage() {
       </section>
       {blocked.length ? <section className="section">
         <div className="section-head"><h2>Held for Page access ({blocked.length})</h2><span className="meta">drafts preserved until Kinetic Clinician can comment</span></div>
-        {blocked.map((r) => <ReplyCard key={`${r.id}-${r.revision}`} reply={r} pageAccess={replyPageAccess(r, data.groups)} approvedPending={decided(r.id) === "approved"} waiting={waiting(r.id)} lastResult={lastResult(r.id)} received={when(r.created_at)} />)}
+        {blocked.map((r) => <ReplyCard key={`${r.id}-${r.revision}`} reply={r} pageAccess={replyPageAccess(r, data.groups)} groupAliases={replyGroupIds(r, data.groups)} approvedPending={decided(r.id) === "approved"} waiting={waiting(r.id)} lastResult={lastResult(r.id)} received={when(r.created_at)} />)}
       </section> : null}
       {weekly ? <section className="section">
         <div className="section-head"><h2>Weekly Page post</h2><span className="meta">best-paid jobs posted in the last 7 days</span></div>

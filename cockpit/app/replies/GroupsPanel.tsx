@@ -7,7 +7,7 @@ import { pageAccessHelp, pageAccessLabel, pageAccessReady, type KcGroup } from "
 export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
   const [joined, setJoined] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
-  const ready = groups.filter((g) => pageAccessReady(g.stats.page_access, g.id));
+  const ready = groups.filter((g) => pageAccessReady(g.stats.page_access, g.id, g.stats.group_aliases));
   const scanned = groups.filter((g) => g.status === "joined")
     .sort((a, b) => (b.stats.posted ?? 0) - (a.stats.posted ?? 0) || (b.stats.replies_back ?? 0) - (a.stats.replies_back ?? 0) || a.name.localeCompare(b.name));
   const toJoin = groups.filter((g) => g.status === "to_join" && !joined[g.id]);
@@ -34,7 +34,7 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
             {scanned.map((g) => <tr key={g.id}>
               <td><a href={g.url} target="_blank" rel="noopener noreferrer">{g.name}</a>
                 {g.stats.quiet ? <span className="chip" title="4+ dismissals in 30 days and nothing posted: no longer queued"> paused</span> : null}
-                <div className={pageAccessReady(g.stats.page_access, g.id) ? "ok-text" : "meta"}>{pageAccessLabel(g.stats.page_access)}</div>
+                <div className={pageAccessReady(g.stats.page_access, g.id, g.stats.group_aliases) ? "ok-text" : "meta"}>{pageAccessLabel(g.stats.page_access)}</div>
                 <details><summary className="meta">Access details</summary>
                   <p className="meta">{pageAccessHelp(g.stats.page_access)} {g.stats.page_access?.note}</p>
                   {g.stats.page_access?.checked_at ? <p className="meta">Checked {new Date(g.stats.page_access.checked_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}</p> : null}

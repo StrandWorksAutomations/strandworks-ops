@@ -30,6 +30,18 @@ describe("reply actions enforce Page access on the server", () => {
     expect(rest.sbSelect).toHaveBeenCalledTimes(2);
     expect(rest.sbInsert).toHaveBeenCalledWith("kc_fb_reply_actions", expect.objectContaining({ item_id: id, action: "approve", draft: "Useful answer." }));
   });
+  it("accepts a numeric permalink only when it is a verified alias of the checked group", async () => {
+    rest.sbSelect.mockResolvedValueOnce([{ ...groupReply, source_url: "https://www.facebook.com/groups/307401089297853/posts/123/" }])
+      .mockResolvedValueOnce([{ id: "Complexmedicine", stats: { group_aliases: ["307401089297853"], page_access: { ...access, proof_url: "https://www.facebook.com/groups/Complexmedicine/" } } }]);
+    await queueReplyAction(action);
+    expect(rest.sbInsert).toHaveBeenCalledTimes(1);
+  });
+  it("does not infer an alias from an unrelated ready group", async () => {
+    rest.sbSelect.mockResolvedValueOnce([{ ...groupReply, source_url: "https://www.facebook.com/groups/999/posts/123/" }])
+      .mockResolvedValueOnce([{ id: "Complexmedicine", stats: { group_aliases: ["307401089297853"], page_access: { ...access, proof_url: "https://www.facebook.com/groups/Complexmedicine/" } } }]);
+    await expect(queueReplyAction(action)).rejects.toBeInstanceOf(ReplyAccessError);
+    expect(rest.sbInsert).not.toHaveBeenCalled();
+  });
   it("preserves saves and dismissals while group access is blocked", async () => {
     await queueReplyAction({ ...action, action: "save" });
     await queueReplyAction({ ...action, action: "dismiss" });

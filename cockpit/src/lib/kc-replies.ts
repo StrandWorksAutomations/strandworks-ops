@@ -48,7 +48,7 @@ export const UNKNOWN_PAGE_ACCESS: KcPageAccess = { status: "unknown", actor_id: 
 
 export type KcGroup = {
   id: string; name: string; meta: string; lane: string; status: "joined" | "to_join"; url: string;
-  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess };
+  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess; group_aliases?: string[] };
 };
 
 export type KcPagePost = { id: string; draft: string; links: KcJobLink[]; status: "draft" | "approved" | "posted" | "dismissed"; created_at: string };
@@ -135,18 +135,30 @@ export function facebookGroupId(url: string): string | null {
 }
 
 /** Personal membership never proves that the Kinetic Clinician Page can comment. */
-export function pageAccessReady(access: KcPageAccess | null | undefined, groupId?: string | null): boolean {
+export function pageAccessReady(access: KcPageAccess | null | undefined, groupId?: string | null, aliases: string[] = []): boolean {
   return access?.status === "ready" && access.actor_id === KINETIC_PAGE_ID
     && !!access.checked_at && /(?:Z|[+-]\d{2}:\d{2})$/.test(access.checked_at) && Number.isFinite(Date.parse(access.checked_at))
     && Date.now() - Date.parse(access.checked_at) <= 7 * 86400_000 && Date.parse(access.checked_at) <= Date.now()
     && /^(Comment|Answer|Write a comment|Write an answer) as Kinetic Clinician$/i.test(access.composer_label ?? "")
-    && !!facebookGroupId(access.proof_url) && (!groupId || facebookGroupId(access.proof_url) === groupId);
+    && !!facebookGroupId(access.proof_url) && (!groupId || [groupId, ...aliases].includes(facebookGroupId(access.proof_url)!));
+}
+
+/** Only aliases observed on Facebook and saved by the local checker are synced here. */
+export function groupIds(group: Pick<KcGroup, "id" | "stats">): string[] {
+  const aliases = Array.isArray(group.stats.group_aliases) ? group.stats.group_aliases : [];
+  return [group.id, ...aliases.filter((id) => typeof id === "string" && /^[0-9A-Za-z._-]{1,80}$/.test(id))];
+}
+
+export function replyGroupIds(reply: Pick<KcReply, "source_url">, groups: KcGroup[]): string[] {
+  const groupId = facebookGroupId(reply.source_url);
+  const group = groups.find((g) => groupId && groupIds(g).includes(groupId));
+  return group ? groupIds(group) : [];
 }
 
 export function replyPageAccess(reply: Pick<KcReply, "source_kind" | "source_url">, groups: KcGroup[]): KcPageAccess | null {
   if (!isManual(reply)) return null;
   const groupId = facebookGroupId(reply.source_url);
-  return groups.find((g) => g.id === groupId)?.stats.page_access ?? UNKNOWN_PAGE_ACCESS;
+  return groups.find((g) => groupId && groupIds(g).includes(groupId))?.stats.page_access ?? UNKNOWN_PAGE_ACCESS;
 }
 
 export function pageAccessLabel(access: KcPageAccess | null | undefined): string {

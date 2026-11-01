@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.stubGlobal("React", React);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-import { KINETIC_PAGE_ID, facebookGroupId, pageAccessLabel, pageAccessReady, pendingDecision, replyPageAccess, resultLine, safeLinks, snoozedUntil, validateGroupJoined, validatePagePostAction, validateReplyAction, type KcPageAccess, type KcReply } from "../src/lib/kc-replies";
+import { KINETIC_PAGE_ID, facebookGroupId, pageAccessLabel, pageAccessReady, pendingDecision, replyGroupIds, replyPageAccess, resultLine, safeLinks, snoozedUntil, validateGroupJoined, validatePagePostAction, validateReplyAction, type KcPageAccess, type KcReply } from "../src/lib/kc-replies";
 import { JobLinks, ReplyCard } from "../app/replies/ReplyCard";
 import { GroupsPanel } from "../app/replies/GroupsPanel";
 
@@ -34,6 +34,18 @@ describe("Kinetic Clinician group access", () => {
     expect(replyPageAccess({ ...reply, source_kind: "owned_page" }, [])).toBeNull();
     expect(facebookGroupId("https://facebook.com.evil.example/groups/1/posts/2/")).toBeNull();
     expect(pageAccessLabel({ ...readyAccess, status: "pending" })).toBe("Page join request pending");
+  });
+  it("matches numeric Facebook permalinks to a group's verified readable alias in either direction", () => {
+    const group = { id: "Complexmedicine", name: "Complex medicine", meta: "", lane: "ems", status: "joined" as const, url: "https://www.facebook.com/groups/Complexmedicine/",
+      stats: { group_aliases: ["307401089297853"], page_access: { ...readyAccess, proof_url: "https://www.facebook.com/groups/Complexmedicine/" } } };
+    const reply = { source_kind: "public_group" as const, source_url: "https://www.facebook.com/groups/307401089297853/posts/123/" };
+    const ids = replyGroupIds(reply, [group]);
+    expect(ids).toEqual(["Complexmedicine", "307401089297853"]);
+    expect(replyPageAccess(reply, [group])).toEqual(group.stats.page_access);
+    expect(pageAccessReady(replyPageAccess(reply, [group]), facebookGroupId(reply.source_url), ids)).toBe(true);
+    expect(pageAccessReady({ ...readyAccess, proof_url: reply.source_url }, group.id, group.stats.group_aliases)).toBe(true);
+    expect(replyGroupIds({ source_url: "https://www.facebook.com/groups/999/posts/123/" }, [group])).toEqual([]);
+    expect(pageAccessReady({ ...readyAccess, proof_url: "https://www.facebook.com/groups/999/" }, group.id, group.stats.group_aliases)).toBe(false);
   });
 });
 

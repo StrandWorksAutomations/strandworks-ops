@@ -33,7 +33,7 @@ export function copyAndOpen(field: HTMLTextAreaElement | null, text: string, url
   return copied || !!navigator.clipboard;
 }
 
-export function ReplyCard({ reply, pageAccess, approvedPending = false, waiting, lastResult, received }: { reply: KcReply; pageAccess?: KcPageAccess | null; approvedPending?: boolean; waiting: string | null; lastResult: string | null; received: string }) {
+export function ReplyCard({ reply, pageAccess, groupAliases = [], approvedPending = false, waiting, lastResult, received }: { reply: KcReply; pageAccess?: KcPageAccess | null; groupAliases?: string[]; approvedPending?: boolean; waiting: string | null; lastResult: string | null; received: string }) {
   const router = useRouter();
   const field = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState(reply.approved_draft ?? reply.draft);
@@ -44,7 +44,7 @@ export function ReplyCard({ reply, pageAccess, approvedPending = false, waiting,
   const [done, setDone] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const manual = isManual(reply);
-  const pageReady = !manual || pageAccessReady(pageAccess, facebookGroupId(reply.source_url));
+  const pageReady = !manual || pageAccessReady(pageAccess, facebookGroupId(reply.source_url), groupAliases);
   const approved = approvedText !== null;
   const edited = draft.trim() !== (approvedText ?? reply.draft).trim();
   const finished = reply.status === "posted" || reply.status === "dismissed" || !!reply.delivery_state;
