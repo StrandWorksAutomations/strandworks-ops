@@ -1,0 +1,89 @@
+{
+  "subject": "Owner Marketing overview",
+  "status": "DEPLOYED_READY_LOCAL_AUTHENTICATED_QA_PASSED",
+  "deployed_code_sha": "f8e350b3482cb6c9dcb3c59ff9978c703fa80682",
+  "deployed_from_branch": "codex/marketing-overview-2026-11-02",
+  "merged_via": "Non-forced fast-forward push HEAD:main; origin/main had not advanced",
+  "deployment": {
+    "id": "dpl_2WM7J4RaWy6bBDvrSxHgzsEuLiPe",
+    "project": "strandworks-cockpit",
+    "target": "production",
+    "state": "Ready",
+    "verified_at_utc": "2026-11-02T16:14:02Z",
+    "url": "https://strandworks-cockpit-91khpk06i-strandworks.vercel.app",
+    "owner_url": "https://dashboard.strandautomationworks.com/marketing",
+    "aliases": [
+      "https://dashboard.strandautomationworks.com",
+      "https://strandworks-cockpit.vercel.app",
+      "https://strandworks-cockpit-strandworks.vercel.app"
+    ],
+    "cloud_build": "PASS: 60 routes, including dynamic /marketing"
+  },
+  "validation": {
+    "marketing_tests": {
+      "passed": 10,
+      "failed": 0
+    },
+    "typecheck": "PASS",
+    "local_production_build": "PASS",
+    "local_authenticated_page_http_status": 200,
+    "local_authenticated_poster_http_status": 200,
+    "local_unauthenticated_page_http_status": 307,
+    "local_unauthenticated_poster_http_status": 307,
+    "production_unauthenticated_page_http_status": 307,
+    "production_unauthenticated_poster_http_status": 307,
+    "root_browser_qa": {
+      "desktop": "PASS",
+      "phone_viewport": [
+        390,
+        844
+      ],
+      "phone_document_scroll_width": 390,
+      "phone_overflow": false,
+      "gallery_default": true,
+      "card_dates_include_month_day_time": true,
+      "published_post_full_caption_and_two_correct_public_links": true,
+      "draft_filter_card_count": 3,
+      "other_brand_queues_not_checked_state": true,
+      "week_grouping": "PASS",
+      "temporary_browser_viewport_reset": true,
+      "evidence_private_paths": [
+        "/Users/jonathanbouren/.codex/tmp/marketing-overview/phone-2026-11-02.png",
+        "/Users/jonathanbouren/.codex/tmp/marketing-overview/desktop-2026-11-02.png"
+      ],
+      "environment": "Authenticated local development preview"
+    },
+    "independent_source_review": "PASS reported by social_queue_snapshot sibling",
+    "qa_environment_note": "Root observed a development hydration warning for Grammarly-injected body attributes. No Marketing component mismatch was reported; extension, auth and global body code were left unchanged.",
+    "production_browser_check": {
+      "result": "EXISTING_OWNER_LOGIN_REACHED",
+      "url": "https://dashboard.strandautomationworks.com/login",
+      "authenticated_production_ui_rechecked": false,
+      "reason": "Root Chrome session had no production passkey session; owner unlocks with existing dashboard passkey.",
+      "authentication_bypass_attempted": false,
+      "authentication_changed": false
+    }
+  },
+  "data_coverage": {
+    "connected_brands": 5,
+    "organic_queue_checked": "Tenetrix only, November 2-9 2026",
+    "queue_source_checked_at_utc": "2026-11-02T15:46:18Z",
+    "accounts_checked_at_utc": "2026-11-02T15:47:57Z",
+    "paid_source_checked_at_utc": "2026-11-02T16:03:25Z",
+    "paid_status_at_source_check": "Preparing",
+    "paid_actual_delivery_verified": false,
+    "automatic_refresh": false,
+    "other_brand_queues": "Not checked",
+    "accounts_outside_metricool": "Not inventoried"
+  },
+  "preserved": [
+    "Existing owner authentication and session middleware",
+    "Existing domain and aliases",
+    "Existing runtime environment",
+    "Organic posting queues and growth-lane ownership",
+    "Existing dashboard routes and other lanes",
+    "No automation created"
+  ],
+  "scope_note": "Only an approved creative poster was added to the authenticated /marketing asset path; private account screenshots were not published.",
+  "local_preview_cleanup": "Owned preview session31706 stopped after root production login check; no other previews or services targeted."
+}
