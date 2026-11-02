@@ -495,7 +495,7 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
   .nav { justify-content: center; }
   .loop-lifecycle { grid-template-columns: repeat(4, 1fr); }
   .shell { max-width: 1060px; }
-  .cols { display: grid; grid-template-columns: 3fr 2fr; gap: 0 28px; align-items: start; }
+  .cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 28px; align-items: start; }
   .grid { grid-template-columns: repeat(4, 1fr); }
 }
 
@@ -551,3 +551,7 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 .group-filters .chip:hover { color: var(--ink); border-color: var(--border-strong); }
 .join-list { list-style: none; margin: 0; padding: 0; }
 .join-list li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+
+/* Shared project outcomes and long report titles must shrink within the grid. */
+.cols > div { min-width: 0; }
+.card p, .card summary { overflow-wrap: anywhere; }

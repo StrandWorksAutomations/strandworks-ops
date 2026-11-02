@@ -1,3 +1,5 @@
+import { fetchPortfolio } from "@/lib/portfolio-data";
+import type { TimelineEntry } from "@/lib/owner-loop";
 import { OWNER_TIME_ZONE, ownerDay } from "@/lib/owner-loop";
 import { businessForProject, businessForEntity } from "@/lib/businesses";
 import { BusinessFilters } from "../components/BusinessFilters";
@@ -26,11 +28,12 @@ export default async function TimelinePage({
 }: {
   searchParams: Promise<{ project?: string | string[]; business?: string | string[]; days?: string | string[] }>;
 }) {
-  const [params, items, events, dueItems] = await Promise.all([
+  const [params, items, events, dueItems, portfolio] = await Promise.all([
     searchParams,
     fetchOwnerLoopItems(),
     fetchOwnerLoopEvents(),
     fetchDueItems(),
+    fetchPortfolio(),
   ]);
   const project = typeof params.project === "string" ? params.project : "";
   const business = typeof params.business === "string" ? params.business : "";
@@ -39,7 +42,14 @@ export default async function TimelinePage({
   const end = new Date(`${ownerDay(now.toISOString())}T12:00:00Z`);
   end.setUTCDate(end.getUTCDate() + days);
   const endDay = end.toISOString().slice(0, 10);
-  const allUpcoming = buildTimelineUpcoming(items ?? [], dueItems ?? [], now);
+  const objectiveDates: TimelineEntry[] = (portfolio?.objectives ?? []).filter((o) => o.status !== "complete").flatMap((o) =>
+    [{ kind: "review", due: o.review_at }, ...(o.status === "active" ? [{ kind: "delivery", due: o.target_at }] : [])].map((date) => ({
+      id: `portfolio-${o.id}-${date.kind}`, source: "portfolio" as const, kind: "milestone" as const,
+      project: o.project, title: `${date.kind === "review" ? "Review" : "Deliver"}: ${o.title}`, dueAt: date.due,
+      detail: `${o.accountable_owner} · ${o.outcome}`, href: `/focus?project=${encodeURIComponent(o.project)}#${o.id}`,
+      overdue: Date.parse(date.due) < now.getTime(), ref: null,
+    })));
+  const allUpcoming = [...buildTimelineUpcoming(items ?? [], dueItems ?? [], now), ...objectiveDates].sort((a, b) => a.dueAt.localeCompare(b.dueAt));
   const allHistory = groupTimelineEvents(events ?? [], now);
   const projects = Array.from(new Set([
     ...allUpcoming.map((entry) => entry.project),
@@ -58,7 +68,7 @@ export default async function TimelinePage({
     now,
   );
   const historyCount = history.reduce((count, group) => count + group.events.length, 0);
-  const upcomingUnavailable = items === null && dueItems === null;
+  const upcomingUnavailable = items === null && dueItems === null && portfolio === null;
 
   return (
     <Chrome title="Timeline" sub="dates ahead · rulings and agent outcomes" active="/timeline">
@@ -90,9 +100,10 @@ export default async function TimelinePage({
           <h2 id="timeline-upcoming">Upcoming</h2>
           <span className="meta">{upcomingUnavailable ? "unavailable" : `${upcoming.length} dates`} · next {days} days + overdue</span>
         </div>
-        {items === null || dueItems === null ? (
+        {items === null || dueItems === null || portfolio === null ? (
           <div className="card" role="status">
             <div className="meta">
+              {portfolio === null ? "Objective dates are unavailable. " : ""}
               {items === null ? "Owner-loop dates are unavailable. " : ""}
               {dueItems === null ? "Business due dates are unavailable. " : ""}
               {upcomingUnavailable ? "The upcoming timeline could not be loaded." : "The timeline below contains only the sources that loaded."}
@@ -109,8 +120,8 @@ export default async function TimelinePage({
             <li key={entry.id} id={entry.ref ?? undefined} className={`card timeline-entry${entry.overdue ? " overdue" : ""}`}>
               <div className="timeline-entry-head">
                 <time dateTime={entry.dueAt} className="timeline-date">
-                  {dayLabel(new Date(entry.dueAt).toISOString().slice(0, 10))}
-                  {entry.source === "owner-loop" ? ` · ${timeLabel(entry.dueAt)} ET` : ""}
+                  {dayLabel(entry.source === "business" ? entry.dueAt.slice(0, 10) : ownerDay(entry.dueAt))}
+                  {entry.source !== "business" ? ` · ${timeLabel(entry.dueAt)} ET` : ""}
                 </time>
                 {entry.overdue ? <span className="badge bad">OVERDUE</span> : null}
               </div>
@@ -119,7 +130,7 @@ export default async function TimelinePage({
                 <span className="timeline-kind meta">{entry.source === "business" ? "Business" : entry.kind}</span>
                 {entry.ref ? <span className="mono meta">{entry.ref}</span> : null}
               </div>
-              <h3>{entry.ref && !boardRefs.has(entry.ref) ? entry.title : <Link href={entry.href} className="timeline-title">{entry.title}</Link>}</h3>
+              <h3>{entry.source === "owner-loop" && entry.ref && !boardRefs.has(entry.ref) ? entry.title : <Link href={entry.href} className="timeline-title">{entry.title}</Link>}</h3>
               {entry.detail ? <div className="meta">{entry.detail}</div> : null}
             </li>
           ))}

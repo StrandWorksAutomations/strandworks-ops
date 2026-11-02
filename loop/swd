@@ -33,6 +33,7 @@ KEY_FILE = Path.home() / ".config/strandworks/owner-loop.apikey"
 STATE_DIR = Path.home() / ".cache/strandworks/owner-loop"
 DASHBOARD = "https://dashboard.strandautomationworks.com/decisions"
 PROMPT_RECHECK_SECONDS = 45
+WORK_RENEW_SECONDS = 15 * 60
 HOOK_DEADLINE_SECONDS = 4  # hard cap; settings give the hook 6 s
 OWNER_TZ = ZoneInfo("America/New_York")  # Jonathan is in Berea, KY
 
@@ -73,6 +74,12 @@ def rpc(fn, args, timeout=8.0):
         raise LoopError(f"{fn}: network error {e}") from None
 
 
+def canonical_project(project):
+    # The application is an independent nested repo; its portfolio identity is
+    # the wrapper's 3rdrider name. Historical owner-loop items use both forms.
+    return "3rdrider" if project in ("3rd-rider", "3rdrider") else project
+
+
 def detect_project(cwd=None):
     cwd = Path(cwd or os.getcwd()).resolve()
     if cwd == PROJECTS_ROOT:
@@ -83,12 +90,12 @@ def detect_project(cwd=None):
             capture_output=True, text=True, timeout=1.5,
         ).stdout.strip()
         if common:
-            return Path(common).parent.name
+            return canonical_project(Path(common).parent.name)
     except (OSError, subprocess.SubprocessError):
         pass
     try:
         rel = cwd.relative_to(PROJECTS_ROOT)
-        return rel.parts[0] if rel.parts else "portfolio"
+        return canonical_project(rel.parts[0]) if rel.parts else "portfolio"
     except ValueError:
         return "portfolio"
 
@@ -120,6 +127,18 @@ def parse_due(s):
         return datetime.fromisoformat(s).replace(hour=23, minute=59, tzinfo=OWNER_TZ).isoformat()
     dt = datetime.fromisoformat(s)
     return (dt if dt.tzinfo else dt.replace(tzinfo=OWNER_TZ)).isoformat()
+
+
+def owner_time(value):
+    if not value:
+        return "unset"
+    try:
+        when = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=OWNER_TZ)
+        return when.astimezone(OWNER_TZ).strftime("%Y-%m-%d %H:%M %Z")
+    except (TypeError, ValueError):
+        return str(value)
 
 
 def ago(iso):
@@ -155,7 +174,7 @@ def fmt_item(i, verbose=False):
     head = f"{i['ref']} [{i['status']}] ({i['project']}, {i['kind']}, from {i['origin_agent']}, {ago(i['created_at'])})"
     lines = [head, f"  {i['title']}"]
     if i.get("due_at"):
-        lines.append(f"  due: {i['due_at'][:16].replace('T', ' ')} ({ago(i['due_at'])})")
+        lines.append(f"  due: {owner_time(i['due_at'])} ({ago(i['due_at'])})")
     if i.get("ruling"):
         via = i.get("ruled_via") or ""
         source = "dashboard" if via == "dashboard" else f"given in chat, recorded by {via[5:] or 'an agent'}"
@@ -242,6 +261,159 @@ def transition(action):
     return run
 
 
+# ---------- shared portfolio control (Linear owns task status) ----------
+
+def json_input(path):
+    try:
+        value = json.loads(Path(path).read_text() if path else sys.stdin.read())
+    except (OSError, ValueError) as e:
+        raise LoopError(f"cannot read JSON input: {e}") from None
+    if not isinstance(value, dict):
+        raise LoopError("JSON input must be an object")
+    return value
+
+
+def work_session(a):
+    value = a.session or detect_session()
+    if not value:
+        raise LoopError("session ID required: use --session or the Codex/Claude session environment")
+    return value
+
+
+def observation_rank(row):
+    value = row.get("value")
+    field = "created_at" if isinstance(value, dict) and "source_observed_at" in value else "observed_at"
+    raw = row.get(field) or row.get("observed_at")
+    when = datetime.fromisoformat(raw.replace("Z", "+00:00")) if raw else datetime.min.replace(tzinfo=timezone.utc)
+    return when, int(row.get("id", 0))
+
+
+def compact_text(value, limit=220):
+    text = " ".join(str(value).split())
+    return text if len(text) <= limit else text[:limit - 1] + "…"
+
+
+def metric_preview(value, limit=180):
+    if value is None:
+        return "unknown"
+    if not isinstance(value, dict):
+        return compact_text(json.dumps(value, ensure_ascii=False), limit)
+    parts = []
+    for key in ("status", "source_observed_at"):
+        if key in value:
+            parts.append(f"{key}={value[key] if value[key] is not None else 'unknown'}")
+    def totals(mapping, prefix=""):
+        for key, item in mapping.items():
+            if key in ("status", "source_observed_at"):
+                continue
+            label = prefix + key
+            if isinstance(item, (int, float, bool)):
+                parts.append(f"{label}={json.dumps(item)}")
+            elif isinstance(item, list):
+                parts.append(f"{label}={len(item)} items")
+    for key in ("summary", "counts", "totals"):
+        if isinstance(value.get(key), dict):
+            totals(value[key])
+    totals(value)
+    for key in ("reason", "error", "availability"):
+        if isinstance(value.get(key), str):
+            parts.append(f"{key}={value[key]}")
+    return compact_text(", ".join(parts) if parts else json.dumps(value, ensure_ascii=False), limit)
+
+
+def focus_text(snapshot):
+    lines = [f"PORTFOLIO FOCUS — checked {owner_time(snapshot['checked_at'])}"]
+    for objective in snapshot.get("objectives", []):
+        lines.append(f"- {objective['id']} [{objective['status']}] {objective['title']} ({objective['project']})")
+        lines.append(f"  outcome: {compact_text(objective['outcome'])}")
+        lines.append(f"  owner: {objective.get('accountable_owner') or 'unset'}; target: {owner_time(objective.get('target_at'))}; next review: {owner_time(objective.get('review_at'))}")
+        if objective.get("issue_ids"):
+            lines.append("  Linear: " + ", ".join(objective["issue_ids"]))
+        latest = {}
+        for observation in snapshot.get("metrics", []):
+            if observation["objective_id"] == objective["id"]:
+                previous = latest.get(observation["metric_id"])
+                if previous is None or observation_rank(observation) > observation_rank(previous):
+                    latest[observation["metric_id"]] = observation
+        for metric in objective.get("metric_definitions", []):
+            observation = latest.get(metric["id"])
+            value = metric_preview(observation["value"]) if observation else "unknown"
+            lines.append(f"  metric {metric['id']}: {value}" + (f" (observed {owner_time(observation['observed_at'])})" if observation else " (no observation)"))
+    now = datetime.now(timezone.utc)
+    for lease in snapshot.get("leases", []):
+        if lease.get("released_at"):
+            continue
+        expired = datetime.fromisoformat(lease["expires_at"].replace("Z", "+00:00")) <= now
+        lines.append(f"- {lease['issue_id']}: {'RECOVERY REQUIRED' if expired else 'claimed'} by {lease['agent']} session {lease['session_id']}; expires {owner_time(lease['expires_at'])}")
+        if lease.get("checkpoint"):
+            lines.append("  checkpoint: " + compact_text(lease["checkpoint"]))
+        if lease.get("next_action"):
+            lines.append("  next: " + compact_text(lease["next_action"]))
+    reports_seen = {}
+    for report in snapshot.get("reports", []):
+        objective = report["objective_id"]
+        if reports_seen.get(objective, 0) >= 3:
+            continue
+        reports_seen[objective] = reports_seen.get(objective, 0) + 1
+        lines.append(f"- report {report['issue_id']} at {owner_time(report['created_at'])}: {compact_text(report['result'])}")
+        if report.get("next_action"):
+            lines.append("  next: " + compact_text(report["next_action"]))
+    lines.append("Linear owns issue status. Claim before writing; checkpoint every 15 minutes; leases expire after 60 minutes.")
+    lines.append("Full records: swd focus --json; older evidence: swd history OBJECTIVE --kind reports|metrics [--limit 20] [--before-id CURSOR].")
+    return "\n".join(lines)
+
+
+def cmd_focus(a):
+    snapshot = rpc("portfolio_focus", {"p_project": a.project or detect_project()})
+    if a.json:
+        print(json.dumps(snapshot, indent=2))
+    else:
+        print(focus_text(snapshot))
+        for item in snapshot.get("owner_loop", []):
+            print(fmt_item(item, verbose=False))
+        print("Full owner context: swd show REF.")
+
+
+def cmd_objective(a):
+    print(json.dumps(rpc("portfolio_objective_upsert", {"p_objective": json_input(a.file)}), indent=2))
+
+
+def cmd_history(a):
+    if not 1 <= a.limit <= 100:
+        raise LoopError("history limit must be 1..100")
+    if a.before_id is not None and a.before_id <= 0:
+        raise LoopError("positive history cursor required")
+    print(json.dumps(rpc("portfolio_history", {"p_objective_id": a.objective,
+        "p_kind": a.kind, "p_limit": a.limit, "p_before_id": a.before_id}), indent=2))
+
+
+def cmd_claim(a):
+    work = {"issue_id": a.issue_id, "objective_id": a.objective, "agent": a.agent or detect_agent(),
+            "session_id": work_session(a), "branch": a.branch, "worktree": a.worktree or os.getcwd()}
+    print(json.dumps(rpc("portfolio_claim", {"p_work": work, "p_recovery_note": a.recovery_note}), indent=2))
+
+
+def cmd_checkpoint(a):
+    print(json.dumps(rpc("portfolio_checkpoint", {"p_issue_id": a.issue_id, "p_session_id": work_session(a),
+        "p_checkpoint": a.note, "p_next_action": a.next_action}), indent=2))
+
+
+def cmd_release(a):
+    print(json.dumps(rpc("portfolio_release", {"p_issue_id": a.issue_id, "p_session_id": work_session(a), "p_note": a.note}), indent=2))
+
+
+def cmd_report(a):
+    report = json_input(a.file)
+    if not report.get("session_id"):
+        report["session_id"] = work_session(a)
+    report.setdefault("agent", a.agent or detect_agent())
+    print(json.dumps(rpc("portfolio_report", {"p_report": report}), indent=2))
+
+
+def cmd_metric(a):
+    print(json.dumps(rpc("portfolio_metric", {"p_observation": json_input(a.file)}), indent=2))
+
+
 # ---------- email intake (classifier side; see intake/README.md) ----------
 
 def cmd_intake_pending(a):
@@ -272,7 +444,13 @@ def hook_context(event, payload):
         state = {"seen": {}, "checked": 0}
     if event == "prompt" and time.time() - state.get("checked", 0) < PROMPT_RECHECK_SECONDS:
         return None
-    items = rpc("owner_loop_inbox", {"p_project": project}, timeout=3.0)
+    focus = None
+    if event == "session-start":
+        try:
+            focus = rpc("portfolio_focus", {"p_project": project}, timeout=2.0)
+        except LoopError:
+            pass  # rollout compatibility: the owner loop works before this migration lands
+    items = focus.get("owner_loop", []) if focus else rpc("owner_loop_inbox", {"p_project": project}, timeout=3.0)
     state["checked"] = time.time()
     seen = state.get("seen", {})
 
@@ -296,7 +474,7 @@ def hook_context(event, payload):
         except OSError:
             pass
 
-    if not (act or mine_open or picked or dated):
+    if not (act or mine_open or picked or dated or (focus and focus.get("objectives"))):
         save()
         return None
 
@@ -318,7 +496,9 @@ def hook_context(event, payload):
         out += [f"- {i['ref']} {i['title']} ({ago(i['created_at'])})" for i in mine_open]
     if dated:
         out.append("Upcoming deadlines/milestones:")
-        out += [f"- {i['ref']} {i['title']} — due {i['due_at'][:10]} ({ago(i['due_at'])})" for i in dated]
+        out += [f"- {i['ref']} {i['title']} — due {owner_time(i['due_at'])} ({ago(i['due_at'])})" for i in dated]
+    if focus and focus.get("objectives"):
+        out.append(focus_text(focus))
     text = "\n".join(out)
     save()
     return text
@@ -407,6 +587,47 @@ def main():
     s.add_argument("id")
     s.add_argument("--file")
     s.set_defaults(fn=cmd_intake_classify)
+
+    s = sub.add_parser("focus", help="bootstrap current objectives, metrics, claims, evidence and owner decisions")
+    s.add_argument("-p", "--project")
+    s.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    s.set_defaults(fn=cmd_focus)
+
+    s = sub.add_parser("history", help="bounded evidence page; use returned next_before_id for older rows")
+    s.add_argument("objective")
+    s.add_argument("--kind", choices=["reports", "metrics"], default="reports")
+    s.add_argument("--limit", type=int, default=20)
+    s.add_argument("--before-id", type=int)
+    s.set_defaults(fn=cmd_history)
+
+    s = sub.add_parser("objective-upsert", help="publish a complete objective JSON object (file or stdin)")
+    s.add_argument("--file")
+    s.set_defaults(fn=cmd_objective)
+
+    s = sub.add_parser("claim", help="atomically claim a Linear issue; inspect expired work before --recovery-note")
+    s.add_argument("issue_id")
+    s.add_argument("--objective", required=True)
+    s.add_argument("--session")
+    s.add_argument("--branch")
+    s.add_argument("--worktree")
+    s.add_argument("--recovery-note")
+    s.set_defaults(fn=cmd_claim)
+
+    for name, fn in (("checkpoint", cmd_checkpoint), ("release", cmd_release)):
+        s = sub.add_parser(name, help="renew a claim with progress" if name == "checkpoint" else "release a claim with a handoff")
+        s.add_argument("issue_id")
+        s.add_argument("--session")
+        s.add_argument("-n", "--note", required=True)
+        if name == "checkpoint":
+            s.add_argument("--next-action")
+        s.set_defaults(fn=fn)
+
+    for name, fn in (("report", cmd_report), ("metric", cmd_metric)):
+        s = sub.add_parser(name, help="append durable evidence from JSON (file or stdin; idempotency_key required)")
+        s.add_argument("--file")
+        if name == "report":
+            s.add_argument("--session")
+        s.set_defaults(fn=fn)
 
     s = sub.add_parser("hook", help="session hook: print dashboard state into the agent's context")
     s.add_argument("--event", choices=["session-start", "prompt"], default="session-start")

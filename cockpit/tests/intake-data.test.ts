@@ -67,7 +67,7 @@ describe("intake data sources", () => {
   });
   it("reads the latest event for each business across its projects without the history cutoff", async () => {
     await fetchBusinessLatestEvents();
-    expect(select.mock.calls).toHaveLength(8);
+    expect(select.mock.calls).toHaveLength(BUSINESSES.filter((b) => b.projects.length).length);
     const query = new URLSearchParams(select.mock.calls[0][1]);
     expect(query.get("item.project")).toBe("in.(highest-paying,kinetic-clinician)");
     expect(query.get("select")).toContain("!inner(ref,title,project)");
