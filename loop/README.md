@@ -52,6 +52,14 @@ and retires only `qa_inbox_sweep`, `drift_gmail_sweep`, `drift_appstore_sweep`,
 no scheduler and runs no source job or remote publication. Re-run after intended
 helper, plan or saved-evidence updates; the saved scout copy is not a new scan.
 
+The same backed-up install maintains a marked quota-handoff block in existing
+`~/PROJECTS/{AGENTS,CLAUDE}.md`, `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md`.
+It preserves surrounding guidance and company facts, creates no missing guidance
+file, and refuses duplicate or unpaired markers before writing. The block routes
+fresh sessions to the canonical provider meter and fixed approved plan, without
+copying live quota percentages into global guidance. A custom `--projects-root`
+uses its parent for the sibling `.codex`/`.claude` guidance paths.
+
 | Installed entrypoint | Purpose / existing cadence |
 |---|---|
 | `loop/portfolio-push.json` → `~/PROJECTS/_ops/portfolio-control/portfolio-push.json` | Eight approved objectives, allocations, reset cutoffs and dated reviews; shared live records are read through `swd focus -p portfolio --json`. |
