@@ -17,8 +17,10 @@ import { countPendingJobSubmissions } from "@/lib/kc-jobs-review-data";
 import { countRepliesToReview } from "@/lib/kc-replies-data";
 import { ownerDay } from "@/lib/owner-loop";
 import { buildProjectFootprint, type RegisterInputs } from "@/lib/projects";
-import { loadProjects } from "@/lib/projects-load";
-import { parseChecks, latestCheck, checkStatusClass } from "@/lib/checks";
+import { loadProjectInventory } from "@/lib/projects-load";
+import { parseChecks } from "@/lib/checks";
+import { projectEvidence } from "@/lib/project-evidence";
+import { ProjectEvidenceSummary } from "./components/ProjectEvidenceSummary";
 import { parseScouts } from "@/lib/scouts";
 import { redactForDisplay } from "@/lib/redact";
 import { listBriefings } from "@/lib/briefings";
@@ -36,12 +38,6 @@ const KIND_TAG: Record<AttentionItem["kind"], string> = {
 
 function shortDate(iso: string | null): string | null {
   return iso ? iso.slice(5) : null; // MM-DD
-}
-
-function daysAgo(iso: string, todayIso: string): number {
-  return Math.round(
-    (new Date(`${todayIso}T00:00:00Z`).getTime() - new Date(`${iso}T00:00:00Z`).getTime()) / 86400000
-  );
 }
 
 export default async function Today() {
@@ -80,7 +76,7 @@ export default async function Today() {
   }
 
   const [dueItems, ownerLoopItems, intake, events, loadedProjects, jobsPending, repliesPending, portfolio] = await Promise.all([
-    fetchDueItems(), fetchOwnerLoopItems(), fetchIntakeOverview(), fetchBusinessLatestEvents(), loadProjects().catch(() => null),
+    fetchDueItems(), fetchOwnerLoopItems(), fetchIntakeOverview(), fetchBusinessLatestEvents(), loadProjectInventory().catch(() => null),
     countPendingJobSubmissions(),
     countRepliesToReview(),
     fetchPortfolio(),
@@ -118,13 +114,15 @@ export default async function Today() {
   const board = tracked.map((p) => ({
     p,
     fp: buildProjectFootprint(p, inputs, PROJECTS),
-    check: latestCheck(checks, p),
+    evidence: projectEvidence(p, checks, portfolio, now),
   })).sort((a, b) => {
-    const d = (b.check?.date ?? "").localeCompare(a.check?.date ?? "");
+    const time = (entry: typeof a) => Date.parse(entry.evidence.report?.created_at ?? entry.evidence.check?.date ?? "") || 0;
+    const d = time(b) - time(a);
     if (d !== 0) return d;
     return b.fp.spendMonthlyUsd - a.fp.spendMonthlyUsd;
   });
-  const reporting = board.filter((b) => b.check && daysAgo(b.check.date, todayIso) <= 7).length;
+  const reporting = board.filter((b) => b.evidence.recent).length;
+  const evidencePartial = checksCsv === null || portfolio === null;
 
   const briefs = await listBriefings(5).catch(() => []);
 
@@ -144,10 +142,10 @@ export default async function Today() {
         </Link>
         <Link href="/projects" className={`tile ${reporting === 0 ? "warm" : "calm"}`}>
           <div className="big">
-            {reporting}
-            <small>/{board.length}</small>
+            {loadedProjects === null ? "—" : evidencePartial ? reporting ? `${reporting}+` : "—" : reporting}
+            <small>/{loadedProjects === null ? "—" : board.length}</small>
           </div>
-          <div className="label">projects reporting · 7d</div>
+          <div className="label">projects with recent evidence · 7 Eastern days{evidencePartial ? " · partial sources" : ""}</div>
         </Link>
         <Link href="/money" className="tile brass">
           <div className="big">
@@ -207,27 +205,19 @@ export default async function Today() {
             <Link href="/projects">all →</Link>
           </div>
           <div className="ledger">
-            {board.map(({ p, fp, check }) => (
-              <Link key={p.slug} href={`/projects/${p.slug}`} className="l-row" style={{ alignItems: "flex-start" }}>
-                <span className="l-name" style={{ whiteSpace: "normal" }}>
-                  {p.name}
-                  {p.activity ? <span className={`badge ${p.activity === "active" ? "good" : p.activity === "dormant" ? "bad" : ""}`}>{p.activity}</span> : null}
-                  {check ? (
-                    <span className={`badge ${checkStatusClass(check.status)}`}>{check.status || check.kind}</span>
-                  ) : (
-                    <span className="badge">no reports</span>
-                  )}
-                  <span className="l-sub" style={{ display: "block" }}>
-                    {check
-                      ? `${check.date.slice(5)} · ${redactForDisplay(check.summary).slice(0, 90)}`
-                      : p.role.slice(0, 90)}
-                  </span>
-                </span>
+            {loadedProjects === null ? <p className="meta" role="status">Project inventory unavailable; project coverage is unknown.</p> : null}
+            {board.map(({ p, fp, evidence }) => (
+              <article key={p.slug} className="l-row" style={{ alignItems: "flex-start" }}>
+                <div className="project-summary-body">
+                  <Link href={`/projects/${p.slug}`} className="l-name">{p.name}</Link>
+                  {p.activity ? <span className="badge">Repo {p.activity}</span> : null}
+                  <ProjectEvidenceSummary evidence={evidence} available={{ checks: checksCsv !== null, portfolio: portfolio !== null }} compact />
+                </div>
                 <span className={`l-amount ${fp.spendMonthlyUsd === 0 ? "dim" : ""}`}>
                   ${fp.spendMonthlyUsd}
                   {fp.sharedMonthlyUsd > 0 ? <span className="l-sub"> +shared</span> : null}
                 </span>
-              </Link>
+              </article>
             ))}
           </div>
         </div>

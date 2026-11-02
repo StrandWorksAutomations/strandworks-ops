@@ -43,6 +43,12 @@ dates use Supabase through server-only REST calls.
   emails, open owner-loop decisions and stalled rulings. Missing sources
   are shown as unavailable, never as a clear queue. Retired QA questions
   are excluded. Source mappings live in `src/lib/businesses.ts`.
+  Project summaries join shared handoffs through objective/project identity.
+  The evidence tile counts each tracked project once across the current and
+  six preceding Eastern calendar dates. Repository activity, dated register
+  checks, current attention items, local results, deployment and owner
+  acceptance remain separately labeled. Missing sources produce partial or
+  unknown counts. Free-text reports never establish structured delivery status.
 - **Marketing** — an authenticated visual week board and gallery of actual
   Metricool post media, captions and source-reported states. Account strips
   cover the connected brands; only checked queues show post counts. A draft
