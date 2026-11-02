@@ -35,11 +35,11 @@ class PortfolioDatabaseTests(unittest.TestCase):
             sock.bind(("127.0.0.1", 0))
             cls.port = sock.getsockname()[1]
         subprocess.run(["initdb", "-D", str(cls.data), "-A", "trust", "-U", "postgres", "--no-locale", "-E", "UTF8"], check=True, capture_output=True)
-        subprocess.run(["pg_ctl", "-D", str(cls.data), "-l", str(Path(cls.tmp.name) / "postgres.log"), "-o", f"-k {cls.tmp.name} -p {cls.port} -h ''", "-w", "start"], check=True, capture_output=True)
+        subprocess.run(["pg_ctl", "-D", str(cls.data), "-l", str(Path(cls.tmp.name) / "postgres.log"), "-o", f"-k {cls.tmp.name} -p {cls.port} -h '' -c shared_buffers=16MB -c max_connections=10", "-w", "start"], check=True, capture_output=True)
         cls.psql = ["psql", "-X", "-q", "-t", "-A", "-v", "ON_ERROR_STOP=1", "-h", cls.tmp.name, "-p", str(cls.port), "-U", "postgres", "postgres"]
         try:
-            cls.run_sql("create role anon; create role authenticated; create role service_role; create schema extensions;")
-            for filename in ("20261024_owner_loop_v1.sql", "20261024_owner_loop_v2_review_fixes.sql", "20261102_portfolio_control_v1.sql", "20261102_portfolio_project_alias.sql"):
+            cls.run_sql("create role anon; create role authenticated; create role service_role bypassrls; create schema extensions;")
+            for filename in ("20261024_owner_loop_v1.sql", "20261024_owner_loop_v2_review_fixes.sql", "20261102_portfolio_control_v1.sql", "20261102_portfolio_project_alias.sql", "20261102_portfolio_compact_focus.sql"):
                 cls.run_sql((ROOT / "supabase/migrations" / filename).read_text())
             cls.run_sql(f"insert into owner_loop_agent_tokens(token_sha256,label) values(encode(extensions.digest('{TOKEN}','sha256'),'hex'),'test');")
         except BaseException:
@@ -125,7 +125,9 @@ class PortfolioDatabaseTests(unittest.TestCase):
         self.run_sql("update portfolio_work_leases set expires_at=now()-interval '48 hours' where issue_id='STR-91004';")
         focus = self.rpc("portfolio_focus", "test-project")
         history = [m for m in focus["metrics"] if m["objective_id"] == "metrics"]
-        self.assertEqual([m["value"] for m in history], [4, None])
+        self.assertEqual([m["value"] for m in history], [4])
+        history = self.rpc("portfolio_history", "metrics", "metrics")
+        self.assertEqual([m["value"] for m in history["items"]], [4, None])
         self.assertIn("owner_loop", focus)
         self.assertTrue(any(r["session_id"] == "idle-chat" and r["result"] == "Local build only" for r in focus["reports"]))
         self.assertTrue(any(l["session_id"] == "idle-chat" and l["checkpoint"] == "Build artifact retained" for l in focus["leases"]))
@@ -135,9 +137,78 @@ class PortfolioDatabaseTests(unittest.TestCase):
     def test_authorization_and_unavailable_are_not_empty_success(self):
         self.assertIn("invalid agent token", self.run_sql("select portfolio_focus('wrong','portfolio');", fail=True))
         self.assertIn("permission denied", self.run_sql("set role anon; select * from portfolio_objectives;", fail=True))
+        self.assertIn("permission denied", self.run_sql("set role anon; select * from portfolio_latest_metrics;", fail=True))
+        self.assertIn("permission denied", self.run_sql("set role authenticated; select * from portfolio_latest_metrics;", fail=True))
+        self.assertIn("invalid agent token", self.run_sql("select portfolio_history('wrong','metrics');", fail=True))
         with patch.object(swd, "rpc", side_effect=swd.LoopError("network unavailable")):
             with self.assertRaisesRegex(swd.LoopError, "unavailable"):
                 swd.cmd_focus(argparse.Namespace(project="portfolio", json=True))
+
+    def test_compact_focus_and_paged_history_preserve_all_baselines(self):
+        for key in ("compact-a", "compact-b"):
+            self.objective(key)
+            for number in range(1, 6):
+                self.rpc("portfolio_report", {"issue_id": "STR-91010", "objective_id": key,
+                    "session_id": "idle", "agent": "codex", "result": f"Receipt {number}",
+                    "evidence": [f"https://example.com/{number}"], "idempotency_key": f"{key}-report-{number}"})
+        self.run_sql(f"""select portfolio_metric('{TOKEN}',jsonb_build_object(
+          'objective_id','compact-a','metric_id','verified','value',n,
+          'observed_at',timestamptz '2026-11-01T00:00:00Z'+n*interval '1 minute',
+          'source','verified baseline','idempotency_key','compact-a-metric-'||n))
+          from generate_series(1,25) n;""")
+        for issue in ("STR-91011", "STR-91012", "STR-91013"):
+            self.claim(issue, "compact-a", "compact-session")
+        self.run_sql("update portfolio_work_leases set expires_at=now()-interval '1 hour' where issue_id='STR-91012';")
+        self.rpc("portfolio_release", "STR-91013", "compact-session", "completed")
+        focus = self.rpc("portfolio_focus", "test-project")
+        self.assertEqual([m["value"] for m in focus["metrics"] if m["objective_id"] == "compact-a"], [25])
+        for key in ("compact-a", "compact-b"):
+            self.assertEqual(len([r for r in focus["reports"] if r["objective_id"] == key]), 3)
+        self.assertEqual({l["issue_id"] for l in focus["leases"]} & {"STR-91011", "STR-91012", "STR-91013"}, {"STR-91011", "STR-91012"})
+        default = self.rpc("portfolio_history", "compact-a", "metrics")
+        self.assertEqual(len(default["items"]), 20)
+        self.assertIsNotNone(default["next_before_id"])
+        items, cursor = [], None
+        while True:
+            page = self.rpc("portfolio_history", "compact-a", "metrics", "4", str(cursor) if cursor else None)
+            items += page["items"]
+            if cursor is None:
+                # A concurrent new publication belongs before this page, never
+                # duplicated into or shifted through already-cursored history.
+                self.rpc("portfolio_metric", {"objective_id": "compact-a", "metric_id": "verified", "value": 26,
+                    "observed_at": "2026-11-01T00:26:00Z", "source": "new publication", "idempotency_key": "compact-a-metric-26"})
+            cursor = page["next_before_id"]
+            if cursor is None:
+                break
+        self.assertEqual([m["value"] for m in items], list(range(25, 0, -1)))
+        self.assertEqual(len({m["id"] for m in items}), 25)
+        self.assertTrue(all("payload_hash" not in m for m in items))
+        all_items = self.rpc("portfolio_history", "compact-a", "metrics", "100")
+        self.assertEqual(len(all_items["items"]), 26)
+        self.assertIsNone(all_items["next_before_id"])
+        report_page = self.rpc("portfolio_history", "compact-a", "reports", "2")
+        older = self.rpc("portfolio_history", "compact-a", "reports", "100", str(report_page["next_before_id"]))
+        self.assertEqual([r["result"] for r in report_page["items"] + older["items"]], [f"Receipt {n}" for n in range(5, 0, -1)])
+        self.assertIn("1..100", self.run_sql(f"select portfolio_history('{TOKEN}','compact-a','metrics',101);", fail=True))
+        self.assertIn("history kind", self.run_sql(f"select portfolio_history('{TOKEN}','compact-a','other');", fail=True))
+
+    def test_latest_view_ranks_generic_facts_and_derived_health_by_source_contract(self):
+        self.objective("ranking")
+        for key, value, observed in (("facts-new", 20, "2026-11-01T12:00:00Z"),
+                                    ("facts-backfill", 10, "2026-10-30T12:00:00Z")):
+            self.rpc("portfolio_metric", {"objective_id": "ranking", "metric_id": "facts", "value": value,
+                "observed_at": observed, "source": "provider facts", "idempotency_key": key})
+        for key, status, observed in (("health-first", "ok", "2026-11-01T12:00:00Z"),
+                                      ("health-later", "stale", "2026-10-30T12:00:00Z")):
+            self.rpc("portfolio_metric", {"objective_id": "ranking", "metric_id": "health",
+                "value": {"status": status, "source_observed_at": observed}, "observed_at": observed,
+                "source": "derived receipt", "idempotency_key": key})
+        rows = [m for m in self.rpc("portfolio_focus", "test-project")["metrics"] if m["objective_id"] == "ranking"]
+        self.assertEqual(next(m["value"] for m in rows if m["metric_id"] == "facts"), 20)
+        health = next(m for m in rows if m["metric_id"] == "health")
+        self.assertEqual(health["value"]["status"], "stale")
+        self.assertTrue(health["observed_at"].startswith("2026-10-30"))
+        self.assertEqual(self.run_sql("set role service_role; select value from portfolio_latest_metrics where objective_id='ranking' and metric_id='facts';"), "20")
 
     def test_nested_project_alias_preserves_both_owner_loop_spellings(self):
         for suffix, project in (("canonical", "3rdrider"), ("legacy", "3rd-rider")):
@@ -153,6 +224,26 @@ class PortfolioDatabaseTests(unittest.TestCase):
 
 
 class PortfolioCliTests(unittest.TestCase):
+    def test_history_cli_preserves_page_cursor_and_propagates_unavailable(self):
+        args = argparse.Namespace(objective="ranking", kind="metrics", limit=20, before_id=42)
+        with patch.object(swd, "rpc", return_value={"items": [], "next_before_id": None}) as rpc, patch("builtins.print"):
+            swd.cmd_history(args)
+        self.assertEqual(rpc.call_args.args, ("portfolio_history", {"p_objective_id": "ranking", "p_kind": "metrics", "p_limit": 20, "p_before_id": 42}))
+        with patch.object(swd, "rpc", side_effect=swd.LoopError("network unavailable")):
+            with self.assertRaisesRegex(swd.LoopError, "unavailable"):
+                swd.cmd_history(args)
+        args.limit = 101
+        with self.assertRaisesRegex(swd.LoopError, "1..100"):
+            swd.cmd_history(args)
+
+    def test_cli_uses_same_generic_and_derived_order_as_database(self):
+        first = {"id": 1, "value": 20, "observed_at": "2026-11-01T12:00:00Z", "created_at": "2026-11-02T12:00:00Z"}
+        backfill = {**first, "id": 2, "value": 10, "observed_at": "2026-10-30T12:00:00Z", "created_at": "2026-11-02T13:00:00Z"}
+        self.assertGreater(swd.observation_rank(first), swd.observation_rank(backfill))
+        first["value"] = {"source_observed_at": first["observed_at"], "status": "ok"}
+        backfill["value"] = {"source_observed_at": backfill["observed_at"], "status": "stale"}
+        self.assertGreater(swd.observation_rank(backfill), swd.observation_rank(first))
+
     def test_nested_git_detection_uses_canonical_portfolio_identity(self):
         with patch.object(swd.subprocess, "run", return_value=argparse.Namespace(stdout="/tmp/3rd-rider/.git\n")):
             self.assertEqual(swd.detect_project("/tmp/3rd-rider/frontend"), "3rdrider")

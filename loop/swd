@@ -268,6 +268,14 @@ def work_session(a):
     return value
 
 
+def observation_rank(row):
+    value = row.get("value")
+    field = "created_at" if isinstance(value, dict) and "source_observed_at" in value else "observed_at"
+    raw = row.get(field) or row.get("observed_at")
+    when = datetime.fromisoformat(raw.replace("Z", "+00:00")) if raw else datetime.min.replace(tzinfo=timezone.utc)
+    return when, int(row.get("id", 0))
+
+
 def focus_text(snapshot):
     lines = [f"PORTFOLIO FOCUS — checked {snapshot['checked_at']}"]
     for objective in snapshot.get("objectives", []):
@@ -279,7 +287,9 @@ def focus_text(snapshot):
         latest = {}
         for observation in snapshot.get("metrics", []):
             if observation["objective_id"] == objective["id"]:
-                latest.setdefault(observation["metric_id"], observation)
+                previous = latest.get(observation["metric_id"])
+                if previous is None or observation_rank(observation) > observation_rank(previous):
+                    latest[observation["metric_id"]] = observation
         for metric in objective.get("metric_definitions", []):
             observation = latest.get(metric["id"])
             value = json.dumps(observation["value"]) if observation else "unknown"
@@ -294,11 +304,17 @@ def focus_text(snapshot):
             lines.append("  checkpoint: " + lease["checkpoint"])
         if lease.get("next_action"):
             lines.append("  next: " + lease["next_action"])
-    for report in snapshot.get("reports", [])[:8]:
+    reports_seen = {}
+    for report in snapshot.get("reports", []):
+        objective = report["objective_id"]
+        if reports_seen.get(objective, 0) >= 3:
+            continue
+        reports_seen[objective] = reports_seen.get(objective, 0) + 1
         lines.append(f"- report {report['issue_id']} at {report['created_at']}: {report['result']}")
         if report.get("next_action"):
             lines.append("  next: " + report["next_action"])
     lines.append("Linear owns issue status. Claim before writing; checkpoint every 15 minutes; leases expire after 60 minutes.")
+    lines.append("Older evidence: swd history OBJECTIVE --kind reports|metrics [--limit 20] [--before-id CURSOR].")
     return "\n".join(lines)
 
 
@@ -314,6 +330,15 @@ def cmd_focus(a):
 
 def cmd_objective(a):
     print(json.dumps(rpc("portfolio_objective_upsert", {"p_objective": json_input(a.file)}), indent=2))
+
+
+def cmd_history(a):
+    if not 1 <= a.limit <= 100:
+        raise LoopError("history limit must be 1..100")
+    if a.before_id is not None and a.before_id <= 0:
+        raise LoopError("positive history cursor required")
+    print(json.dumps(rpc("portfolio_history", {"p_objective_id": a.objective,
+        "p_kind": a.kind, "p_limit": a.limit, "p_before_id": a.before_id}), indent=2))
 
 
 def cmd_claim(a):
@@ -521,6 +546,13 @@ def main():
     s.add_argument("-p", "--project")
     s.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
     s.set_defaults(fn=cmd_focus)
+
+    s = sub.add_parser("history", help="bounded evidence page; use returned next_before_id for older rows")
+    s.add_argument("objective")
+    s.add_argument("--kind", choices=["reports", "metrics"], default="reports")
+    s.add_argument("--limit", type=int, default=20)
+    s.add_argument("--before-id", type=int)
+    s.set_defaults(fn=cmd_history)
 
     s = sub.add_parser("objective-upsert", help="publish a complete objective JSON object (file or stdin)")
     s.add_argument("--file")
