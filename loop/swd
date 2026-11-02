@@ -33,6 +33,7 @@ KEY_FILE = Path.home() / ".config/strandworks/owner-loop.apikey"
 STATE_DIR = Path.home() / ".cache/strandworks/owner-loop"
 DASHBOARD = "https://dashboard.strandautomationworks.com/decisions"
 PROMPT_RECHECK_SECONDS = 45
+WORK_RENEW_SECONDS = 15 * 60
 HOOK_DEADLINE_SECONDS = 4  # hard cap; settings give the hook 6 s
 OWNER_TZ = ZoneInfo("America/New_York")  # Jonathan is in Berea, KY
 
@@ -242,6 +243,100 @@ def transition(action):
     return run
 
 
+# ---------- shared portfolio control (Linear owns task status) ----------
+
+def json_input(path):
+    try:
+        value = json.loads(Path(path).read_text() if path else sys.stdin.read())
+    except (OSError, ValueError) as e:
+        raise LoopError(f"cannot read JSON input: {e}") from None
+    if not isinstance(value, dict):
+        raise LoopError("JSON input must be an object")
+    return value
+
+
+def work_session(a):
+    value = a.session or detect_session()
+    if not value:
+        raise LoopError("session ID required: use --session or the Codex/Claude session environment")
+    return value
+
+
+def focus_text(snapshot):
+    lines = [f"PORTFOLIO FOCUS — checked {snapshot['checked_at']}"]
+    for objective in snapshot.get("objectives", []):
+        lines.append(f"- {objective['id']} [{objective['status']}] {objective['title']} ({objective['project']})")
+        lines.append(f"  outcome: {objective['outcome']}")
+        lines.append(f"  target: {objective.get('target_at') or 'unset'}; next review: {objective.get('review_at') or 'unset'}")
+        if objective.get("issue_ids"):
+            lines.append("  Linear: " + ", ".join(objective["issue_ids"]))
+        latest = {}
+        for observation in snapshot.get("metrics", []):
+            if observation["objective_id"] == objective["id"]:
+                latest.setdefault(observation["metric_id"], observation)
+        for metric in objective.get("metric_definitions", []):
+            observation = latest.get(metric["id"])
+            value = json.dumps(observation["value"]) if observation else "unknown"
+            lines.append(f"  metric {metric['id']}: {value}" + (f" (observed {observation['observed_at']})" if observation else " (no observation)"))
+    now = datetime.now(timezone.utc)
+    for lease in snapshot.get("leases", []):
+        if lease.get("released_at"):
+            continue
+        expired = datetime.fromisoformat(lease["expires_at"].replace("Z", "+00:00")) <= now
+        lines.append(f"- {lease['issue_id']}: {'RECOVERY REQUIRED' if expired else 'claimed'} by {lease['agent']} session {lease['session_id']}; expires {lease['expires_at']}")
+        if lease.get("checkpoint"):
+            lines.append("  checkpoint: " + lease["checkpoint"])
+        if lease.get("next_action"):
+            lines.append("  next: " + lease["next_action"])
+    for report in snapshot.get("reports", [])[:8]:
+        lines.append(f"- report {report['issue_id']} at {report['created_at']}: {report['result']}")
+        if report.get("next_action"):
+            lines.append("  next: " + report["next_action"])
+    lines.append("Linear owns issue status. Claim before writing; checkpoint every 15 minutes; leases expire after 60 minutes.")
+    return "\n".join(lines)
+
+
+def cmd_focus(a):
+    snapshot = rpc("portfolio_focus", {"p_project": a.project or detect_project()})
+    if a.json:
+        print(json.dumps(snapshot, indent=2))
+    else:
+        print(focus_text(snapshot))
+        for item in snapshot.get("owner_loop", []):
+            print(fmt_item(item, verbose=True))
+
+
+def cmd_objective(a):
+    print(json.dumps(rpc("portfolio_objective_upsert", {"p_objective": json_input(a.file)}), indent=2))
+
+
+def cmd_claim(a):
+    work = {"issue_id": a.issue_id, "objective_id": a.objective, "agent": a.agent or detect_agent(),
+            "session_id": work_session(a), "branch": a.branch, "worktree": a.worktree or os.getcwd()}
+    print(json.dumps(rpc("portfolio_claim", {"p_work": work, "p_recovery_note": a.recovery_note}), indent=2))
+
+
+def cmd_checkpoint(a):
+    print(json.dumps(rpc("portfolio_checkpoint", {"p_issue_id": a.issue_id, "p_session_id": work_session(a),
+        "p_checkpoint": a.note, "p_next_action": a.next_action}), indent=2))
+
+
+def cmd_release(a):
+    print(json.dumps(rpc("portfolio_release", {"p_issue_id": a.issue_id, "p_session_id": work_session(a), "p_note": a.note}), indent=2))
+
+
+def cmd_report(a):
+    report = json_input(a.file)
+    if not report.get("session_id"):
+        report["session_id"] = work_session(a)
+    report.setdefault("agent", a.agent or detect_agent())
+    print(json.dumps(rpc("portfolio_report", {"p_report": report}), indent=2))
+
+
+def cmd_metric(a):
+    print(json.dumps(rpc("portfolio_metric", {"p_observation": json_input(a.file)}), indent=2))
+
+
 # ---------- email intake (classifier side; see intake/README.md) ----------
 
 def cmd_intake_pending(a):
@@ -272,7 +367,13 @@ def hook_context(event, payload):
         state = {"seen": {}, "checked": 0}
     if event == "prompt" and time.time() - state.get("checked", 0) < PROMPT_RECHECK_SECONDS:
         return None
-    items = rpc("owner_loop_inbox", {"p_project": project}, timeout=3.0)
+    focus = None
+    if event == "session-start":
+        try:
+            focus = rpc("portfolio_focus", {"p_project": project}, timeout=2.0)
+        except LoopError:
+            pass  # rollout compatibility: the owner loop works before this migration lands
+    items = focus.get("owner_loop", []) if focus else rpc("owner_loop_inbox", {"p_project": project}, timeout=3.0)
     state["checked"] = time.time()
     seen = state.get("seen", {})
 
@@ -296,7 +397,7 @@ def hook_context(event, payload):
         except OSError:
             pass
 
-    if not (act or mine_open or picked or dated):
+    if not (act or mine_open or picked or dated or (focus and focus.get("objectives"))):
         save()
         return None
 
@@ -319,6 +420,8 @@ def hook_context(event, payload):
     if dated:
         out.append("Upcoming deadlines/milestones:")
         out += [f"- {i['ref']} {i['title']} — due {i['due_at'][:10]} ({ago(i['due_at'])})" for i in dated]
+    if focus and focus.get("objectives"):
+        out.append(focus_text(focus))
     text = "\n".join(out)
     save()
     return text
@@ -407,6 +510,40 @@ def main():
     s.add_argument("id")
     s.add_argument("--file")
     s.set_defaults(fn=cmd_intake_classify)
+
+    s = sub.add_parser("focus", help="bootstrap current objectives, metrics, claims, evidence and owner decisions")
+    s.add_argument("-p", "--project")
+    s.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
+    s.set_defaults(fn=cmd_focus)
+
+    s = sub.add_parser("objective-upsert", help="publish a complete objective JSON object (file or stdin)")
+    s.add_argument("--file")
+    s.set_defaults(fn=cmd_objective)
+
+    s = sub.add_parser("claim", help="atomically claim a Linear issue; inspect expired work before --recovery-note")
+    s.add_argument("issue_id")
+    s.add_argument("--objective", required=True)
+    s.add_argument("--session")
+    s.add_argument("--branch")
+    s.add_argument("--worktree")
+    s.add_argument("--recovery-note")
+    s.set_defaults(fn=cmd_claim)
+
+    for name, fn in (("checkpoint", cmd_checkpoint), ("release", cmd_release)):
+        s = sub.add_parser(name, help="renew a claim with progress" if name == "checkpoint" else "release a claim with a handoff")
+        s.add_argument("issue_id")
+        s.add_argument("--session")
+        s.add_argument("-n", "--note", required=True)
+        if name == "checkpoint":
+            s.add_argument("--next-action")
+        s.set_defaults(fn=fn)
+
+    for name, fn in (("report", cmd_report), ("metric", cmd_metric)):
+        s = sub.add_parser(name, help="append durable evidence from JSON (file or stdin; idempotency_key required)")
+        s.add_argument("--file")
+        if name == "report":
+            s.add_argument("--session")
+        s.set_defaults(fn=fn)
 
     s = sub.add_parser("hook", help="session hook: print dashboard state into the agent's context")
     s.add_argument("--event", choices=["session-start", "prompt"], default="session-start")
