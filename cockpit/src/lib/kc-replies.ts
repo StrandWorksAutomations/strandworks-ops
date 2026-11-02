@@ -165,7 +165,7 @@ export function replyPageAccess(reply: Pick<KcReply, "source_kind" | "source_url
 
 export function pageAccessLabel(access: KcPageAccess | null | undefined): string {
   if (pageAccessReady(access)) return "Kinetic Clinician can comment";
-  if (access?.status === "pending") return "Page join request pending";
+  if (access?.status === "pending") return "Page approval pending";
   if (access?.status === "profile_only") return "Personal profile only";
   if (access?.status === "unavailable") return "Page access unavailable";
   return "Page access needs checking";
@@ -173,7 +173,7 @@ export function pageAccessLabel(access: KcPageAccess | null | undefined): string
 
 export function pageAccessHelp(access: KcPageAccess | null | undefined): string {
   if (pageAccessReady(access)) return "On Facebook, confirm the comment box says Kinetic Clinician before pasting.";
-  if (access?.status === "pending") return "The group admin must approve Kinetic Clinician's join request before this reply can be used.";
+  if (access?.status === "pending") return "The group admin must approve Kinetic Clinician to join or participate before this reply can be used.";
   if (access?.status === "profile_only") return "This group does not currently allow Kinetic Clinician to participate. Your personal membership cannot give the Page access.";
   if (access?.status === "unavailable") return "Facebook is not currently allowing Kinetic Clinician to comment in this group. Recheck access before using this reply.";
   return "Open Facebook as Kinetic Clinician and check this group's membership and comment box. Joining as Jonathan does not join the Page.";

@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { GROUP_FILTERS, filterGroups, groupAccessStatus, groupFilterCounts, latestJoinLimit, pageAccessHelp, pageAccessLabel, type GroupFilter, type KcGroup } from "@/lib/kc-replies";
 
-// The scan list is distinct from the Page's right to participate in each group.
+// Every saved group is considered; Page commenting access determines readiness.
 export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
-  const [joined, setJoined] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
   const counts = groupFilterCounts(groups);
   const [filter, setFilter] = useState<GroupFilter>(() => counts.ready ? "ready" : "all");
   const [query, setQuery] = useState("");
@@ -14,18 +12,6 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
   const personal = groups.filter((g) => g.stats.personal_member_observed).length;
   const pageMembers = groups.filter((g) => g.stats.page_member_observed).length;
   const joinLimit = latestJoinLimit(groups);
-
-  async function markJoined(id: string) {
-    setError(null);
-    setJoined((j) => ({ ...j, [id]: "saving" }));
-    const res = await fetch("/api/replies/groups", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ group_id: id }) }).catch(() => null);
-    setJoined((j) => {
-      const next = { ...j };
-      if (res?.ok) next[id] = "done"; else delete next[id];
-      return next;
-    });
-    if (!res?.ok) setError("The group was not added. Try again.");
-  }
 
   return (
     <>
@@ -58,7 +44,7 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
                 <div className="meta">{[
                   g.stats.personal_member_observed ? "Personal membership recorded" : null,
                   g.stats.page_member_observed ? "Page membership recorded" : null,
-                  !g.stats.personal_member_observed && !g.stats.page_member_observed ? g.status === "to_join" ? "Candidate group" : "On scan list" : null,
+                  !g.stats.personal_member_observed && !g.stats.page_member_observed ? g.status === "to_join" ? "Candidate group" : "Saved group" : null,
                 ].filter(Boolean).join(" · ")}</div>
                 <details><summary className="meta">Access details</summary>
                   <p className="meta">{pageAccessHelp(g.stats.page_access)} {g.stats.page_access?.note}</p>
@@ -66,7 +52,6 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
                   {g.stats.personal_member_observed ? <p className="meta">Personal membership observed {g.stats.personal_member_observed}</p> : null}
                   {g.stats.page_member_observed ? <p className="meta">Page membership observed {g.stats.page_member_observed}</p> : null}
                 </details>
-                {g.status === "to_join" ? <button className="token-btn" disabled={!!joined[g.id]} onClick={() => markJoined(g.id)}>{joined[g.id] === "done" ? "Added to scan list" : joined[g.id] === "saving" ? "Adding…" : "Add to scan list"}</button> : null}
               </td>
               <td className="num">{g.stats.posted ?? 0}</td>
               <td className="num">{g.stats.replies_back ?? 0}</td>
@@ -82,9 +67,7 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
         {filter !== "all" ? <button type="button" className="token-btn" onClick={() => setFilter("all")}>Search all {groups.length} groups</button> : null}
         {query ? <button type="button" className="token-btn" onClick={() => setQuery("")}>Clear search</button> : null}
       </div>}
-      {Object.values(joined).includes("done") ? <p className="ok-text" role="status">Added to the scan list. Page access still needs to be checked.</p> : null}
-      {error ? <p className="error-text" role="alert">{error}</p> : null}
-      <p className="meta">Personal membership does not give the Page access. Switch Facebook to Kinetic Clinician before requesting to join a group, then wait for any admin approval. Adding a group to the scan list does not confirm that the Page can comment.</p>
+      <p className="meta">Groups with confirmed Kinetic Clinician commenting access are included automatically. Use Facebook as Kinetic Clinician and wait for any group admin approval to join or participate. Personal membership does not give the Page access.</p>
     </>
   );
 }

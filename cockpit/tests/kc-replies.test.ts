@@ -96,7 +96,7 @@ describe("Kinetic Clinician group access", () => {
     expect(replyPageAccess(reply, [{ ...group, id: "2", stats: { page_access: readyAccess } }])?.status).toBe("unknown");
     expect(replyPageAccess({ ...reply, source_kind: "owned_page" }, [])).toBeNull();
     expect(facebookGroupId("https://facebook.com.evil.example/groups/1/posts/2/")).toBeNull();
-    expect(pageAccessLabel({ ...readyAccess, status: "pending" })).toBe("Page join request pending");
+    expect(pageAccessLabel({ ...readyAccess, status: "pending" })).toBe("Page approval pending");
   });
   it("matches numeric Facebook permalinks to a group's verified readable alias in either direction", () => {
     const group = { id: "Complexmedicine", name: "Complex medicine", meta: "", lane: "ems", status: "joined" as const, url: "https://www.facebook.com/groups/Complexmedicine/",
@@ -199,7 +199,7 @@ describe("results, weekly post and groups", () => {
     expect(readyHtml).toContain("Kinetic Clinician can comment");
     expect(readyHtml).not.toMatch(/disabled=""[^>]*>Approve, copy and open post/);
   });
-  it("groups list joined stats and groups to join", () => {
+  it("lists saved group results and access without a redundant scan action", () => {
     const html = renderToStaticMarkup(React.createElement(GroupsPanel, { groups: [
       { id: "1", name: "EMS Jobs", meta: "", lane: "ems", status: "joined", url: "https://www.facebook.com/groups/1/", stats: { posted: 2, replies_back: 5, quiet: true } },
       { id: "2", name: "Travel CNAs", meta: "Public 215K", lane: "cna", status: "to_join", url: "https://www.facebook.com/groups/2/", stats: {} },
@@ -207,7 +207,9 @@ describe("results, weekly post and groups", () => {
     expect(html).toContain("EMS Jobs");
     expect(html).toContain("paused");
     expect(html).toContain("All (2)");
-    expect(html).toContain("Add to scan list");
+    expect(html).not.toContain("Add to scan list");
+    expect(html).toContain("Saved group");
+    expect(html).toContain("Candidate group");
     expect(html).not.toContain("I joined it");
     expect(html).toContain("Page access needs checking");
     expect(html).toContain("0 groups checked for commenting as Kinetic Clinician");
