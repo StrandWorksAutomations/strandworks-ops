@@ -1,5 +1,5 @@
 import { fetchPortfolio } from "@/lib/portfolio-data";
-import type { TimelineEntry } from "@/lib/owner-loop";
+import { portfolioDates } from "@/lib/portfolio";
 import { OWNER_TIME_ZONE, ownerDay } from "@/lib/owner-loop";
 import { businessForProject, businessForEntity } from "@/lib/businesses";
 import { BusinessFilters } from "../components/BusinessFilters";
@@ -42,14 +42,8 @@ export default async function TimelinePage({
   const end = new Date(`${ownerDay(now.toISOString())}T12:00:00Z`);
   end.setUTCDate(end.getUTCDate() + days);
   const endDay = end.toISOString().slice(0, 10);
-  const objectiveDates: TimelineEntry[] = (portfolio?.objectives ?? []).filter((o) => o.status !== "complete").flatMap((o) =>
-    [{ kind: "review", due: o.review_at }, ...(o.status === "active" ? [{ kind: "delivery", due: o.target_at }] : [])].map((date) => ({
-      id: `portfolio-${o.id}-${date.kind}`, source: "portfolio" as const, kind: "milestone" as const,
-      project: o.project, title: `${date.kind === "review" ? "Review" : "Deliver"}: ${o.title}`, dueAt: date.due,
-      detail: `${o.accountable_owner} · ${o.outcome}`, href: `/focus?project=${encodeURIComponent(o.project)}#${o.id}`,
-      overdue: Date.parse(date.due) < now.getTime(), ref: null,
-    })));
-  const allUpcoming = [...buildTimelineUpcoming(items ?? [], dueItems ?? [], now), ...objectiveDates].sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  const allUpcoming = [...buildTimelineUpcoming(items ?? [], dueItems ?? [], now), ...portfolioDates(portfolio?.objectives ?? [], now)]
+    .sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt) || a.id.localeCompare(b.id));
   const allHistory = groupTimelineEvents(events ?? [], now);
   const projects = Array.from(new Set([
     ...allUpcoming.map((entry) => entry.project),

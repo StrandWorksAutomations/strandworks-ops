@@ -19,7 +19,7 @@ export function BusinessBoard({ cards, available, now, jobsPending, repliesPendi
   jobsPending?: number | null;
   /** Facebook reply drafts waiting in /replies (Kinetic Clinician card); null = unavailable, undefined = hide. */
   repliesPending?: number | null;
-  available: { intake: boolean; loop: boolean; events: boolean; dates: boolean; projects: boolean };
+  available: { intake: boolean; loop: boolean; events: boolean; dates: boolean; portfolio: boolean; projects: boolean };
   now: Date;
 }) {
   const incomplete = Object.values(available).some((value) => !value);
@@ -27,7 +27,7 @@ export function BusinessBoard({ cards, available, now, jobsPending, repliesPendi
     <div className="section-head business-board-head"><h2 id="business-board-title">Your businesses</h2><span className="meta">Updated {intakeDate(now.toISOString())}</span></div>
     {incomplete ? <p className="card meta" role="status">Some sources are unavailable: {[
       !available.intake && "email", !available.loop && "owner loop", !available.events && "agent activity",
-      !available.dates && "business dates", !available.projects && "project activity",
+      !available.dates && "business dates", !available.portfolio && "objective dates", !available.projects && "project activity",
     ].filter(Boolean).join(", ")}. Counts and activity below are incomplete. Refresh to retry.</p> : null}
     <div className="business-board">
       {cards.map((card) => {
@@ -47,7 +47,7 @@ export function BusinessBoard({ cards, available, now, jobsPending, repliesPendi
             <Metric label="Stalled rulings" count={available.loop ? card.stalled.length : "—"} href={`/decisions?${filter}#waiting-on-agents`}
               top={card.stalled[0]?.title ?? (card.waiting[0] ? `${card.waiting[0].title} · ${card.waiting[0].status === "picked_up" ? "Agent acting" : "Awaiting pickup"}` : undefined)}
               topHref={card.stalled[0] || card.waiting[0] ? `/decisions?${filter}#${(card.stalled[0] ?? card.waiting[0]).ref}` : undefined} />
-            <Metric label="Deadlines · next 14 days + overdue" count={available.loop && available.dates ? card.dates.length : card.dates.length ? `${card.dates.length}+` : "—"}
+            <Metric label="Deadlines · next 14 days + overdue" count={available.loop && available.dates && available.portfolio ? card.dates.length : card.dates.length ? `${card.dates.length}+` : "—"}
               href={`/timeline?${filter}&days=14`} top={card.dates[0] ? `${card.dates[0].title}${card.dates[0].overdue ? " · Overdue" : ""}` : undefined} />
             {key === "kinetic-clinician" && jobsPending !== undefined
               ? <Metric label="Recruiter jobs to review" count={jobsPending ?? "—"} href="/jobs-review" /> : null}

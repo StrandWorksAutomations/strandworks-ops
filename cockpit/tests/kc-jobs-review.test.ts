@@ -46,7 +46,7 @@ describe("kc job review validation", () => {
     const { buildBusinessBoard } = await import("../src/lib/businesses");
     const now = new Date("2026-10-25T12:00:00Z");
     const cards = buildBusinessBoard({ emails: [], latestEmail: [], items: [], events: [], dueItems: [], projects: [] }, now);
-    const available = { intake: true, loop: true, events: true, dates: true, projects: true };
+    const available = { intake: true, loop: true, events: true, dates: true, portfolio: true, projects: true };
     expect(renderToStaticMarkup(React.createElement(BusinessBoard, { cards, available, now }))).not.toContain("Recruiter jobs");
     const html = renderToStaticMarkup(React.createElement(BusinessBoard, { cards, available, now, jobsPending: 3 }));
     expect(html.match(/Recruiter jobs to review/g)?.length).toBe(1);

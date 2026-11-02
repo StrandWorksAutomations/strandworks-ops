@@ -42,7 +42,7 @@ describe("inbox and business board rendering", () => {
   it("never labels missing sources quiet or displays their counts as zero", () => {
     const cards = buildBusinessBoard({ emails: [], latestEmail: [], items: [], events: [], dueItems: [], projects: [] }, NOW);
     const html = renderToStaticMarkup(React.createElement(BusinessBoard, { cards, now: NOW,
-      available: { intake: false, loop: false, events: false, dates: false, projects: false } }));
+      available: { intake: false, loop: false, events: false, dates: false, portfolio: false, projects: false } }));
     expect(html).toContain("Status unavailable");
     expect(html).not.toContain(">Quiet<");
     expect(html).toContain("Counts and activity below are incomplete");
@@ -51,7 +51,7 @@ describe("inbox and business board rendering", () => {
   it("links counts and top items to their matching business views", () => {
     const cards = buildBusinessBoard({ emails: [email({ priority: "high" })], latestEmail: [], items: [], events: [], dueItems: [], projects: [] }, NOW);
     const html = renderToStaticMarkup(React.createElement(BusinessBoard, { cards, now: NOW,
-      available: { intake: true, loop: true, events: true, dates: true, projects: true } }));
+      available: { intake: true, loop: true, events: true, dates: true, portfolio: true, projects: true } }));
     expect(html).toContain('href="/inbox?business=strandworks"');
     expect(html).toContain('href="/decisions?business=strandworks"');
     expect(html).toContain('href="/timeline?business=strandworks&amp;days=14"');

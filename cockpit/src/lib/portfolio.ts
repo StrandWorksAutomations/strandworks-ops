@@ -1,3 +1,5 @@
+import type { TimelineEntry } from "./owner-loop";
+
 export type Objective = {
   id: string; project: string; title: string; outcome: string; priority: number;
   target_at: string; review_at: string; accountable_owner: string;
@@ -9,6 +11,25 @@ export type Observation = { id: number; objective_id: string; metric_id: string;
 export type WorkLease = { issue_id: string; objective_id: string | null; project: string; agent: string; session_id: string; branch: string; worktree: string; claimed_at: string; renewed_at: string; expires_at: string; released_at: string | null; checkpoint: string | null; next_action: string | null; recovery_note?: string | null };
 export type WorkReport = { id: number; issue_id: string | null; objective_id: string | null; agent: string; session_id: string; result: string; validation: string; remaining: string; next_action: string; evidence: unknown[]; created_at: string };
 export type Portfolio = { checked_at: string; objectives: Objective[]; metrics: Observation[]; leases: WorkLease[]; reports: WorkReport[] };
+
+// Today and Timeline must count the same dated commitments. Identity, rather
+// than title/time, keeps distinct objectives and review/delivery dates intact.
+export function portfolioDates(objectives: Objective[], now: Date): TimelineEntry[] {
+  const result: TimelineEntry[] = [];
+  for (const o of new Map(objectives.map((objective) => [objective.id, objective])).values()) {
+    if (o.status === "complete") continue;
+    const dates = [{ kind: "review", due: o.review_at }, ...(o.status === "active" ? [{ kind: "delivery", due: o.target_at }] : [])];
+    for (const date of dates) {
+      const time = Date.parse(date.due);
+      if (!Number.isFinite(time)) continue;
+      result.push({ id: `portfolio-${o.id}-${date.kind}`, source: "portfolio", kind: "milestone",
+        project: o.project, title: `${date.kind === "review" ? "Review" : "Deliver"}: ${o.title}`, dueAt: date.due,
+        detail: `${o.accountable_owner} · ${o.outcome}`, href: `/focus?project=${encodeURIComponent(o.project)}#${o.id}`,
+        overdue: time < now.getTime(), ref: null });
+    }
+  }
+  return result;
+}
 
 const ALIASES: Record<string, string> = { "tenetrix-insight": "badgemedia", "kinetic-clinician": "highest-paying", "strandworks-medical": "contracting-startup", "sag": "sag-international", "3rd-rider": "3rdrider", "portfolio": "strandworks-ops" };
 export function projectKey(project: string) {

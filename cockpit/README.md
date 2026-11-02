@@ -33,9 +33,12 @@ dates use Supabase through server-only REST calls.
   actions use the session-checked `/api/inbox/action` route. Seven days of
   scanned job alerts and filtered noise remain visible for inspection.
   Email bodies are plain text; no email HTML is rendered.
-- **Today** — a dynamic nine-business board shows review emails, open
+- **Today** — a dynamic twelve-business board shows review emails, open
   decisions, stalled rulings, 14-day deadlines plus overdue dates, and latest
-  email/agent/repository activity. Counts open business-filtered Inbox,
+  email/agent/repository activity. Portfolio review and delivery dates use
+  the same dated commitments as Timeline. Paused objectives keep their review
+  date; completed objectives leave the date queue. An unavailable objective
+  source produces partial counts rather than a false zero. Counts open business-filtered Inbox,
   Decide and Timeline views. The existing attention queue includes review
   emails, open owner-loop decisions and stalled rulings. Missing sources
   are shown as unavailable, never as a clear queue. Retired QA questions
