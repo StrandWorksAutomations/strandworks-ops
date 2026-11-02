@@ -122,7 +122,13 @@ def main(argv=None, now=None):
     p.add_argument("--publish", action="store_true")
     args = p.parse_args(argv)
     plan = json.loads(args.manifest.read_text())
-    budget = plan["quota"][args.provider]
+    budget = {**plan["quota"][args.provider]}
+    # The portfolio closes before Codex's provider cutoff. Enforce that earlier
+    # boundary in code as well as session guidance; it grants no later packet.
+    cutoff = min(stamp(budget["stop_at"]), stamp(plan["close"]))
+    budget["stop_at"] = cutoff.isoformat()
+    budget["additional_limits"] = {name: {**limit, "stop_at": min(stamp(limit["stop_at"]), cutoff).isoformat()}
+        for name, limit in budget.get("additional_limits", {}).items()}
     try:
         snapshot = provider_snapshot(args.provider, budget, args.sessions, args.claude_snapshot)
     except (OSError, ValueError, TypeError):
