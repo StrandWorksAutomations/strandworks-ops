@@ -112,7 +112,8 @@ export default async function Today() {
   };
   const PROJECTS = loadedProjects ?? [];
   const businesses = buildBusinessBoard({ emails: intake?.reviews ?? [], latestEmail: intake?.latest ?? [],
-    items: ownerLoopItems ?? [], events: events ?? [], dueItems: dueItems ?? [], projects: PROJECTS }, now);
+    items: ownerLoopItems ?? [], events: events ?? [], dueItems: dueItems ?? [], projects: PROJECTS,
+    objectives: portfolio?.objectives ?? [] }, now);
   const tracked = PROJECTS.filter((p) => ["flagship", "ops", "tier-2"].includes(p.tier));
   const board = tracked.map((p) => ({
     p,
@@ -131,7 +132,7 @@ export default async function Today() {
     <Chrome title="Today" sub="the whole operation, triaged" active="/">
       <Link href="/focus" className="card" style={{ display: "block" }}><h2>Shared project focus</h2><div className="meta">{portfolio ? `${portfolio.objectives.filter((o) => o.status !== "complete").length} objectives · ${portfolioAttention(portfolio, now).length} need attention · ${portfolio.leases.length} work sessions` : "Shared records unavailable"} · goals, evidence and recovery →</div></Link>
       <BusinessBoard cards={businesses} available={{ intake: intake !== null, loop: !loopUnavailable,
-        events: events !== null, dates: dueItems !== null, projects: loadedProjects !== null }} now={now} jobsPending={jobsPending} repliesPending={repliesPending} />
+        events: events !== null, dates: dueItems !== null, portfolio: portfolio !== null, projects: loadedProjects !== null }} now={now} jobsPending={jobsPending} repliesPending={repliesPending} />
       <div className="grid">
         <div className={`tile ${nowCount > 0 ? "hot" : attentionUnavailable ? "warm" : "calm"}`}>
           <div className="big">{actionCount(nowCount)}</div>

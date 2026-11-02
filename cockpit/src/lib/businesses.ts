@@ -2,6 +2,7 @@ import { reviewEmails, type IntakeReview } from "./intake";
 import type { DueItem } from "./due-items";
 import type { ProjectDef } from "./projects";
 import { buildTimelineUpcoming, isStalled, ownerDay, type OwnerLoopItem, type OwnerLoopEvent } from "./owner-loop";
+import { portfolioDates, type Objective } from "./portfolio";
 
 export const BUSINESSES = [
   { key: "kinetic-clinician", name: "Kinetic Clinician", projects: ["highest-paying", "kinetic-clinician"], entities: ["kinetic clinician", "highest paying"] },
@@ -49,6 +50,7 @@ export function businessStatus(review: number, decisions: number, overdue: numbe
 export function buildBusinessBoard(input: {
   emails: IntakeReview[]; latestEmail: { business: string; received_at: string }[];
   items: OwnerLoopItem[]; events: OwnerLoopEvent[]; dueItems: DueItem[]; projects: ProjectDef[];
+  objectives?: Objective[];
 }, now: Date) {
   const today = ownerDay(now.toISOString());
   const through = new Date(`${today}T12:00:00Z`);
@@ -61,10 +63,12 @@ export function buildBusinessBoard(input: {
       .sort((a, b) => (a.due_at ?? "9999").localeCompare(b.due_at ?? "9999") || a.created_at.localeCompare(b.created_at));
     const stalled = items.filter((item) => isStalled(item, now)).sort((a, b) => (a.ruled_at ?? "").localeCompare(b.ruled_at ?? ""));
     const waiting = items.filter((item) => item.status === "ruled" || item.status === "picked_up");
-    const dates = buildTimelineUpcoming(
+    const dates = [...buildTimelineUpcoming(
       items.filter((item) => item.kind === "deadline" || item.kind === "milestone"),
       input.dueItems.filter((item) => businessForEntity(item.entity)?.key === business.key), now,
-    ).filter((entry) => (entry.source === "business" ? entry.dueAt.slice(0, 10) : ownerDay(entry.dueAt)) <= endDay);
+    ), ...portfolioDates(input.objectives ?? [], now).filter((entry) => businessForProject(entry.project)?.key === business.key)]
+      .filter((entry) => (entry.source === "business" ? entry.dueAt.slice(0, 10) : ownerDay(entry.dueAt)) <= endDay)
+      .sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt) || a.id.localeCompare(b.id));
     const activity = [
       ...input.events.filter((event) => businessForProject(event.item?.project ?? "")?.key === business.key).map((event) => event.at),
       ...input.latestEmail.filter((email) => email.business === business.key).map((email) => email.received_at),

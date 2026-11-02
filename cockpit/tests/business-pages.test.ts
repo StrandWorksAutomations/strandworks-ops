@@ -14,6 +14,9 @@ vi.mock("../src/lib/rule-writer", () => ({ writeMode: () => "dry-run" }));
 import { fetchOwnerLoopItems, fetchOwnerLoopEvents } from "../src/lib/owner-loop-data";
 import { fetchIntake } from "../src/lib/intake-data";
 import { fetchDueItems } from "../src/lib/due-items";
+import { fetchPortfolio } from "../src/lib/portfolio-data";
+import { buildBusinessBoard } from "../src/lib/businesses";
+import type { Objective } from "../src/lib/portfolio";
 import InboxPage from "../app/inbox/page";
 import DecisionsPage from "../app/decisions/page";
 import TimelinePage from "../app/timeline/page";
@@ -24,6 +27,7 @@ beforeEach(() => {
   vi.mocked(fetchOwnerLoopEvents).mockResolvedValue([]);
   vi.mocked(fetchDueItems).mockResolvedValue([]);
   vi.mocked(fetchIntake).mockResolvedValue({ items: [], linkCounts: {} });
+  vi.mocked(fetchPortfolio).mockResolvedValue({ checked_at: NOW.toISOString(), objectives: [], metrics: [], leases: [], reports: [] });
 });
 afterEach(() => { vi.useRealTimers(); });
 
@@ -73,5 +77,25 @@ describe("business-filtered destination pages", () => {
     expect(html).not.toContain("Later medical deadline");
     expect(html).not.toContain("Medical decision");
     expect(html).toContain("2 dates");
+  });
+  it("shows the same portfolio commitments as the matching Today business count", async () => {
+    const objective: Objective = { id: "pilot", project: "BadgeMedia", title: "Educator pilot", outcome: "Reviewed lesson",
+      status: "active", priority: 1, accountable_owner: "Owner", target_at: "2026-10-26T12:00:00Z",
+      review_at: "2026-10-25T12:00:00Z", issue_ids: [], metric_definitions: [],
+      created_at: NOW.toISOString(), updated_at: NOW.toISOString() };
+    const objectives: Objective[] = [objective, { ...objective, id: "parked", status: "paused", project: "tenetrix-insight" },
+      { ...objective, id: "done", status: "complete" }, { ...objective, id: "medical", project: "contracting-startup" }];
+    vi.mocked(fetchPortfolio).mockResolvedValue({ checked_at: NOW.toISOString(), objectives, metrics: [], leases: [], reports: [] });
+    const html = renderToStaticMarkup(await TimelinePage({ searchParams: Promise.resolve({ business: "tenetrix", days: "14" }) }));
+    const card = buildBusinessBoard({ emails: [], latestEmail: [], items: [], events: [], dueItems: [], projects: [], objectives }, NOW)
+      .find((entry) => entry.business.key === "tenetrix")!;
+    expect(card.dates).toHaveLength(3);
+    expect(html).toContain("3 dates");
+    expect(html).toContain('href="/focus?project=BadgeMedia#pilot">Review: Educator pilot</a>');
+    expect(html).toContain('href="/focus?project=BadgeMedia#pilot">Deliver: Educator pilot</a>');
+    expect(html).toContain('href="/focus?project=tenetrix-insight#parked">Review: Educator pilot</a>');
+    expect(html).not.toContain('href="/focus?project=tenetrix-insight#parked">Deliver:');
+    expect(html).not.toContain("#done");
+    expect(html).not.toContain("#medical");
   });
 });
