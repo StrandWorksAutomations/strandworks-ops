@@ -53,6 +53,9 @@ def limit_verdict(snapshot, budget, now):
         reset_jitter = budget.get("reset_jitter_seconds", 0)
         if isinstance(reset_jitter, bool) or not isinstance(reset_jitter, (int, float)) or reset_jitter not in (0, 1):
             raise ValueError("reset jitter must be zero or one second")
+        reset_precision = budget.get("reset_match_precision", "second")
+        if reset_precision not in ("second", "minute"):
+            raise ValueError("reset match precision must be second or minute")
         if cutoff > expected_reset:
             raise ValueError("quota cutoff must not follow reset")
         cutoff = min(cutoff, min(reset, expected_reset) - timedelta(minutes=30))
@@ -60,9 +63,11 @@ def limit_verdict(snapshot, budget, now):
             raise ValueError("quota observation is in the future")
     except (ValueError, TypeError, KeyError, AttributeError, OverflowError) as error:
         return {"allowed": False, "reason": "Invalid provider quota: " + str(error)}
-    result = {**snapshot, "stop_at_used": budget["stop_at_used"], "stop_at": cutoff.isoformat(), "expected_reset_at": budget["reset_at"], "reset_jitter_seconds": reset_jitter, "remaining_percent": 100 - snapshot["used_percent"], "allowed": False}
+    result = {**snapshot, "stop_at_used": budget["stop_at_used"], "stop_at": cutoff.isoformat(), "expected_reset_at": budget["reset_at"], "reset_jitter_seconds": reset_jitter, "reset_match_precision": reset_precision, "remaining_percent": 100 - snapshot["used_percent"], "allowed": False}
     result.pop("additional_limits", None)
-    if abs((reset - expected_reset).total_seconds()) > reset_jitter:
+    same_period = (reset.astimezone(timezone.utc).replace(second=0, microsecond=0) == expected_reset.astimezone(timezone.utc).replace(second=0, microsecond=0)
+        if reset_precision == "minute" else abs((reset - expected_reset).total_seconds()) <= reset_jitter)
+    if not same_period:
         result["reason"] = "Different allowance period; a reset does not authorize another allocation"
     elif now >= cutoff:
         result["reason"] = "Pre-reset cutoff reached"

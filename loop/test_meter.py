@@ -50,6 +50,28 @@ class MeterTests(unittest.TestCase):
         self.assertFalse(result["allowed"])
         self.assertEqual(meter.stamp(result["stop_at"]), cutoff)
 
+    def test_minute_match_preserves_raw_reset_and_rejects_other_minutes_and_periods(self):
+        budget = {**self.budget, "reset_match_precision": "minute"}
+        for second in (0, 27, 29, 59):
+            snapshot = {**self.snapshot, "reset_at": "2026-11-04T06:35:%02dZ" % second}
+            result = verdict(snapshot, budget, self.now)
+            self.assertTrue(result["allowed"])
+            self.assertEqual(result["reset_at"], snapshot["reset_at"])
+            self.assertEqual(result["stop_at_used"], 93.2)
+        for reset in ("2026-11-04T06:34:59Z", "2026-11-04T06:36:00Z", "2026-11-05T06:35:27Z", "2026-11-11T06:35:27Z"):
+            self.assertFalse(verdict({**self.snapshot, "reset_at": reset}, budget, self.now)["allowed"])
+        for precision in (None, True, "hour", "day"):
+            self.assertFalse(verdict(self.snapshot, {**budget, "reset_match_precision": precision}, self.now)["allowed"])
+
+    def test_minute_match_keeps_reserve_freshness_and_earliest_cutoff(self):
+        budget = {**self.budget, "reset_match_precision": "minute"}
+        snapshot = {**self.snapshot, "reset_at": "2026-11-04T01:35:00-05:00"}
+        self.assertTrue(verdict(snapshot, budget, self.now)["allowed"])
+        self.assertFalse(verdict({**snapshot, "used_percent": 93.2}, budget, self.now)["allowed"])
+        self.assertFalse(verdict(snapshot, budget, self.now + timedelta(hours=2))["allowed"])
+        cutoff = datetime(2026, 11, 4, 6, 5, tzinfo=timezone.utc)
+        self.assertFalse(verdict({**snapshot, "observed_at": cutoff.isoformat()}, budget, cutoff)["allowed"])
+
     def test_portfolio_midnight_close_precedes_codex_provider_cutoff(self):
         for current, permitted in ((datetime(2026,11,4,4,59,tzinfo=timezone.utc), True),
                                    (datetime(2026,11,4,5,0,tzinfo=timezone.utc), False)):
