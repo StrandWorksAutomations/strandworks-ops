@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "revision": 4,
-  "updated_at": "2026-11-02T19:45:56.011Z",
+  "revision": 5,
+  "updated_at": "2026-11-02T19:47:44.386Z",
   "rules": [
     {
       "id": "shared-plain-language",
@@ -116,6 +116,21 @@
       "active": true,
       "created_at": "2026-11-02T19:45:56.011Z",
       "updated_at": "2026-11-02T19:45:56.011Z"
+    },
+    {
+      "id": "614f7bc1-e871-4fac-9f57-8a0eb7e85f2d",
+      "brand_id": "7530099",
+      "post_id": "405007407",
+      "post_uuid": null,
+      "original_text": "HR 118, SBP 92. Divide the first by the second before you call it borderline.\n\nShock index is heart rate over systolic blood pressure. SI = HR / SBP. For this patient, 118 / 92 = 1.28. The calculator labels that result High, significant shock, consider MTP. The bands it uses: below 0.5 low-normal, 0.5 to under 0.7 normal, 0.7 to 1.0 elevated with possible hypovolemia, above 1.0 high. A pulse of 118 is tachycardic. A systolic of 92 sits just above the SBP <90 trauma criterion on the MTP card. The ratio says more than either value, which is why the Massive Transfusion Protocol card lists a shock index above 1.0 among its clinical activation signs. The source behind the calculator is Allgöwer and Burri, 1967. Tag the triage nurse who already does this division in their head.\n\nRun your own numbers in the Shock Index calculator.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #TriageNurse #EmergencyNursing #ClinicalCalculators",
+      "original_sha256": "56687e8bd0080cdeda256d31d7e02be10e32fc6f4c4b52d3d979f700139665aa",
+      "scope": "brand",
+      "flags": [],
+      "rewrite": "Heart rate and systolic blood pressure are two parts of a vital puzzle. \nWhen should these numbers alarm you?",
+      "note": "HR 118, SBP 92. Divide the first by the second before you call it borderline.",
+      "active": true,
+      "created_at": "2026-11-02T19:47:44.386Z",
+      "updated_at": "2026-11-02T19:47:44.386Z"
     }
   ],
   "history": [
@@ -160,6 +175,17 @@
       "action": "save_feedback",
       "entity": "feedback",
       "entity_id": "95c5e2b6-7be3-4261-b206-bb08b62d720a",
+      "scope": "brand",
+      "brand_id": "7530099"
+    },
+    {
+      "revision": 5,
+      "at": "2026-11-02T19:47:44.386Z",
+      "actor": "owner",
+      "source": "cockpit",
+      "action": "save_feedback",
+      "entity": "feedback",
+      "entity_id": "614f7bc1-e871-4fac-9f57-8a0eb7e85f2d",
       "scope": "brand",
       "brand_id": "7530099"
     }
