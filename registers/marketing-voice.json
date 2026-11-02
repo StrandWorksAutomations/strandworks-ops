@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "revision": 0,
-  "updated_at": "2026-11-02T18:19:42Z",
+  "revision": 1,
+  "updated_at": "2026-11-02T18:57:16.743Z",
   "rules": [
     {
       "id": "shared-plain-language",
@@ -46,7 +46,7 @@
       "text": "Write short and direct, like a working paramedic.",
       "active": true,
       "created_at": "2026-11-02T18:19:42Z",
-      "updated_at": "2026-11-02T18:19:42Z"
+      "updated_at": "2026-11-02T18:57:16.743Z"
     },
     {
       "id": "tenetrix-approved-access-wording",
@@ -68,5 +68,17 @@
     }
   ],
   "feedback": [],
-  "history": []
+  "history": [
+    {
+      "revision": 1,
+      "at": "2026-11-02T18:57:16.743Z",
+      "actor": "owner",
+      "source": "cockpit",
+      "action": "save_rule",
+      "entity": "rule",
+      "entity_id": "tenetrix-practical-voice",
+      "scope": "brand",
+      "brand_id": "7530099"
+    }
+  ]
 }
