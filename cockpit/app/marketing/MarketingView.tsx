@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MARKETING_TIMEZONE, ownerDay, postStatus, safeMediaUrl, sourceIsStale, statusExplanation, weekOf,
   type MarketingSnapshot, type MarketingPaidSnapshot, type MarketingPost, type MarketingStatus, type PaidCampaign } from "@/lib/marketing";
+import { VoiceFeedbackPanel } from "./VoiceFeedbackPanel";
 
 const PLATFORMS: Record<string, string> = { facebook: "Facebook", instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", linkedin: "LinkedIn", bluesky: "Bluesky", threads: "Threads", twitter: "X" };
 const STATUS: Record<MarketingStatus, string> = { draft: "Draft", scheduled: "Scheduled", published: "Published", attention: "Check status" };
@@ -17,7 +18,7 @@ function dayLabel(day: string): string {
 }
 function platform(name: string) { return PLATFORMS[name.toLowerCase()] ?? name; }
 
-function PostCard({ post, now }: { post: MarketingPost; now: Date }) {
+function PostCard({ post, now, onImprove }: { post: MarketingPost; now: Date; onImprove: (post: MarketingPost) => void }) {
   const [open, setOpen] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
   const status = postStatus(post, now);
@@ -42,6 +43,7 @@ function PostCard({ post, now }: { post: MarketingPost; now: Date }) {
         {post.media.map((m, i) => { const url = safeMediaUrl(m.url); return !url ? null : m.type === "video" ? <video key={i} src={url} poster={safeMediaUrl(m.thumbnail_url)} controls playsInline preload="metadata" /> : <img key={i} src={url} alt={m.alt || `Post image ${i + 1}`} loading="lazy" />; })}
       </div>
       <p className="marketing-caption">{post.text}</p>
+      <button type="button" className="marketing-improve-wording" onClick={() => onImprove(post)}>Improve wording</button>
       {post.first_comment_text ? <details><summary>First comment</summary><p className="marketing-caption">{post.first_comment_text}</p></details> : null}
       <ul className="marketing-provider-list">{post.providers.map((p) => <li key={p.platform}>
         <span><strong>{platform(p.platform)}</strong><small>{post.draft || post.isDraft ? "Draft" : p.detailed_status || p.status}</small></span>
@@ -81,6 +83,9 @@ export function MarketingView({ snapshot, paid, nowIso }: { snapshot: MarketingS
   const [brandId, setBrandId] = useState("7530099");
   const [filter, setFilter] = useState<MarketingStatus | "all">("all");
   const [view, setView] = useState<"week" | "gallery">("gallery");
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voicePost, setVoicePost] = useState<MarketingPost | null>(null);
+  const improveWording = (post: MarketingPost) => { setVoicePost(post); setVoiceOpen(true); };
   const brand = snapshot?.brands.find((b) => b.id === brandId);
   const posts = (snapshot?.posts || []).filter((p) => p.brand_id === brandId).sort((a, b) => a.scheduled_at_utc.localeCompare(b.scheduled_at_utc));
   const visible = posts.filter((p) => filter === "all" || postStatus(p, now) === filter);
@@ -94,9 +99,10 @@ export function MarketingView({ snapshot, paid, nowIso }: { snapshot: MarketingS
   return <div className="marketing-view">
     {!snapshot ? <section className="marketing-unavailable" role="status"><h2>Social overview unavailable</h2><p>The saved source check could not be loaded. No empty queue or publication status is assumed.</p></section> : <>
       <div className="marketing-toolbar">
-        <label className="marketing-brand-select">Brand<select aria-label="Choose a brand" value={brandId} onChange={(event) => { setBrandId(event.target.value); setFilter("all"); }}>{[...snapshot.brands].sort((a, b) => Number(b.id === "7530099") - Number(a.id === "7530099")).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
+        <label className="marketing-brand-select">Brand<select aria-label="Choose a brand" value={brandId} onChange={(event) => { setBrandId(event.target.value); setFilter("all"); setVoiceOpen(false); setVoicePost(null); }}>{[...snapshot.brands].sort((a, b) => Number(b.id === "7530099") - Number(a.id === "7530099")).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
         <div className={`marketing-source-compact ${postsCheckedAt && sourceIsStale(postsCheckedAt, now) ? "stale" : ""}`}><p>Saved check {when(postsCheckedAt || snapshot.checked_at_utc)}{postsCheckedAt && sourceIsStale(postsCheckedAt, now) ? " (over 24h old)" : ""}</p><p>No automatic updates. All times Eastern.</p><SourceDetails snapshot={snapshot} /></div>
       </div>
+      <div className="marketing-voice-control"><button type="button" onClick={() => { setVoicePost(null); setVoiceOpen(true); }}>Writing voice</button></div>
       <details className="marketing-accounts" aria-label="Connected accounts"><summary><span>{brand?.accounts.length || 0} accounts linked in Metricool</span>{accountAttention ? <strong>TikTok needs attention</strong> : <span>{queueChecked ? "Account details" : "Queues not checked"}</span>}</summary>
         <div className="marketing-section-heading"><h2>{brand?.name || "Accounts"}</h2><span className="marketing-source-note">Accounts checked {when(snapshot.checked_at_utc)}</span></div>
         <div className="marketing-account-strip">{brand?.accounts.map((a) => <div key={a.platform} className={`marketing-account ${a.connection_status.includes("attention") || (a.platform === "tiktok" && a.handle === "adminlwcbg5") ? "needs-attention" : ""}`}>
@@ -112,15 +118,16 @@ export function MarketingView({ snapshot, paid, nowIso }: { snapshot: MarketingS
         <section className="marketing-board" aria-label="Organic posts">
           <div className="marketing-section-heading"><h2>Social posts</h2><div className="marketing-view-switch" aria-label="Post layout"><button aria-pressed={view === "gallery"} onClick={() => setView("gallery")}>Gallery</button><button aria-pressed={view === "week"} onClick={() => setView("week")}>By week</button></div></div>
           <div className="marketing-status-filters" aria-label="Filter post status"><button aria-pressed={filter === "all"} onClick={() => setFilter("all")}>All <span>{posts.length}</span></button>{ORDER.map((status) => <button key={status} aria-pressed={filter === status} onClick={() => setFilter(status)}>{status === "attention" ? "Needs attention" : STATUS[status]} <span>{posts.filter((p) => postStatus(p, now) === status).length}</span></button>)}</div>
-          {visible.length === 0 ? <p className="marketing-empty">No records with this status in the checked date range.</p> : view === "gallery" ? <div className="marketing-post-grid">{visible.map((post) => <PostCard key={post.id} post={post} now={now} />)}</div> : Array.from(groups).map(([day, items], i, entries) => <section className="marketing-day" key={day}>
+          {visible.length === 0 ? <p className="marketing-empty">No records with this status in the checked date range.</p> : view === "gallery" ? <div className="marketing-post-grid">{visible.map((post) => <PostCard key={post.id} post={post} now={now} onImprove={improveWording} />)}</div> : Array.from(groups).map(([day, items], i, entries) => <section className="marketing-day" key={day}>
             {i === 0 || weekOf(entries[i - 1][0]) !== weekOf(day) ? <h3 className="marketing-week">Week of {dayLabel(weekOf(day)).replace("Monday, ", "")}</h3> : null}
             <h4 className="marketing-day-heading">{dayLabel(day)} <span>{items.length} post{items.length === 1 ? "" : "s"}</span></h4>
-            <div className="marketing-post-grid">{items.map((post) => <PostCard key={post.id} post={post} now={now} />)}</div>
+            <div className="marketing-post-grid">{items.map((post) => <PostCard key={post.id} post={post} now={now} onImprove={improveWording} />)}</div>
           </section>)}
           <p className="marketing-source-note">Checked range: {snapshot.source_completeness?.queue_local_date_start} to {snapshot.source_completeness?.queue_local_date_end}. Other dates have not been checked.</p>
         </section>
       </>}
     </>}
     {!paid ? <p className="marketing-empty">Updated paid campaign source check is not available yet.</p> : null}
+    <VoiceFeedbackPanel open={voiceOpen} brandId={brandId} brands={snapshot?.brands || []} post={voicePost} onClose={() => setVoiceOpen(false)} />
   </div>;
 }

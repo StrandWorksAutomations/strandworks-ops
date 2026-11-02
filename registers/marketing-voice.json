@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "revision": 0,
+  "updated_at": "2026-11-02T18:19:42Z",
+  "rules": [
+    {
+      "id": "shared-plain-language",
+      "scope": "shared",
+      "brand_id": null,
+      "text": "Use plain, natural wording. Keep posts short and direct.",
+      "active": true,
+      "created_at": "2026-11-02T18:19:42Z",
+      "updated_at": "2026-11-02T18:19:42Z"
+    },
+    {
+      "id": "shared-no-generic-filler",
+      "scope": "shared",
+      "brand_id": null,
+      "text": "Avoid generic filler such as 'curated', 'field-tested intelligence' and 'peer-to-peer digest'.",
+      "active": true,
+      "created_at": "2026-11-02T18:19:42Z",
+      "updated_at": "2026-11-02T18:19:42Z"
+    },
+    {
+      "id": "shared-no-canned-closers",
+      "scope": "shared",
+      "brand_id": null,
+      "text": "Avoid canned closers such as 'Save this for the next time you chart it.'",
+      "active": true,
+      "created_at": "2026-11-02T18:19:42Z",
+      "updated_at": "2026-11-02T18:19:42Z"
+    },
+    {
+      "id": "shared-brand-separation",
+      "scope": "shared",
+      "brand_id": null,
+      "text": "Keep each brand's posts about that brand. Do not introduce another brand as a sibling, family, companion or the same team.",
+      "active": true,
+      "created_at": "2026-11-02T18:19:42Z",
+      "updated_at": "2026-11-02T18:19:42Z"
+    },
+    {
+      "id": "tenetrix-practical-voice",
+      "scope": "brand",
+      "brand_id": "7530099",
+      "text": "Write short and direct, like a working paramedic.",
+      "active": true,
+      "created_at": "2026-11-02T18:19:42Z",
+      "updated_at": "2026-11-02T18:19:42Z"
+    },
+    {
+      "id": "tenetrix-approved-access-wording",
+      "scope": "brand",
+      "brand_id": "7530099",
+      "text": "Preserve the approved access wording exactly: 'Free reference and study tools.' and 'Foundations is an optional one-time purchase.'",
+      "active": true,
+      "created_at": "2026-11-02T18:19:42Z",
+      "updated_at": "2026-11-02T18:19:42Z"
+    },
+    {
+      "id": "tenetrix-no-legacy-offers",
+      "scope": "brand",
+      "brand_id": "7530099",
+      "text": "Do not add prices, trials, subscriptions or legacy Premium claims to social copy.",
+      "active": true,
+      "created_at": "2026-11-02T18:19:42Z",
+      "updated_at": "2026-11-02T18:19:42Z"
+    }
+  ],
+  "feedback": [],
+  "history": []
+}

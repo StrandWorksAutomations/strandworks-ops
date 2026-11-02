@@ -47,9 +47,17 @@ dates use Supabase through server-only REST calls.
   slots require verification. Paid creative and its verified Meta settings
   are shown separately. Source snapshots live in
   `registers/marketing-snapshot.json` and `registers/marketing-paid.json`;
-  their check times and coverage are visible. This is a saved read-only
-  overview, not an automatic feed or a second publishing queue. Creative
+  their check times and coverage are visible. The post overview is a saved
+  snapshot, not an automatic feed or a second publishing queue. Creative
   posters under `/marketing/` pass through the existing session middleware.
+  **Writing voice** saves owner rules, original-caption snapshots, preferred
+  wording and notes to `registers/marketing-voice.json`. Brand scope is the
+  default; shared guidance requires an explicit all-brands choice. Saves use
+  the existing repository writer with revision and blob-SHA conflict checks.
+  Examples and rules can be stopped and restored. The ADVERTISING writer
+  packet helper reads the latest main-branch guide before new social copy is
+  drafted. These edits guide future wording; they do not change Metricool
+  posts, publication permissions or model weights.
 - **Replies** — group replies are held separately until a current Facebook check
   confirms the Kinetic Clinician Page's comment box in that exact group. Personal
   membership and pending Page join requests are shown separately from usable Page

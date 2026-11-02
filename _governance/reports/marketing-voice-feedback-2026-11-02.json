@@ -1,0 +1,36 @@
+{
+  "status": "LOCAL_GUI_VERIFIED_PENDING_PRODUCTION_DEPLOY",
+  "date": "2026-11-02",
+  "test_data_only": true,
+  "qa_data_root": "/Users/jonathanbouren/.codex/tmp/marketing-voice-qa-35sylp7k",
+  "canonical_seed": {
+    "revision": 0,
+    "rules": 7,
+    "feedback": 0,
+    "test_records_committed": false
+  },
+  "verified": [
+    "Unauthenticated route redirects to existing login",
+    "Authenticated dev session and guide load",
+    "Brand-scoped feedback save and reload persistence",
+    "Original caption and SHA preserved",
+    "Two-editor revision conflict blocks stale overwrite",
+    "Typed correction survives conflict and reload",
+    "Recovered save updates one record without duplication",
+    "Example stop and restore",
+    "Rule save and already-saved-rule retry without duplicate",
+    "Brand B cannot show Brand A correction",
+    "Returning to Brand A restores its unsaved draft",
+    "390x844 modal fits at default and larger text",
+    "Original social snapshot and paid snapshot unchanged"
+  ],
+  "browser_limit": "Viewport emulation; physical phone keyboard not tested",
+  "production_limit": "Production authenticated UI and GitHub-backed writes not yet exercised. GitHub CAS is covered by mocked HTTP tests.",
+  "queue_changes": false,
+  "auth_changes": false,
+  "screenshots": [
+    "/Users/jonathanbouren/.codex/tmp/marketing-voice-feedback/phone-2026-11-02.png",
+    "/Users/jonathanbouren/.codex/tmp/marketing-voice-feedback/phone-form-2026-11-02.png"
+  ],
+  "qa_fixture_reset_to_clean_seed": true
+}
