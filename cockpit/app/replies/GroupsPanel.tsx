@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { pageAccessHelp, pageAccessLabel, pageAccessReady, type KcGroup } from "@/lib/kc-replies";
+import { GROUP_FILTERS, filterGroups, groupAccessStatus, groupFilterCounts, pageAccessHelp, pageAccessLabel, type GroupFilter, type KcGroup } from "@/lib/kc-replies";
 
 // The scan list is distinct from the Page's right to participate in each group.
 export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
   const [joined, setJoined] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
-  const ready = groups.filter((g) => pageAccessReady(g.stats.page_access, g.id, g.stats.group_aliases));
-  const scanned = groups.filter((g) => g.status === "joined")
-    .sort((a, b) => (b.stats.posted ?? 0) - (a.stats.posted ?? 0) || (b.stats.replies_back ?? 0) - (a.stats.replies_back ?? 0) || a.name.localeCompare(b.name));
-  const toJoin = groups.filter((g) => g.status === "to_join" && !joined[g.id]);
+  const counts = groupFilterCounts(groups);
+  const [filter, setFilter] = useState<GroupFilter>(() => counts.ready ? "ready" : "all");
+  const [query, setQuery] = useState("");
+  const visible = filterGroups(groups, filter, query);
+  const personal = groups.filter((g) => g.stats.personal_member_observed).length;
+  const pageMembers = groups.filter((g) => g.stats.page_member_observed).length;
 
   async function markJoined(id: string) {
     setError(null);
@@ -26,19 +28,40 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
 
   return (
     <>
-      <p className="meta">{ready.length} groups checked for commenting as Kinetic Clinician · {scanned.length} on the scan list. Personal group membership does not give the Page access.</p>
-      <div className="group-wrap card">
+      <p className="meta">{counts.ready} groups checked for commenting as Kinetic Clinician · {groups.length} groups in the full inventory.
+        {personal ? <> {personal} personal memberships recorded.</> : null}
+        {pageMembers ? <> {pageMembers} Page memberships recorded.</> : null}
+      </p>
+      <div className="group-controls">
+        <label className="meta" htmlFor="group-search">Find a group</label>
+        <input id="group-search" className="answer-input group-search" type="search" placeholder="Group name, topic or Facebook ID" value={query} onChange={(event) => setQuery(event.target.value)} />
+        <nav className="chips timeline-filters group-filters" aria-label="Filter groups by Kinetic Clinician Page access">
+          {GROUP_FILTERS.map((option) => <button key={option.id} type="button" className={`chip ${filter === option.id ? "on" : ""}`} aria-pressed={filter === option.id} onClick={() => setFilter(option.id)}>
+            {option.label} ({counts[option.id]})
+          </button>)}
+        </nav>
+        <p className="meta" role="status">Showing {visible.length} of {groups.length} groups{query.trim() ? <> matching “{query.trim()}”</> : null}.</p>
+      </div>
+      {visible.length ? <div className="group-wrap card">
         <table className="group-table">
           <thead><tr><th>Group / Page access</th><th className="num">Posted</th><th className="num">Replies back</th><th className="num">Reactions</th><th className="num">Dismissed</th></tr></thead>
           <tbody>
-            {scanned.map((g) => <tr key={g.id}>
+            {visible.map((g) => <tr key={g.id}>
               <td><a href={g.url} target="_blank" rel="noopener noreferrer">{g.name}</a>
                 {g.stats.quiet ? <span className="chip" title="4+ dismissals in 30 days and nothing posted: no longer queued"> paused</span> : null}
-                <div className={pageAccessReady(g.stats.page_access, g.id, g.stats.group_aliases) ? "ok-text" : "meta"}>{pageAccessLabel(g.stats.page_access)}</div>
+                <div className={groupAccessStatus(g) === "ready" ? "ok-text" : "meta"}>{pageAccessLabel(g.stats.page_access)}</div>
+                <div className="meta">{[
+                  g.stats.personal_member_observed ? "Personal membership recorded" : null,
+                  g.stats.page_member_observed ? "Page membership recorded" : null,
+                  !g.stats.personal_member_observed && !g.stats.page_member_observed ? g.status === "to_join" ? "Candidate group" : "On scan list" : null,
+                ].filter(Boolean).join(" · ")}</div>
                 <details><summary className="meta">Access details</summary>
                   <p className="meta">{pageAccessHelp(g.stats.page_access)} {g.stats.page_access?.note}</p>
                   {g.stats.page_access?.checked_at ? <p className="meta">Checked {new Date(g.stats.page_access.checked_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" })}</p> : null}
+                  {g.stats.personal_member_observed ? <p className="meta">Personal membership observed {g.stats.personal_member_observed}</p> : null}
+                  {g.stats.page_member_observed ? <p className="meta">Page membership observed {g.stats.page_member_observed}</p> : null}
                 </details>
+                {g.status === "to_join" ? <button className="token-btn" disabled={!!joined[g.id]} onClick={() => markJoined(g.id)}>{joined[g.id] === "done" ? "Added to scan list" : joined[g.id] === "saving" ? "Adding…" : "Add to scan list"}</button> : null}
               </td>
               <td className="num">{g.stats.posted ?? 0}</td>
               <td className="num">{g.stats.replies_back ?? 0}</td>
@@ -47,19 +70,16 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
             </tr>)}
           </tbody>
         </table>
-      </div>
+      </div> : <div className="card">
+        <p className="meta">{query.trim() ? "No groups match this search and access filter."
+          : filter === "ready" ? "No groups currently have checked commenting access as Kinetic Clinician."
+          : `No groups match the “${GROUP_FILTERS.find((option) => option.id === filter)?.label}” filter.`}</p>
+        {filter !== "all" ? <button type="button" className="token-btn" onClick={() => setFilter("all")}>Search all {groups.length} groups</button> : null}
+        {query ? <button type="button" className="token-btn" onClick={() => setQuery("")}>Clear search</button> : null}
+      </div>}
       {Object.values(joined).includes("done") ? <p className="ok-text" role="status">Added to the scan list. Page access still needs to be checked.</p> : null}
       {error ? <p className="error-text" role="alert">{error}</p> : null}
-      {toJoin.length ? <details className="card">
-        <summary>Groups to join ({toJoin.length})</summary>
-        <p className="meta">Switch Facebook to Kinetic Clinician before requesting to join. Wait for any admin approval. Adding a group to the scan list does not confirm that the Page can comment.</p>
-        <ul className="join-list">
-          {toJoin.map((g) => <li key={g.id}>
-            <span><a href={g.url} target="_blank" rel="noopener noreferrer">{g.name} ↗</a> <span className="meta">{g.meta}</span></span>
-            <button className="token-btn" disabled={joined[g.id] === "saving"} onClick={() => markJoined(g.id)}>Add to scan list</button>
-          </li>)}
-        </ul>
-      </details> : null}
+      <p className="meta">Personal membership does not give the Page access. Switch Facebook to Kinetic Clinician before requesting to join a group, then wait for any admin approval. Adding a group to the scan list does not confirm that the Page can comment.</p>
     </>
   );
 }

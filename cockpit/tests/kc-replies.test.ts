@@ -4,12 +4,51 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.stubGlobal("React", React);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-import { KINETIC_PAGE_ID, facebookGroupId, pageAccessLabel, pageAccessReady, pendingDecision, replyGroupIds, replyPageAccess, resultLine, safeLinks, snoozedUntil, validateGroupJoined, validatePagePostAction, validateReplyAction, type KcPageAccess, type KcReply } from "../src/lib/kc-replies";
+import { KINETIC_PAGE_ID, facebookGroupId, filterGroups, groupFilterCounts, pageAccessLabel, pageAccessReady, pendingDecision, replyGroupIds, replyPageAccess, resultLine, safeLinks, snoozedUntil, validateGroupJoined, validatePagePostAction, validateReplyAction, type KcGroup, type KcPageAccess, type KcReply } from "../src/lib/kc-replies";
 import { JobLinks, ReplyCard } from "../app/replies/ReplyCard";
 import { GroupsPanel } from "../app/replies/GroupsPanel";
 
 const id = "0123456789abcdef01234567";
 const readyAccess: KcPageAccess = { status: "ready", actor_id: KINETIC_PAGE_ID, checked_at: new Date().toISOString(), proof_url: "https://www.facebook.com/groups/1/posts/2/", composer_label: "Comment as Kinetic Clinician", note: "Comment box showed Kinetic Clinician." };
+
+describe("full group inventory filters", () => {
+  const group = (id: string, name: string, status: KcPageAccess["status"] = "unknown"): KcGroup => ({ id, name, meta: "Public group", lane: "ems", status: "joined", url: `https://www.facebook.com/groups/${id}/`,
+    stats: { page_access: { ...readyAccess, status, proof_url: `https://www.facebook.com/groups/${id}/` } } });
+  const inventory: KcGroup[] = [group("1", "EMS Jobs", "ready"), group("2", "Travel Nursing", "pending"), group("3", "Private Clinicians", "profile_only"), group("4", "Unavailable Group", "unavailable"),
+    ...Array.from({ length: 152 }, (_, index) => group(String(index + 5), `Personal group ${index + 5}`))];
+
+  it("keeps all 156 groups and counts unavailable and profile-only together", () => {
+    expect(groupFilterCounts(inventory)).toEqual({ all: 156, ready: 1, pending: 1, unavailable: 2, unknown: 152 });
+    expect(filterGroups(inventory, "all", "")).toHaveLength(156);
+    expect(filterGroups(inventory, "unknown", "")).toHaveLength(152);
+    expect(inventory).toHaveLength(156);
+  });
+  it("combines case-insensitive text search with the chosen Page access status", () => {
+    expect(filterGroups(inventory, "all", " nursing TRAVEL ").map((g) => g.id)).toEqual(["2"]);
+    expect(filterGroups(inventory, "ready", "nursing")).toEqual([]);
+    expect(filterGroups(inventory, "pending", "nursing").map((g) => g.id)).toEqual(["2"]);
+    const aliased = { ...inventory[0], stats: { ...inventory[0].stats, group_aliases: ["307401089297853"] } };
+    expect(filterGroups([aliased], "all", "307401089297853")).toEqual([aliased]);
+  });
+  it("sorts usable and pending groups first without relabelling stale checks as usable", () => {
+    const stale = { ...inventory[0], id: "999", stats: { page_access: { ...readyAccess, checked_at: "2020-01-01T00:00:00Z" } } };
+    const rows = filterGroups([inventory[2], stale, inventory[1], inventory[0]], "all", "");
+    expect(rows.slice(0, 2).map((g) => g.id)).toEqual(["1", "2"]);
+    expect(groupFilterCounts([stale]).unknown).toBe(1);
+  });
+  it("defaults to usable groups and exposes search and the complete inventory count", () => {
+    const html = renderToStaticMarkup(React.createElement(GroupsPanel, { groups: inventory }));
+    expect(html).toContain('type="search"');
+    expect(html).toContain("Can comment (1)");
+    expect(html).toContain("Pending (1)");
+    expect(html).toContain("Unavailable (2)");
+    expect(html).toContain("Needs check (152)");
+    expect(html).toContain("All (156)");
+    expect(html).toContain("Showing 1 of 156 groups");
+    expect(html).toContain("EMS Jobs");
+    expect(html).not.toContain("Travel Nursing");
+  });
+});
 
 describe("Kinetic Clinician group access", () => {
   it("never treats personal membership, a pending request, or an unchecked Page as ready", () => {
@@ -143,7 +182,7 @@ describe("results, weekly post and groups", () => {
     ] }));
     expect(html).toContain("EMS Jobs");
     expect(html).toContain("paused");
-    expect(html).toContain("Groups to join (1)");
+    expect(html).toContain("All (2)");
     expect(html).toContain("Add to scan list");
     expect(html).not.toContain("I joined it");
     expect(html).toContain("Page access needs checking");

@@ -546,5 +546,8 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 .group-table th, .group-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .group-table td.num, .group-table th.num { text-align: right; white-space: nowrap; }
 .group-wrap { overflow-x: auto; }
+.group-search { max-width: 520px; }
+.group-filters .chip { background: var(--panel-2); cursor: pointer; }
+.group-filters .chip:hover { color: var(--ink); border-color: var(--border-strong); }
 .join-list { list-style: none; margin: 0; padding: 0; }
 .join-list li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }

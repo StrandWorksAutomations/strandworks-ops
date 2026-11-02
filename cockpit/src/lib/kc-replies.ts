@@ -48,7 +48,7 @@ export const UNKNOWN_PAGE_ACCESS: KcPageAccess = { status: "unknown", actor_id: 
 
 export type KcGroup = {
   id: string; name: string; meta: string; lane: string; status: "joined" | "to_join"; url: string;
-  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess; group_aliases?: string[] };
+  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess; group_aliases?: string[]; personal_member_observed?: string | null; page_member_observed?: string | null };
 };
 
 export type KcPagePost = { id: string; draft: string; links: KcJobLink[]; status: "draft" | "approved" | "posted" | "dismissed"; created_at: string };
@@ -175,6 +175,42 @@ export function pageAccessHelp(access: KcPageAccess | null | undefined): string 
   if (access?.status === "profile_only") return "This group does not currently allow Kinetic Clinician to participate. Your personal membership cannot give the Page access.";
   if (access?.status === "unavailable") return "Facebook is not currently allowing Kinetic Clinician to comment in this group. Recheck access before using this reply.";
   return "Open Facebook as Kinetic Clinician and check this group's membership and comment box. Joining as Jonathan does not join the Page.";
+}
+
+export const GROUP_FILTERS = [
+  { id: "ready", label: "Can comment" },
+  { id: "pending", label: "Pending" },
+  { id: "unavailable", label: "Unavailable" },
+  { id: "unknown", label: "Needs check" },
+  { id: "all", label: "All" },
+] as const;
+export type GroupFilter = (typeof GROUP_FILTERS)[number]["id"];
+
+export function groupAccessStatus(group: KcGroup): Exclude<GroupFilter, "all"> {
+  if (pageAccessReady(group.stats.page_access, group.id, groupIds(group))) return "ready";
+  const status = group.stats.page_access?.status;
+  if (status === "pending") return "pending";
+  return status === "unavailable" || status === "profile_only" ? "unavailable" : "unknown";
+}
+
+export function groupFilterCounts(groups: KcGroup[]): Record<GroupFilter, number> {
+  const counts = { ready: 0, pending: 0, unavailable: 0, unknown: 0, all: groups.length };
+  for (const group of groups) counts[groupAccessStatus(group)] += 1;
+  return counts;
+}
+
+/** Search the full saved inventory; filters never remove a group from that inventory. */
+export function filterGroups(groups: KcGroup[], status: GroupFilter, query: string): KcGroup[] {
+  const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  const rank = { ready: 0, pending: 1, unknown: 2, unavailable: 3 };
+  return groups.filter((group) => {
+    if (status !== "all" && groupAccessStatus(group) !== status) return false;
+    const text = [group.name, group.meta, group.lane, ...groupIds(group)].join(" ").toLocaleLowerCase();
+    return words.every((word) => text.includes(word));
+  }).sort((a, b) => rank[groupAccessStatus(a)] - rank[groupAccessStatus(b)]
+    || (b.stats.posted ?? 0) - (a.stats.posted ?? 0)
+    || (b.stats.replies_back ?? 0) - (a.stats.replies_back ?? 0)
+    || a.name.localeCompare(b.name));
 }
 
 /** Snoozed until a later time, by the synced row or an action the Mac has not applied yet. */
