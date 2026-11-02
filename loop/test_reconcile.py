@@ -208,6 +208,14 @@ class ReconcilerTests(unittest.TestCase):
                 "created_at": (NOW + timedelta(minutes=1)).isoformat(), "value": {"status": "failed", "source_observed_at": (NOW - timedelta(hours=5)).isoformat()}}]}
         self.assertEqual(reconcile.latest_metric(data, "kc", "scan")["value"]["status"], "failed")
 
+    def test_late_backfilled_generic_facts_and_provider_budgets_keep_observation_order(self):
+        for current, backfill in ((12, 99), ({"remaining_percent": 35}, {"remaining_percent": 90})):
+            data = {"metrics": [{"id": 9, "objective_id": "portfolio", "metric_id": "fact", "observed_at": NOW.isoformat(),
+                "created_at": NOW.isoformat(), "value": current},
+                {"id": 10, "objective_id": "portfolio", "metric_id": "fact", "observed_at": (NOW - timedelta(days=2)).isoformat(),
+                    "created_at": (NOW + timedelta(minutes=1)).isoformat(), "value": backfill}]}
+            self.assertEqual(reconcile.latest_metric(data, "portfolio", "fact")["value"], current)
+
     def test_retry_has_bounded_backoff_and_permanent_failures_stop(self):
         attempts, sleeps = [], []
         def transient():

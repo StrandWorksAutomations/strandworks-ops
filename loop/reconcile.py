@@ -57,10 +57,15 @@ def digest(value):
 def latest_metric(focus, objective_id, metric_id):
     rows = [m for m in focus.get("metrics", []) if m.get("objective_id") == objective_id and m.get("metric_id") == metric_id]
     minimum = datetime.min.replace(tzinfo=timezone.utc)
-    # Select the latest publication, then judge freshness from its source time.
-    # An agent's newer inspection timestamp must not hide a newly published old
-    # failure receipt from the actual scanner.
-    return max(rows, key=lambda m: (stamp(m.get("created_at")) or stamp(m.get("observed_at")) or minimum,
+    # Derived health receipts explicitly retain source_observed_at. Select their
+    # newest publication, then age that original source time. Generic facts and
+    # provider budgets keep observation-time ordering, including late backfills.
+    def effective_time(row):
+        value = row.get("value")
+        if isinstance(value, dict) and "source_observed_at" in value:
+            return stamp(row.get("created_at")) or stamp(row.get("observed_at")) or minimum
+        return stamp(row.get("observed_at")) or minimum
+    return max(rows, key=lambda m: (effective_time(m),
         int(m["id"]) if str(m.get("id", "")).isdigit() else 0), default=None)
 
 
