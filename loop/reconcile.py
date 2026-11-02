@@ -99,6 +99,14 @@ def metric_conditions(focus, objective, now):
     return reasons
 
 
+def condition_fingerprint(body):
+    # Repeated source checks can advance their timestamp while the same fault
+    # persists. Alert once for that condition; retain the first source receipt
+    # in the alert body and expose current receipts through metrics/history.
+    # Delivery deadlines, expired claims and progress timestamps stay material.
+    return digest(re.sub(r"(source observation )\S+", r"\1<source-time>", body))
+
+
 def published_adapter(focus, objective_id, metric_id, now, max_age):
     row = latest_metric(focus, objective_id, metric_id)
     if not row or not isinstance(row.get("value"), dict):
@@ -278,7 +286,7 @@ class Reconciler:
         for objective_id, concern in concerns.items():
             objective = concern["objective"]
             body = "\n".join(concern["reasons"])
-            fingerprint = digest(body)
+            fingerprint = condition_fingerprint(body)
             prior = self.state["alerts"].get(objective_id)
             if prior and prior["hash"] == fingerprint:
                 continue
@@ -383,7 +391,7 @@ class Reconciler:
         concerns = self.concerns(focus, now)
         self.alert_changes(concerns)
         adapters = {"linear": self.refresh_linear(focus, now), "marketing": self.marketing(now, focus),
-            "scanners": published_adapter(focus, "kc-reset-push", "scheduled_scan", now, 8),
+            "scanners": published_adapter(focus, "kc-reset-push", "scheduled_scan", now, 14),
             "collector": published_adapter(focus, "kc-reset-push", "source_freshness", now, 6),
             "tech_scout_receipt": published_adapter(focus, CONTROL, "tech_scout_freshness", now, 192),
             "opportunities": {"status": "unknown", "reason": "No automatic opportunity research performed"}}

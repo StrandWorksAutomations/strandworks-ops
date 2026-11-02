@@ -5,7 +5,7 @@ export type Objective = {
   metric_definitions: { id: string; label?: string; target?: string; [key: string]: unknown }[];
   status: "active" | "paused" | "complete"; updated_at: string;
 };
-export type Observation = { id: number; objective_id: string; metric_id: string; value: unknown; observed_at: string; source: string; evidence: unknown[] };
+export type Observation = { id: number; objective_id: string; metric_id: string; value: unknown; observed_at: string; source: string; evidence: unknown[]; created_at?: string };
 export type WorkLease = { issue_id: string; objective_id: string | null; project: string; agent: string; session_id: string; branch: string; worktree: string; claimed_at: string; renewed_at: string; expires_at: string; released_at: string | null; checkpoint: string | null; next_action: string | null; recovery_note?: string | null };
 export type WorkReport = { id: number; issue_id: string | null; objective_id: string | null; agent: string; session_id: string; result: string; validation: string; remaining: string; next_action: string; evidence: unknown[]; created_at: string };
 export type Portfolio = { checked_at: string; objectives: Objective[]; metrics: Observation[]; leases: WorkLease[]; reports: WorkReport[] };
@@ -18,11 +18,8 @@ export function projectKey(project: string) {
 export function sameProject(a: string, b: string) { return projectKey(a) === projectKey(b); }
 export function latestMetric(metrics: Observation[], objective: string, metric: string) {
   const candidates = metrics.filter((m) => m.objective_id === objective && m.metric_id === metric);
-  const derived = candidates.filter((m) => m.value !== null && typeof m.value === "object" && "source_observed_at" in m.value);
-  // Derived health can change while its underlying run stays old. Generic facts
-  // and provider limits still follow source observation time, including backfills.
-  return (derived.length ? derived.sort((a, b) => b.id - a.id)
-    : candidates.sort((a, b) => Date.parse(b.observed_at) - Date.parse(a.observed_at) || b.id - a.id))[0];
+  const effectiveTime = (m: Observation) => Date.parse(m.value !== null && typeof m.value === "object" && "source_observed_at" in m.value ? (m.created_at ?? m.observed_at) : m.observed_at);
+  return candidates.sort((a, b) => effectiveTime(b) - effectiveTime(a) || b.id - a.id)[0];
 }
 export function leaseState(lease: WorkLease, now: Date): "released" | "active" | "needs recovery" {
   if (lease.released_at) return "released";

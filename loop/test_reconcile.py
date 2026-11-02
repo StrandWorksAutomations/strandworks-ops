@@ -78,6 +78,31 @@ class ReconcilerTests(unittest.TestCase):
         second.drain(NOW + timedelta(minutes=1))
         self.assertEqual(len(remote.results), 4)
 
+    def test_repeated_failure_receipts_are_quiet_but_recovery_and_new_fault_alert(self):
+        runner, remote, saved = self.runner()
+        objective = remote.focus["objectives"][1]
+        objective.pop("target_at")
+        objective["metric_definitions"] = [{"id": "scan", "label": "Scan", "alert_statuses": ["failed", "unknown"]}]
+        metric = {"objective_id": objective["id"], "metric_id": "scan", "value": {"status": "failed", "source_observed_at": NOW.isoformat()}, "observed_at": NOW.isoformat()}
+        remote.focus["metrics"] = [metric]
+        runner.run(NOW)
+        metric["value"]["source_observed_at"] = (NOW + timedelta(minutes=15)).isoformat()
+        runner.run(NOW + timedelta(minutes=15))
+        self.assertEqual(len([name for name, _ in remote.calls if name == "owner_loop_ask"]), 1)
+        metric["value"]["status"] = "ok"
+        runner.run(NOW + timedelta(minutes=30))
+        self.assertNotIn(objective["id"], saved["alerts"])
+        metric["value"]["status"] = "unknown"
+        runner.run(NOW + timedelta(minutes=45))
+        self.assertEqual(len([name for name, _ in remote.calls if name == "owner_loop_ask"]), 2)
+
+    def test_scan_adapter_allows_the_existing_13_hour_overnight_gap(self):
+        runner, remote, _ = self.runner()
+        source_at = (NOW - timedelta(hours=13)).isoformat()
+        remote.focus["metrics"] = [{"objective_id": "kc-reset-push", "metric_id": "scheduled_scan", "observed_at": source_at,
+            "value": {"status": "ok", "source_observed_at": source_at}}]
+        self.assertEqual(runner.run(NOW)["adapters"]["scanners"]["status"], "ok")
+
     def test_parked_objective_still_requires_dated_review(self):
         runner, remote, _ = self.runner()
         objective = remote.focus["objectives"][1]

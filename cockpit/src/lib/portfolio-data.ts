@@ -15,9 +15,9 @@ export async function fetchPortfolio(project?: string): Promise<Portfolio | null
   try {
     const [objectives, metrics, leases, reports] = await Promise.all([
       all<Objective>("portfolio_objectives", "select=*&order=priority.asc,target_at.asc"),
-      all<Observation>("portfolio_metrics", "select=*&order=observed_at.desc,id.desc"),
+      all<Observation>("portfolio_latest_metrics", "select=*&order=observed_at.desc,id.desc"),
       all<WorkLease>("portfolio_work_leases", "select=*&released_at=is.null&order=expires_at.asc"),
-      all<WorkReport>("portfolio_work_reports", `select=*&created_at=gte.${encodeURIComponent(new Date(Date.now() - 30 * 86400000).toISOString())}&order=created_at.desc,id.desc`),
+      all<WorkReport>("portfolio_recent_reports", "select=*&order=created_at.desc,id.desc"),
     ]);
     const selected = project ? objectives.filter((o) => sameProject(o.project, project)) : objectives;
     const ids = new Set(selected.map((o) => o.id));
