@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "revision": 8,
-  "updated_at": "2026-11-02T19:49:15.228Z",
+  "revision": 9,
+  "updated_at": "2026-11-02T19:58:14.453Z",
   "rules": [
     {
       "id": "shared-plain-language",
@@ -131,6 +131,21 @@
       "active": true,
       "created_at": "2026-11-02T19:47:44.386Z",
       "updated_at": "2026-11-02T19:47:44.386Z"
+    },
+    {
+      "id": "8d8901f6-669a-48d4-a773-813428cf80d6",
+      "brand_id": "7530099",
+      "post_id": "405007503",
+      "post_uuid": null,
+      "original_text": "Tension pneumothorax, tamponade, hypothermia. Which ABCDE letter does each one kill in?\n\nWeek one is orientation. The ABCDE card gives the order. Airway with C-spine protection, breathing, circulation with hemorrhage control, disability, exposure. Treat life threats as they are found before moving to the next letter. The ATLS Primary Survey card then names what each letter is hunting: tension pneumothorax in B, massive hemothorax in B and C, cardiac tamponade and massive hemorrhage in C, severe TBI in D, hypothermia in E. Find what kills, fix what kills, then move on. The last slide is the Anatomical orientation lesson; Saturday's question comes from it. Free reference and study tools.\n\nSwipe through the two cards and the lesson.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #ATLS #NursingStudent #Paramedic #PrimarySurvey",
+      "original_sha256": "4a12b9dd8d852e47c882cd0bb91d5ed50ed9c48d25d3ec675846ad6ae9af5dcf",
+      "scope": "brand",
+      "flags": [],
+      "rewrite": "in a dark matching game kind of view. \nMatch the killer with the assessment step that catches it.\nAirway                                          Tamponade\nBreathing\nCirculation                                    Hypothermia\nDisability\nExposure                                      Tension Pneumothorax",
+      "note": "The photo - Which letter does each of these kill in ? ",
+      "active": true,
+      "created_at": "2026-11-02T19:58:14.453Z",
+      "updated_at": "2026-11-02T19:58:14.453Z"
     }
   ],
   "history": [
@@ -221,6 +236,17 @@
       "entity_id": "shared-plain-language",
       "scope": "shared",
       "brand_id": null
+    },
+    {
+      "revision": 9,
+      "at": "2026-11-02T19:58:14.453Z",
+      "actor": "owner",
+      "source": "cockpit",
+      "action": "save_feedback",
+      "entity": "feedback",
+      "entity_id": "8d8901f6-669a-48d4-a773-813428cf80d6",
+      "scope": "brand",
+      "brand_id": "7530099"
     }
   ]
 }
