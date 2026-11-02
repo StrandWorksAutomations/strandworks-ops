@@ -209,7 +209,7 @@ export default async function Today() {
             {board.map(({ p, fp, evidence }) => (
               <article key={p.slug} className="l-row" style={{ alignItems: "flex-start" }}>
                 <div className="project-summary-body">
-                  <Link href={`/projects/${p.slug}`} className="l-name">{p.name}</Link>
+                  <Link href={`/projects/${p.slug}`} className="l-name" style={{ whiteSpace: "normal" }}>{p.name}</Link>
                   {p.activity ? <span className="badge">Repo {p.activity}</span> : null}
                   <ProjectEvidenceSummary evidence={evidence} available={{ checks: checksCsv !== null, portfolio: portfolio !== null }} compact />
                 </div>
