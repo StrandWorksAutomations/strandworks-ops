@@ -28,7 +28,7 @@
       "remaining_at_kickoff": null,
       "allowed_points": 28.8,
       "stop_at_used": 64.8,
-      "reset_at": "2026-11-03T04:59:00-05:00",
+      "reset_at": "2026-11-03T05:00:00-05:00",
       "stop_at": "2026-11-03T04:29:00-05:00",
       "source": "Claude Code native /usage verified2026-11-02T18:17:36Z: all_models36%USED, Fable5%USED; usage credits OFF",
       "kickoff_usage_verified": false,
@@ -42,7 +42,7 @@
           "reference_observed_at": "2026-11-02T18:17:36Z",
           "allowed_points": 76,
           "stop_at_used": 81,
-          "reset_at": "2026-11-03T04:59:00-05:00",
+          "reset_at": "2026-11-03T05:00:00-05:00",
           "stop_at": "2026-11-03T04:29:00-05:00",
           "reset_precision": "minute"
         }
@@ -50,21 +50,28 @@
       "verified_snapshot": {
         "limit_id": "all_models",
         "used_percent": 36,
-        "observed_at": "2026-11-02T18:17:36Z",
-        "reset_at": "2026-11-03T04:59:00-05:00",
-        "source": "Claude Code native /usage verified2026-11-02T18:17:36Z: all_models36%USED, Fable5%USED; usage credits OFF",
+        "observed_at": "2026-11-02T19:12:46Z",
+        "reset_at": "2026-11-03T05:00:00-05:00",
+        "source": "Claude Code2.1.316 native /usage post final single-read bootstrap at2026-11-02T19:12:46Z; provider whole-percent reading, no exact consumption inference",
         "reset_precision": "minute",
+        "reset_display": "Resets Nov3 at5am (America/New_York)",
         "usage_credits_enabled": false,
+        "unknown_limits": [
+          "Current-session provider percentage/reset not displayed",
+          "No separate Extra usage row displayed"
+        ],
         "additional_limits": {
           "fable": {
             "used_percent": 5,
-            "observed_at": "2026-11-02T18:17:36Z",
-            "reset_at": "2026-11-03T04:59:00-05:00",
-            "source": "Claude Code native /usage Fable limit verified2026-11-02T18:17:36Z",
-            "reset_precision": "minute"
+            "observed_at": "2026-11-02T19:12:46Z",
+            "reset_at": "2026-11-03T05:00:00-05:00",
+            "source": "Claude Code2.1.316 native /usage Current week(Fable), observed2026-11-02T19:12:46Z",
+            "reset_precision": "minute",
+            "reset_display": "Resets Nov3 at5am (America/New_York)"
           }
         }
-      }
+      },
+      "reset_reconciliation": "Latest native /usage19:12:46Z and original owner0500tomorrow agree on Nov3 05:00Eastern. Earlier04:59display is retained in evidence history. Fixed all-model/Fable spending ceilings and earlier04:29cutoff are unchanged; allowance has not reset."
     }
   },
   "objectives": [
