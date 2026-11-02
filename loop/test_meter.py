@@ -21,6 +21,17 @@ class MeterTests(unittest.TestCase):
         self.assertFalse(verdict({**self.snapshot, "reset_at": "2026-11-11T06:35:27Z"}, self.budget, self.now)["allowed"])
         self.assertFalse(verdict(self.snapshot, self.budget, datetime(2026, 11, 4, 6, 6, tzinfo=timezone.utc))["allowed"])
 
+    def test_portfolio_midnight_close_precedes_codex_provider_cutoff(self):
+        for current, permitted in ((datetime(2026,11,4,4,59,tzinfo=timezone.utc), True),
+                                   (datetime(2026,11,4,5,0,tzinfo=timezone.utc), False)):
+            snapshot = {**self.snapshot, "observed_at": current.isoformat()}
+            with patch.object(meter, "provider_snapshot", return_value=snapshot), patch("builtins.print") as output:
+                code = meter.main(["codex"], now=current)
+            result = json.loads(output.call_args.args[0])
+            self.assertEqual(result["allowed"], permitted)
+            self.assertEqual(code, 0 if permitted else 2)
+            self.assertEqual(meter.stamp(result["stop_at"]), datetime(2026,11,4,5,tzinfo=timezone.utc))
+
     def claude(self):
         budget = json.loads((Path(__file__).parent / "portfolio-push.json").read_text())["quota"]["claude"]
         snapshot = copy.deepcopy(budget["verified_snapshot"])
