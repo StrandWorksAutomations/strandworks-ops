@@ -17,8 +17,12 @@ export function projectKey(project: string) {
 }
 export function sameProject(a: string, b: string) { return projectKey(a) === projectKey(b); }
 export function latestMetric(metrics: Observation[], objective: string, metric: string) {
-  return metrics.filter((m) => m.objective_id === objective && m.metric_id === metric)
-    .sort((a, b) => Date.parse(b.observed_at) - Date.parse(a.observed_at) || b.id - a.id)[0];
+  const candidates = metrics.filter((m) => m.objective_id === objective && m.metric_id === metric);
+  const derived = candidates.filter((m) => m.value !== null && typeof m.value === "object" && "source_observed_at" in m.value);
+  // Derived health can change while its underlying run stays old. Generic facts
+  // and provider limits still follow source observation time, including backfills.
+  return (derived.length ? derived.sort((a, b) => b.id - a.id)
+    : candidates.sort((a, b) => Date.parse(b.observed_at) - Date.parse(a.observed_at) || b.id - a.id))[0];
 }
 export function leaseState(lease: WorkLease, now: Date): "released" | "active" | "needs recovery" {
   if (lease.released_at) return "released";

@@ -24,6 +24,11 @@ describe("shared portfolio behavior", () => {
     expect(metricValue(latestMetric(observations, "one", "quality")?.value)).toBe("Unknown");
     expect(metricValue(0)).toBe("0");
   });
+  it("uses latest derived status but keeps original source freshness", () => {
+    const observations = [{ id: 1, objective_id: "one", metric_id: "scan", observed_at: "2026-11-02T17:00:00Z", value: { status: "ok", source_observed_at: "2026-11-02T13:00:00Z" } }, { id: 2, objective_id: "one", metric_id: "scan", observed_at: "2026-11-02T13:00:00Z", value: { status: "failed", source_observed_at: "2026-11-02T13:00:00Z" } }] as Portfolio["metrics"];
+    expect(latestMetric(observations, "one", "scan")?.id).toBe(2);
+    expect((latestMetric(observations, "one", "scan")?.value as { source_observed_at: string }).source_observed_at).toBe("2026-11-02T13:00:00Z");
+  });
   it("maps project aliases without mixing the medical company and umbrella", () => {
     expect(sameProject("tenetrix-insight", "BadgeMedia")).toBe(true);
     expect(sameProject("kinetic-clinician", "highest-paying")).toBe(true);

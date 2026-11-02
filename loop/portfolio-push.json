@@ -69,6 +69,36 @@
         {
           "id": "scheduler_retirement",
           "label": "Scheduler retirement"
+        },
+        {
+          "id": "local_publisher_health",
+          "label": "Local publisher health",
+          "max_age_hours": 0.75,
+          "alert_statuses": [
+            "failed",
+            "stale",
+            "unknown"
+          ]
+        },
+        {
+          "id": "reconciler_health",
+          "label": "Reconciler health",
+          "max_age_hours": 0.75,
+          "alert_statuses": [
+            "failed",
+            "stale",
+            "unknown"
+          ]
+        },
+        {
+          "id": "tech_scout_freshness",
+          "label": "Tech scout freshness",
+          "max_age_hours": 192,
+          "alert_statuses": [
+            "failed",
+            "stale",
+            "unknown"
+          ]
         }
       ],
       "status": "active",
@@ -88,15 +118,35 @@
       "metric_definitions": [
         {
           "id": "source_freshness",
-          "label": "Source freshness"
+          "label": "Source freshness",
+          "max_age_hours": 6,
+          "alert_statuses": [
+            "failed",
+            "stale",
+            "unknown",
+            "degraded"
+          ]
         },
         {
           "id": "failed_sources",
-          "label": "Failed sources"
+          "label": "Failed sources",
+          "max_age_hours": 6,
+          "alert_statuses": [
+            "failed",
+            "stale",
+            "unknown",
+            "degraded"
+          ]
         },
         {
           "id": "field_coverage",
-          "label": "Field coverage"
+          "label": "Field coverage",
+          "max_age_hours": 30,
+          "alert_statuses": [
+            "failed",
+            "stale",
+            "unknown"
+          ]
         },
         {
           "id": "valid_destinations",
@@ -108,7 +158,13 @@
         },
         {
           "id": "scheduled_scan",
-          "label": "Scheduled scan"
+          "label": "Scheduled scan",
+          "max_age_hours": 14,
+          "alert_statuses": [
+            "failed",
+            "stale",
+            "unknown"
+          ]
         },
         {
           "id": "confirmed_signups",
@@ -336,7 +392,13 @@
         },
         {
           "id": "approved_coverage",
-          "label": "Approved coverage"
+          "label": "Approved coverage",
+          "max_age_hours": 24,
+          "alert_statuses": [
+            "failed",
+            "stale",
+            "unknown"
+          ]
         },
         {
           "id": "spend",
