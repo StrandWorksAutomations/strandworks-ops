@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "revision": 1,
-  "updated_at": "2026-11-02T18:57:16.743Z",
+  "revision": 2,
+  "updated_at": "2026-11-02T19:08:17.287Z",
   "rules": [
     {
       "id": "shared-plain-language",
@@ -67,7 +67,25 @@
       "updated_at": "2026-11-02T18:19:42Z"
     }
   ],
-  "feedback": [],
+  "feedback": [
+    {
+      "id": "c36a9346-218a-438d-aa75-b3cb01c3d9de",
+      "brand_id": "7530099",
+      "post_id": "404630939",
+      "post_uuid": null,
+      "original_text": "Two weeks on the App Store. What's missing from Tenetrix Insight? A card you reach for that isn't there, a calculator you'd add, a drug entry that needs a line. Tell us and it goes on the build list.\n\nSupport and feedback: https://tenetrix.org/support\n\nReference only. Verify against current guidelines and institutional protocols.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\n#TenetrixInsight #NurseLife #EMS #Paramedic",
+      "original_sha256": "ce5ef8f037a539b359d0e4bb20a2c391f08ba20dad4bb02d9232c80a096ddec3",
+      "scope": "brand",
+      "flags": [
+        "ai_sounding"
+      ],
+      "rewrite": "We strive to provide the highest quality content and visual learning material to our users. \nDon't like something? Have an idea for a new feature?\nTell us ! \n\nWe pay our developer in chicken salad and buttery rounds. He won't mind. \n\nSupport and feedback: https://tenetrix.org/support\n\nReference only. Verify against current guidelines and institutional protocols.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\n#TenetrixInsight #NurseLife #EMS #Paramedic",
+      "note": "Tell us and it goes on the build list. \nTwo weeks on the App Store.",
+      "active": true,
+      "created_at": "2026-11-02T19:08:17.287Z",
+      "updated_at": "2026-11-02T19:08:17.287Z"
+    }
+  ],
   "history": [
     {
       "revision": 1,
@@ -77,6 +95,17 @@
       "action": "save_rule",
       "entity": "rule",
       "entity_id": "tenetrix-practical-voice",
+      "scope": "brand",
+      "brand_id": "7530099"
+    },
+    {
+      "revision": 2,
+      "at": "2026-11-02T19:08:17.287Z",
+      "actor": "owner",
+      "source": "cockpit",
+      "action": "save_feedback",
+      "entity": "feedback",
+      "entity_id": "c36a9346-218a-438d-aa75-b3cb01c3d9de",
       "scope": "brand",
       "brand_id": "7530099"
     }
