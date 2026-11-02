@@ -24,13 +24,47 @@
       "source": "provider session rate-limit metadata 2026-11-02T17:05:09Z"
     },
     "claude": {
-      "used_at_kickoff": 64,
-      "remaining_at_kickoff": 36,
+      "used_at_kickoff": null,
+      "remaining_at_kickoff": null,
       "allowed_points": 28.8,
-      "stop_at_used": 92.8,
-      "reset_at": "2026-11-03T05:00:00-05:00",
-      "stop_at": "2026-11-03T04:30:00-05:00",
-      "source": "owner /usage answers in originating chat"
+      "stop_at_used": 64.8,
+      "reset_at": "2026-11-03T04:59:00-05:00",
+      "stop_at": "2026-11-03T04:29:00-05:00",
+      "source": "Claude Code native /usage verified2026-11-02T18:17:36Z: all_models36%USED, Fable5%USED; usage credits OFF",
+      "kickoff_usage_verified": false,
+      "kickoff_note": "The original36-remaining interpretation was disproven by native /usage. Actual kickoff usage is unverified; retain the original28.8-point authorization without enlarging it.",
+      "reference_used_percent": 36,
+      "reference_observed_at": "2026-11-02T18:17:36Z",
+      "reset_precision": "minute",
+      "additional_limits": {
+        "fable": {
+          "reference_used_percent": 5,
+          "reference_observed_at": "2026-11-02T18:17:36Z",
+          "allowed_points": 76,
+          "stop_at_used": 81,
+          "reset_at": "2026-11-03T04:59:00-05:00",
+          "stop_at": "2026-11-03T04:29:00-05:00",
+          "reset_precision": "minute"
+        }
+      },
+      "verified_snapshot": {
+        "limit_id": "all_models",
+        "used_percent": 36,
+        "observed_at": "2026-11-02T18:17:36Z",
+        "reset_at": "2026-11-03T04:59:00-05:00",
+        "source": "Claude Code native /usage verified2026-11-02T18:17:36Z: all_models36%USED, Fable5%USED; usage credits OFF",
+        "reset_precision": "minute",
+        "usage_credits_enabled": false,
+        "additional_limits": {
+          "fable": {
+            "used_percent": 5,
+            "observed_at": "2026-11-02T18:17:36Z",
+            "reset_at": "2026-11-03T04:59:00-05:00",
+            "source": "Claude Code native /usage Fable limit verified2026-11-02T18:17:36Z",
+            "reset_precision": "minute"
+          }
+        }
+      }
     }
   },
   "objectives": [
