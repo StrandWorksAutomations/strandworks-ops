@@ -50,15 +50,19 @@ def limit_verdict(snapshot, budget, now):
                 raise ValueError(f"{label} must be a finite percentage in 0..100")
         observed, reset = stamp(snapshot["observed_at"]), stamp(snapshot["reset_at"])
         expected_reset, cutoff = stamp(budget["reset_at"]), stamp(budget["stop_at"])
+        reset_jitter = budget.get("reset_jitter_seconds", 0)
+        if isinstance(reset_jitter, bool) or not isinstance(reset_jitter, (int, float)) or reset_jitter not in (0, 1):
+            raise ValueError("reset jitter must be zero or one second")
         if cutoff > expected_reset:
             raise ValueError("quota cutoff must not follow reset")
+        cutoff = min(cutoff, min(reset, expected_reset) - timedelta(minutes=30))
         if observed > now + timedelta(minutes=5):
             raise ValueError("quota observation is in the future")
     except (ValueError, TypeError, KeyError, AttributeError, OverflowError) as error:
         return {"allowed": False, "reason": "Invalid provider quota: " + str(error)}
-    result = {**snapshot, "stop_at_used": budget["stop_at_used"], "stop_at": budget["stop_at"], "remaining_percent": 100 - snapshot["used_percent"], "allowed": False}
+    result = {**snapshot, "stop_at_used": budget["stop_at_used"], "stop_at": cutoff.isoformat(), "expected_reset_at": budget["reset_at"], "reset_jitter_seconds": reset_jitter, "remaining_percent": 100 - snapshot["used_percent"], "allowed": False}
     result.pop("additional_limits", None)
-    if reset != expected_reset:
+    if abs((reset - expected_reset).total_seconds()) > reset_jitter:
         result["reason"] = "Different allowance period; a reset does not authorize another allocation"
     elif now >= cutoff:
         result["reason"] = "Pre-reset cutoff reached"

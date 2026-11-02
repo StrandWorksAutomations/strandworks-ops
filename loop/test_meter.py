@@ -21,6 +21,35 @@ class MeterTests(unittest.TestCase):
         self.assertFalse(verdict({**self.snapshot, "reset_at": "2026-11-11T06:35:27Z"}, self.budget, self.now)["allowed"])
         self.assertFalse(verdict(self.snapshot, self.budget, datetime(2026, 11, 4, 6, 6, tzinfo=timezone.utc))["allowed"])
 
+    def test_one_second_precision_requires_explicit_fixed_configuration(self):
+        for seconds in (-1, 1):
+            snapshot = {**self.snapshot, "reset_at": (meter.stamp(self.snapshot["reset_at"]) + timedelta(seconds=seconds)).isoformat()}
+            self.assertFalse(verdict(snapshot, self.budget, self.now)["allowed"])
+            result = verdict(snapshot, {**self.budget, "reset_jitter_seconds": 1}, self.now)
+            self.assertTrue(result["allowed"])
+            self.assertEqual(result["reset_at"], snapshot["reset_at"])
+            self.assertEqual(result["expected_reset_at"], self.budget["reset_at"])
+            self.assertEqual(result["stop_at_used"], 93.2)
+            self.assertEqual(result["points_until_stop"], 27.2)
+
+    def test_precision_does_not_admit_larger_shifts_or_new_periods(self):
+        budget = {**self.budget, "reset_jitter_seconds": 1}
+        for seconds in (-604800, -2, 2, 604800):
+            snapshot = {**self.snapshot, "reset_at": (meter.stamp(self.snapshot["reset_at"]) + timedelta(seconds=seconds)).isoformat()}
+            self.assertFalse(verdict(snapshot, budget, self.now)["allowed"])
+        for invalid in (None, True, -1, 2, 60, "1", float("nan"), float("inf")):
+            self.assertFalse(verdict(self.snapshot, {**self.budget, "reset_jitter_seconds": invalid}, self.now)["allowed"])
+
+    def test_precision_preserves_freshness_reserve_and_earlier_verified_cutoff(self):
+        budget = {**self.budget, "reset_jitter_seconds": 1}
+        snapshot = {**self.snapshot, "reset_at": "2026-11-04T06:35:26Z"}
+        self.assertFalse(verdict({**snapshot, "used_percent": 93.2}, budget, self.now)["allowed"])
+        self.assertFalse(verdict(snapshot, budget, self.now + timedelta(hours=2))["allowed"])
+        cutoff = datetime(2026, 11, 4, 6, 5, 26, tzinfo=timezone.utc)
+        result = verdict({**snapshot, "observed_at": cutoff.isoformat()}, budget, cutoff)
+        self.assertFalse(result["allowed"])
+        self.assertEqual(meter.stamp(result["stop_at"]), cutoff)
+
     def test_portfolio_midnight_close_precedes_codex_provider_cutoff(self):
         for current, permitted in ((datetime(2026,11,4,4,59,tzinfo=timezone.utc), True),
                                    (datetime(2026,11,4,5,0,tzinfo=timezone.utc), False)):

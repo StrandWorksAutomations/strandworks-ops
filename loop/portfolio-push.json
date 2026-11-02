@@ -19,6 +19,8 @@
       "remaining_at_kickoff": 34,
       "allowed_points": 27.2,
       "stop_at_used": 93.2,
+      "reset_jitter_seconds": 1,
+      "reset_precision_ruling": "D-0170: Correct one-second precision; retain all limits. Original baseline/reset/cutoff and usage ceiling remain fixed; raw reported reset is retained.",
       "reset_at": "2026-11-04T01:35:27-05:00",
       "stop_at": "2026-11-04T01:05:27-05:00",
       "source": "provider session rate-limit metadata 2026-11-02T17:05:09Z"
