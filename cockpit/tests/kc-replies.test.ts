@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.stubGlobal("React", React);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-import { KINETIC_PAGE_ID, facebookGroupId, filterGroups, groupFilterCounts, latestJoinLimit, pageAccessLabel, pageAccessReady, pendingDecision, replyGroupIds, replyPageAccess, resultLine, safeLinks, snoozedUntil, validateGroupJoined, validatePagePostAction, validateReplyAction, type KcGroup, type KcPageAccess, type KcReply } from "../src/lib/kc-replies";
+import { KINETIC_PAGE_ID, PUBLIC_5K_TARGET_CAMPAIGN, defaultGroupScope, facebookGroupId, filterGroups, groupFilterCounts, groupsInScope, latestJoinLimit, pageAccessLabel, pageAccessReady, pendingDecision, publicGroupTarget, replyGroupIds, replyPageAccess, resultLine, safeLinks, snoozedUntil, validateGroupJoined, validatePagePostAction, validateReplyAction, type KcGroup, type KcGroupTarget, type KcPageAccess, type KcReply } from "../src/lib/kc-replies";
 import { JobLinks, ReplyCard } from "../app/replies/ReplyCard";
 import { GroupsPanel } from "../app/replies/GroupsPanel";
 
@@ -47,6 +47,87 @@ describe("full group inventory filters", () => {
     expect(html).toContain("Showing 1 of 156 groups");
     expect(html).toContain("EMS Jobs");
     expect(html).not.toContain("Travel Nursing");
+  });
+});
+
+describe("100 public group targets within the full inventory", () => {
+  const target = (priority: number, patch: Partial<KcGroupTarget> = {}): KcGroupTarget => ({
+    label: "100 public Facebook groups, 5K+ members", source_date: "2026-11-01", source_row: priority, priority,
+    section: priority < 29 ? "EMS" : "Nursing", type: priority <= 69 ? "jobs" : priority <= 89 ? "community" : priority <= 94 ? "study" : "humor",
+    role: "RN", reported_members: "12K", reported_posts_per_day: "", count_source: "FB search 2026-11-01", earlier_scan: false,
+    reported_visibility: "public", ...patch,
+  });
+  const group = (id: string, name: string, status: KcPageAccess["status"] = "unknown", metadata?: KcGroupTarget): KcGroup => ({
+    id, name, meta: "", lane: "nursing", status: "to_join", url: `https://www.facebook.com/groups/${id}/`,
+    stats: { page_access: { ...readyAccess, status, proof_url: `https://www.facebook.com/groups/${id}/` },
+      ...(metadata ? { target_campaigns: { [PUBLIC_5K_TARGET_CAMPAIGN]: metadata } } : {}) },
+  });
+  const targets = Array.from({ length: 100 }, (_, index) => group(String(index + 1), `Target group ${index + 1}`, index < 6 ? "ready" : index < 9 ? "unavailable" : "unknown", target(index + 1)));
+  const personal = Array.from({ length: 134 }, (_, index) => ({ ...group(String(index + 1001), `Personal group ${index + 1}`), stats: { personal_member_observed: "2026-11-01" } }));
+  const inventory = [...targets, ...personal];
+
+  it("defaults only a complete unique100-row cohort and preserves all234groups", () => {
+    expect(defaultGroupScope(inventory)).toBe("public_targets");
+    expect(groupsInScope(inventory, "public_targets")).toHaveLength(100);
+    expect(groupFilterCounts(groupsInScope(inventory, "public_targets"))).toEqual({ all: 100, ready: 6, pending: 0, unavailable: 3, unknown: 91 });
+    expect(groupsInScope(inventory, "all")).toBe(inventory);
+    expect(groupsInScope(inventory, "all")).toHaveLength(234);
+    expect(defaultGroupScope(inventory.slice(1))).toBe("all");
+    const duplicateSourceRow = { ...targets[99], stats: { ...targets[99].stats, target_campaigns: { [PUBLIC_5K_TARGET_CAMPAIGN]: target(100, { source_row: 1 }) } } };
+    expect(defaultGroupScope([...targets.slice(0, 99), duplicateSourceRow, ...personal])).toBe("all");
+    expect(personal.every((g) => g.stats.personal_member_observed === "2026-11-01")).toBe(true);
+  });
+  it("keeps global job-first priority within every access filter rather than ranking community access ahead of jobs", () => {
+    const job = group("1", "Z job target", "unknown", target(1, { source_row: 30 }));
+    const community = group("2", "A community target", "ready", target(70, { source_row: 3 }));
+    const anotherJob = group("3", "B job target", "ready", target(2, { source_row: 31 }));
+    expect(filterGroups([community, anotherJob, job], "all", "", "target_priority").map((g) => g.id)).toEqual(["1", "3", "2"]);
+    expect(filterGroups([community, anotherJob, job], "ready", "", "target_priority").map((g) => g.id)).toEqual(["3", "2"]);
+    expect(publicGroupTarget(job)?.source_row).toBe(30);
+  });
+  it("combines target scope, current access and reported source-label search without losing full-inventory search", () => {
+    const renamed = group("1", "Canonical label", "unknown", target(1, { source_group_label: "Named Travel RN Job Group" }));
+    expect(filterGroups(groupsInScope([renamed, ...personal], "public_targets"), "all", "Travel RN", "target_priority").map((g) => g.id)).toEqual(["1"]);
+    expect(filterGroups(groupsInScope(inventory, "public_targets"), "all", "Personal")).toEqual([]);
+    expect(filterGroups(groupsInScope(inventory, "all"), "all", "Personal")).toHaveLength(134);
+    expect(filterGroups(groupsInScope(inventory, "public_targets"), "unknown", "Target group 10", "target_priority").map((g) => g.id)).toEqual(["10", "100"]);
+  });
+  it("rejects malformed discovery metadata and never makes a source Page-status claim into current access", () => {
+    for (const patch of [{ priority: 0 }, { source_row: 101 }, { reported_members: "4.9K" }, { source_date: "2026-10-31" },
+      { reported_visibility: "private" }, { earlier_scan: undefined }, { role: "" }]) {
+      const bad = group("1", "Invalid target", "unknown", target(1, patch as Partial<KcGroupTarget>));
+      expect(publicGroupTarget(bad)).toBeNull();
+      expect(groupsInScope([bad], "public_targets")).toEqual([]);
+      expect(groupsInScope([bad], "all")).toEqual([bad]);
+    }
+    const providedReady = group("1", "Source says Page ready", "unknown", { ...target(1), source_page_status: "Page ready" } as KcGroupTarget);
+    expect(publicGroupTarget(providedReady)).not.toBeNull();
+    expect(groupFilterCounts([providedReady]).ready).toBe(0);
+    expect(pageAccessReady(providedReady.stats.page_access)).toBe(false);
+  });
+  it("renders the current6-ready cohort, reported counts, earlier-scan qualifier and access to the full234", () => {
+    const rows = targets.map((g, index) => index < 6 ? { ...g, stats: { ...g.stats, target_campaigns: { [PUBLIC_5K_TARGET_CAMPAIGN]: target(index + 1, { reported_members: "215K", earlier_scan: true, count_source: "groups.json (earlier scan)" }) } } } : g);
+    const html = renderToStaticMarkup(React.createElement(GroupsPanel, { groups: [...rows, ...personal] }));
+    expect(html).toContain("100 public targets");
+    expect(html).toContain("Full inventory (234)");
+    expect(html).toContain("Can comment (6)");
+    expect(html).toContain("Unavailable (3)");
+    expect(html).toContain("Needs check (91)");
+    expect(html).toContain("Showing 6 of 100 targets");
+    expect(html).toContain("69 job groups come first");
+    expect(html).toContain("215K members");
+    expect(html).toContain("Earlier saved scan");
+    expect(html).not.toContain("Target group 100");
+  });
+  it("keeps the observed join-limit notice visible when its source is outside the selected target cohort", () => {
+    const limited = { ...personal[0], stats: { ...personal[0].stats, last_join_limit: { observed_at: new Date(Date.now() - 60_000).toISOString(), source_group_id: personal[0].id, source_url: personal[0].url, expires_at: null } } };
+    const all = [...targets, limited, ...personal.slice(1)];
+    expect(groupsInScope(all, "public_targets")).not.toContain(limited);
+    expect(latestJoinLimit(all)).toEqual(limited.stats.last_join_limit);
+    const html = renderToStaticMarkup(React.createElement(GroupsPanel, { groups: all }));
+    expect(html).toContain("100 public targets");
+    expect(html).toContain("Last observed group join limit");
+    expect(html).not.toContain("Personal group 1</a>");
   });
 });
 

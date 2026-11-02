@@ -48,9 +48,26 @@ export const UNKNOWN_PAGE_ACCESS: KcPageAccess = { status: "unknown", actor_id: 
 
 export type KcJoinLimit = { observed_at: string; source_group_id: string; source_url: string; expires_at: null };
 
+export const PUBLIC_5K_TARGET_CAMPAIGN = "public_5k_2026_11_01";
+export type KcGroupTarget = {
+  label: string;
+  source_date: string;
+  source_row: number;
+  priority: number;
+  section: "EMS" | "Nursing";
+  type: "jobs" | "community" | "study" | "humor";
+  role: string;
+  reported_members: string;
+  reported_posts_per_day: string;
+  count_source: string;
+  earlier_scan: boolean;
+  reported_visibility: "public";
+  source_group_label?: string;
+};
+
 export type KcGroup = {
   id: string; name: string; meta: string; lane: string; status: "joined" | "to_join"; url: string;
-  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess; group_aliases?: string[]; personal_member_observed?: string | null; page_member_observed?: string | null; last_join_limit?: KcJoinLimit | null };
+  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess; group_aliases?: string[]; personal_member_observed?: string | null; page_member_observed?: string | null; last_join_limit?: KcJoinLimit | null; target_campaigns?: Record<string, KcGroupTarget> };
 };
 
 export type KcPagePost = { id: string; draft: string; links: KcJobLink[]; status: "draft" | "approved" | "posted" | "dismissed"; created_at: string };
@@ -201,6 +218,40 @@ export function groupFilterCounts(groups: KcGroup[]): Record<GroupFilter, number
   return counts;
 }
 
+export type GroupScope = "public_targets" | "all";
+
+/** Discovery metadata never grants Page access or replaces the canonical group ID. */
+export function publicGroupTarget(group: KcGroup): KcGroupTarget | null {
+  const target = group.stats.target_campaigns?.[PUBLIC_5K_TARGET_CAMPAIGN];
+  if (!target || typeof target !== "object" || target.source_date !== "2026-11-01" || target.reported_visibility !== "public"
+    || !Number.isInteger(target.source_row) || target.source_row < 1 || target.source_row > 100
+    || !Number.isInteger(target.priority) || target.priority < 1 || target.priority > 100
+    || !["EMS", "Nursing"].includes(target.section) || !["jobs", "community", "study", "humor"].includes(target.type)
+    || typeof target.earlier_scan !== "boolean") return null;
+  const textFields = [target.label, target.role, target.reported_members, target.reported_posts_per_day, target.count_source];
+  if (textFields.some((text) => typeof text !== "string" || text.length > 200)) return null;
+  if ([target.label, target.role, target.count_source].some((text) => !text.trim())) return null;
+  const members = target.reported_members.match(/^(\d+(?:\.\d+)?)([KM]?)\*?$/i);
+  const unit = members?.[2].toUpperCase();
+  if (!members || Number(members[1]) * (unit === "M" ? 1_000_000 : unit === "K" ? 1000 : 1) < 5000) return null;
+  if (target.source_group_label !== undefined && (typeof target.source_group_label !== "string" || target.source_group_label.length > 200)) return null;
+  return target;
+}
+
+export function groupsInScope(groups: KcGroup[], scope: GroupScope): KcGroup[] {
+  return scope === "public_targets" ? groups.filter((group) => publicGroupTarget(group)) : groups;
+}
+
+/** Partial syncs remain accessible, but only the complete 100-row cohort becomes the default. */
+export function defaultGroupScope(groups: KcGroup[]): GroupScope {
+  const targets = groupsInScope(groups, "public_targets");
+  return targets.length === 100
+    && new Set(targets.map((group) => group.id)).size === 100
+    && new Set(targets.map((group) => publicGroupTarget(group)!.priority)).size === 100
+    && new Set(targets.map((group) => publicGroupTarget(group)!.source_row)).size === 100
+    ? "public_targets" : "all";
+}
+
 /** A recent observed join-limit event, not a claim that the limit is still active. */
 export function latestJoinLimit(groups: KcGroup[], at = Date.now()): KcJoinLimit | null {
   const events = groups.flatMap((group) => {
@@ -215,14 +266,16 @@ export function latestJoinLimit(groups: KcGroup[], at = Date.now()): KcJoinLimit
 }
 
 /** Search the full saved inventory; filters never remove a group from that inventory. */
-export function filterGroups(groups: KcGroup[], status: GroupFilter, query: string): KcGroup[] {
+export function filterGroups(groups: KcGroup[], status: GroupFilter, query: string, order: "activity" | "target_priority" = "activity"): KcGroup[] {
   const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const rank = { ready: 0, pending: 1, unknown: 2, unavailable: 3 };
   return groups.filter((group) => {
     if (status !== "all" && groupAccessStatus(group) !== status) return false;
-    const text = [group.name, group.meta, group.lane, ...groupIds(group)].join(" ").toLocaleLowerCase();
+    const target = publicGroupTarget(group);
+    const text = [group.name, group.meta, group.lane, ...groupIds(group), target?.source_group_label, target?.role, target?.type, target?.section].filter(Boolean).join(" ").toLocaleLowerCase();
     return words.every((word) => text.includes(word));
-  }).sort((a, b) => rank[groupAccessStatus(a)] - rank[groupAccessStatus(b)]
+  }).sort((a, b) => (order === "target_priority" ? (publicGroupTarget(a)?.priority ?? Number.MAX_SAFE_INTEGER) - (publicGroupTarget(b)?.priority ?? Number.MAX_SAFE_INTEGER) : 0)
+    || rank[groupAccessStatus(a)] - rank[groupAccessStatus(b)]
     || (b.stats.posted ?? 0) - (a.stats.posted ?? 0)
     || (b.stats.replies_back ?? 0) - (a.stats.replies_back ?? 0)
     || a.name.localeCompare(b.name));

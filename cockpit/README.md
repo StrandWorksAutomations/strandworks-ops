@@ -46,7 +46,10 @@ dates use Supabase through server-only REST calls.
   access. Approval and marking posted recheck the Page identity, group, composer
   label and seven-day check age on the server. The local sync enforces the same
   gate. Group replies remain manual; adding a group to the scan list grants no
-  Facebook membership or commenting access.
+  Facebook membership or commenting access. When all 100 public 5K+ targets from
+  the Nov 1 list are synced, the group view opens on that cohort with job groups
+  first. Full inventory preserves every saved group. Access filters apply within
+  each scope; reported counts and earlier scans remain separate from Page proof.
 - **Governance files** — a collapsed section at the bottom of Decide keeps
   pending files in `_governance/decisions/` as cards with the
   six owner-token buttons (APPROVE / REVISE / PARK / BLESSED / HALT /
