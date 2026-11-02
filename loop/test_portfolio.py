@@ -39,7 +39,7 @@ class PortfolioDatabaseTests(unittest.TestCase):
         cls.psql = ["psql", "-X", "-q", "-t", "-A", "-v", "ON_ERROR_STOP=1", "-h", cls.tmp.name, "-p", str(cls.port), "-U", "postgres", "postgres"]
         try:
             cls.run_sql("create role anon; create role authenticated; create role service_role bypassrls; create schema extensions;")
-            for filename in ("20261024_owner_loop_v1.sql", "20261024_owner_loop_v2_review_fixes.sql", "20261102_portfolio_control_v1.sql", "20261102_portfolio_project_alias.sql", "20261102_portfolio_compact_focus.sql"):
+            for filename in sorted(("20261024_owner_loop_v1.sql", "20261024_owner_loop_v2_review_fixes.sql", "20261102_portfolio_control_v1.sql", "20261102_portfolio_project_alias.sql", "20261102_portfolio_reporting_compaction.sql")):
                 cls.run_sql((ROOT / "supabase/migrations" / filename).read_text())
             cls.run_sql(f"insert into owner_loop_agent_tokens(token_sha256,label) values(encode(extensions.digest('{TOKEN}','sha256'),'hex'),'test');")
         except BaseException:
