@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import copy
 import json
 from pathlib import Path
@@ -23,7 +23,8 @@ class MeterTests(unittest.TestCase):
 
     def claude(self):
         budget = json.loads((Path(__file__).parent / "portfolio-push.json").read_text())["quota"]["claude"]
-        return copy.deepcopy(budget["verified_snapshot"]), budget, datetime(2026, 11, 2, 18, 20, tzinfo=timezone.utc)
+        snapshot = copy.deepcopy(budget["verified_snapshot"])
+        return snapshot, budget, meter.stamp(snapshot["observed_at"]) + timedelta(minutes=1)
 
     def test_verified_default_uses_36_used_without_expanding_original_cap(self):
         snapshot, budget, now = self.claude()
@@ -40,7 +41,7 @@ class MeterTests(unittest.TestCase):
         self.assertEqual(result["points_until_stop"], 28.8)
         self.assertEqual(result["additional_limits"]["fable"]["used_percent"], 5)
         self.assertEqual(result["additional_limits"]["fable"]["stop_at_used"], 81)
-        self.assertEqual(result["reset_at"], "2026-11-03T04:59:00-05:00")
+        self.assertEqual(result["reset_at"], "2026-11-03T05:00:00-05:00")
         self.assertEqual(budget["stop_at"], "2026-11-03T04:29:00-05:00")
 
     def test_either_claude_reserve_stops_work(self):
@@ -88,8 +89,8 @@ class MeterTests(unittest.TestCase):
     def test_stable_full_payload_hash_changes_when_same_observation_becomes_stale(self):
         snapshot, budget, now = self.claude()
         first = metric_observation("claude", snapshot, verdict(snapshot, budget, now))
-        same = metric_observation("claude", snapshot, verdict(snapshot, budget, now.replace(minute=30)))
-        stale = metric_observation("claude", snapshot, verdict(snapshot, budget, now.replace(hour=21)))
+        same = metric_observation("claude", snapshot, verdict(snapshot, budget, now + timedelta(minutes=10)))
+        stale = metric_observation("claude", snapshot, verdict(snapshot, budget, now + timedelta(hours=3)))
         self.assertEqual(first["idempotency_key"], same["idempotency_key"])
         self.assertNotEqual(first["idempotency_key"], stale["idempotency_key"])
         self.assertEqual(first["observed_at"], stale["observed_at"])
