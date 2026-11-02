@@ -32,5 +32,13 @@
     "/Users/jonathanbouren/.codex/tmp/marketing-voice-feedback/phone-2026-11-02.png",
     "/Users/jonathanbouren/.codex/tmp/marketing-voice-feedback/phone-form-2026-11-02.png"
   ],
-  "qa_fixture_reset_to_clean_seed": true
+  "qa_fixture_reset_to_clean_seed": true,
+  "automated_checks": {
+    "cockpit_tests_passed": 451,
+    "test_files_passed": 37,
+    "production_build": "PASS",
+    "typescript": "PASS in production build",
+    "next_version": "15.5.20",
+    "integrated_main_base": "5e1c13d"
+  }
 }
