@@ -44,12 +44,12 @@
     ]
   },
   "summary": {
-    "content_records": 17,
-    "scheduled_content_records": 13,
-    "reported_published_content_records": 1,
-    "draft_content_records": 3,
+    "content_records": 36,
+    "scheduled_content_records": 19,
+    "reported_published_content_records": 2,
+    "draft_content_records": 15,
     "next_scheduled_at_utc": "2026-11-02T22:00:00.000Z",
-    "scheduled_through_at_utc": "2026-11-08T23:00:00.000Z",
+    "scheduled_through_at_utc": "2026-11-11T15:00:00.000Z",
     "scheduled_networks": [
       "facebook",
       "instagram"
