@@ -68,6 +68,24 @@ class ReconcilerTests(unittest.TestCase):
             return [{"identifier": i, "state": {"name": "In Progress", "type": "started"}} for i in ids]
         return reconcile.Reconciler(saved, lambda: None, remote, linear, lambda _: None), remote, saved
 
+    def test_distinct_runtime_observations_in_same_hour_do_not_collide(self):
+        remote = FakeRemote()
+        first, _, _ = self.runner(remote)
+        first.publish_metrics(remote.focus["objectives"][0], {"linear": {"status": "unknown"}}, NOW)
+        first.drain(NOW)
+        second, _, _ = self.runner(remote)
+        second.publish_metrics(remote.focus["objectives"][0], {"linear": {"status": "ok"}}, NOW + timedelta(minutes=1))
+        second.drain(NOW + timedelta(minutes=1))
+        self.assertEqual(len(remote.results), 4)
+
+    def test_parked_objective_still_requires_dated_review(self):
+        runner, remote, _ = self.runner()
+        objective = remote.focus["objectives"][1]
+        objective.update(status="paused", review_at=(NOW - timedelta(hours=1)).isoformat(), created_at=(NOW - timedelta(days=3)).isoformat())
+        reasons = runner.concerns(remote.focus, NOW)["kc-reliability"]["reasons"]
+        self.assertEqual(len(reasons), 1)
+        self.assertIn("Review overdue", reasons[0])
+
     def test_unchanged_run_is_quiet_and_linear_is_hourly(self):
         runner, remote, saved = self.runner()
         first = runner.run(NOW)
@@ -75,9 +93,11 @@ class ReconcilerTests(unittest.TestCase):
         runner.writes = 0
         second = runner.run(NOW + timedelta(minutes=15))
         self.assertEqual(first["attention_objectives"], ["kc-reliability"])
-        self.assertEqual(second["writes"], 0)
+        self.assertEqual(second["writes"], 1)  # actual runner completion heartbeat, no repeated alerts
         self.assertEqual(len(self.linear_calls), 1)
-        self.assertTrue(all(name == "portfolio_focus" for name, _ in remote.calls[before:]))
+        extra = remote.calls[before:]
+        self.assertEqual([name for name, _ in extra], ["portfolio_focus", "portfolio_metric"])
+        self.assertEqual(extra[1][1]["p_observation"]["metric_id"], "reconciler_health")
         self.assertEqual(second["adapters"]["marketing"]["status"], "unknown")
         self.assertEqual(second["adapters"]["scanners"]["status"], "unknown")
 
@@ -150,6 +170,43 @@ class ReconcilerTests(unittest.TestCase):
         with self.assertRaisesRegex(reconcile.RemoteError, "unavailable"):
             runner.run(NOW)
         self.assertNotIn("last_completed_at", saved)
+
+    def test_metric_policy_detects_failure_and_missing_laptop_publication(self):
+        runner, remote, _ = self.runner()
+        objective = remote.focus["objectives"][1]
+        objective.pop("target_at")
+        objective["metric_definitions"] = [{"id": "scan", "label": "Scheduled scan", "alert_statuses": ["failed", "unknown", "stale"], "max_age_hours": 8}]
+        remote.focus["metrics"] = [{"id": 1, "objective_id": objective["id"], "metric_id": "scan", "observed_at": (NOW - timedelta(hours=1)).isoformat(), "value": {"status": "failed", "source_observed_at": (NOW - timedelta(hours=1)).isoformat()}}]
+        self.assertIn("failed", " ".join(runner.concerns(remote.focus, NOW)[objective["id"]]["reasons"]))
+        remote.focus["metrics"][0]["value"]["status"] = "ok"
+        later = NOW + timedelta(hours=9)
+        self.assertIn("exceeds 8 hours", " ".join(runner.concerns(remote.focus, later)[objective["id"]]["reasons"]))
+        self.assertEqual(reconcile.published_adapter(remote.focus, objective["id"], "scan", later, 8)["status"], "stale")
+        remote.focus["metrics"] = []
+        self.assertIn("no source observation", " ".join(runner.concerns(remote.focus, NOW)[objective["id"]]["reasons"]))
+
+    def test_receipt_time_is_used_instead_of_recent_publication_time(self):
+        objective = {"id": "kc", "metric_definitions": [{"id": "scan", "max_age_hours": 1}]}
+        recent = NOW.isoformat()
+        old = (NOW - timedelta(days=2)).isoformat()
+        data = {"metrics": [{"id": 10, "objective_id": "kc", "metric_id": "scan", "observed_at": recent,
+            "value": {"status": "ok", "source_observed_at": old}}]}
+        self.assertIn(old, " ".join(reconcile.metric_conditions(data, objective, NOW)))
+        self.assertEqual(reconcile.published_adapter(data, "kc", "scan", NOW, 1)["status"], "stale")
+
+    def test_equal_source_time_uses_latest_record_and_nonpolicy_metrics_are_quiet(self):
+        objective = {"id": "kc", "metric_definitions": [{"id": "scan", "alert_statuses": ["failed"]}, {"id": "unvalidated_accuracy"}]}
+        data = {"metrics": [{"id": 9, "objective_id": "kc", "metric_id": "scan", "observed_at": NOW.isoformat(), "value": {"status": "ok"}},
+            {"id": 10, "objective_id": "kc", "metric_id": "scan", "observed_at": NOW.isoformat(), "value": {"status": "failed"}}]}
+        self.assertEqual(len(reconcile.metric_conditions(data, objective, NOW)), 1)
+        self.assertIn("failed", reconcile.metric_conditions(data, objective, NOW)[0])
+
+    def test_new_publication_of_old_failure_is_not_hidden_by_recent_manual_inspection(self):
+        data = {"metrics": [{"id": 9, "objective_id": "kc", "metric_id": "scan", "observed_at": NOW.isoformat(),
+            "created_at": NOW.isoformat(), "value": {"status": "ok"}},
+            {"id": 10, "objective_id": "kc", "metric_id": "scan", "observed_at": (NOW - timedelta(hours=5)).isoformat(),
+                "created_at": (NOW + timedelta(minutes=1)).isoformat(), "value": {"status": "failed", "source_observed_at": (NOW - timedelta(hours=5)).isoformat()}}]}
+        self.assertEqual(reconcile.latest_metric(data, "kc", "scan")["value"]["status"], "failed")
 
     def test_retry_has_bounded_backoff_and_permanent_failures_stop(self):
         attempts, sleeps = [], []

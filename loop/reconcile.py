@@ -54,6 +54,62 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
+def latest_metric(focus, objective_id, metric_id):
+    rows = [m for m in focus.get("metrics", []) if m.get("objective_id") == objective_id and m.get("metric_id") == metric_id]
+    minimum = datetime.min.replace(tzinfo=timezone.utc)
+    # Select the latest publication, then judge freshness from its source time.
+    # An agent's newer inspection timestamp must not hide a newly published old
+    # failure receipt from the actual scanner.
+    return max(rows, key=lambda m: (stamp(m.get("created_at")) or stamp(m.get("observed_at")) or minimum,
+        int(m["id"]) if str(m.get("id", "")).isdigit() else 0), default=None)
+
+
+def metric_conditions(focus, objective, now):
+    reasons = []
+    for definition in objective.get("metric_definitions", []):
+        if not isinstance(definition, dict):
+            continue
+        alert_statuses = definition.get("alert_statuses", [])
+        alert_statuses = {str(value).lower() for value in alert_statuses} if isinstance(alert_statuses, list) else set()
+        max_age = definition.get("max_age_hours")
+        max_age = max_age if isinstance(max_age, (int, float)) and not isinstance(max_age, bool) and max_age > 0 else None
+        if not alert_statuses and not max_age:
+            continue
+        row = latest_metric(focus, objective["id"], definition.get("id"))
+        label = definition.get("label") or definition.get("id")
+        if not row:
+            reasons.append(f"{label}: no source observation published (unknown).")
+            continue
+        value = row.get("value")
+        current_status = str(value.get("status", "")).lower() if isinstance(value, dict) else "unknown" if value is None else ""
+        observed = value.get("source_observed_at") if isinstance(value, dict) and "source_observed_at" in value else row.get("observed_at")
+        source_at = stamp(observed)
+        if current_status in alert_statuses:
+            reasons.append(f"{label}: {current_status}; source observation {observed or 'unknown'}.")
+        if max_age:
+            if not source_at or source_at > now + timedelta(minutes=5):
+                reasons.append(f"{label}: source time unknown; freshness cannot be established.")
+            elif now - source_at > timedelta(hours=max_age):
+                reasons.append(f"{label}: source observation {observed} exceeds {max_age:g} hours.")
+    return reasons
+
+
+def published_adapter(focus, objective_id, metric_id, now, max_age):
+    row = latest_metric(focus, objective_id, metric_id)
+    if not row or not isinstance(row.get("value"), dict):
+        return {"status": "unknown", "reason": "No structured source receipt published"}
+    value = row["value"]
+    observed = value.get("source_observed_at") if "source_observed_at" in value else row.get("observed_at")
+    source_at = stamp(observed)
+    current_status = value.get("status", "unknown")
+    if not source_at or source_at > now + timedelta(minutes=5):
+        current_status = "unknown"
+    elif now - source_at > timedelta(hours=max_age) and current_status not in ("failed", "unknown"):
+        current_status = "stale"
+    return {"status": current_status, "source_observed_at": observed,
+        "reason": "Published source receipt only; reconciler did not execute the source job", "metric_id": metric_id}
+
+
 def retry(call, sleep=time.sleep):
     for attempt in range(3):
         try:
@@ -191,18 +247,20 @@ class Reconciler:
     def concerns(self, focus, now):
         grouped = {}
         for objective in focus["objectives"]:
-            if objective["status"] != "active":
+            if objective["status"] == "complete":
                 continue
             reasons = []
-            for field, label in (("target_at", "Delivery target"), ("review_at", "Review")):
+            for field, label in ((("target_at", "Delivery target"), ("review_at", "Review")) if objective["status"] == "active" else (("review_at", "Review"),)):
                 due = stamp(objective.get(field))
                 if due and due < now:
                     reasons.append(f"{label} overdue since {objective[field]}.")
             reports = [stamp(r.get("created_at")) for r in focus["reports"] if r["objective_id"] == objective["id"]]
             checkpoints = [stamp(l.get("renewed_at")) for l in focus["leases"] if l["objective_id"] == objective["id"] and l.get("checkpoint")]
             activity = max([d for d in reports + checkpoints + [stamp(objective.get("created_at"))] if d], default=now)
-            if now - activity > timedelta(hours=24):
+            if objective["status"] == "active" and now - activity > timedelta(hours=24):
                 reasons.append(f"No progress checkpoint/report since {iso(activity)}.")
+            if objective["status"] == "active":
+                reasons.extend(metric_conditions(focus, objective, now))
             for lease in focus["leases"]:
                 expiry = stamp(lease.get("expires_at"))
                 if lease["objective_id"] == objective["id"] and not lease.get("released_at") and expiry and expiry <= now:
@@ -252,9 +310,11 @@ class Reconciler:
         self.save()
         return state
 
-    def marketing(self, now):
+    def marketing(self, now, focus=None):
         path = os.environ.get("PORTFOLIO_MARKETING_SNAPSHOT")
         if not path:
+            if focus:
+                return published_adapter(focus, "advertising-reset-push", "approved_coverage", now, 24)
             return {"status": "unknown", "reason": "No automatic Metricool/Meta refresh adapter; saved dashboard snapshot unchanged"}
         try:
             saved = json.loads(Path(path).read_text())
@@ -273,9 +333,14 @@ class Reconciler:
         hour = now.astimezone(timezone.utc).strftime("%Y-%m-%dT%H")
         for name, value in (("linear_snapshot", adapters["linear"]), ("adapter_health", adapters)):
             key = f"portfolio:{name}:{hour}"
-            self.enqueue(key, "portfolio_metric", {"p_observation": {"objective_id": CONTROL, "metric_id": name,
+            observation = {"objective_id": CONTROL, "metric_id": name,
                 "value": value, "observed_at": iso(now), "source": "portfolio-reconciler (source check times retained)",
-                "evidence": [], "idempotency_key": key}})
+                "evidence": []}
+            # Local state emits once per hour; a preflight and a new runtime can
+            # observe different facts in that hour. Only identical payload retries
+            # share a server idempotency key. Persist the exact payload in outbox.
+            observation["idempotency_key"] = key + ":" + digest(observation)
+            self.enqueue(key, "portfolio_metric", {"p_observation": observation})
 
     def publish_reports(self, focus, control, concerns, adapters, now):
         if not control or not control.get("issue_ids"):
@@ -312,13 +377,22 @@ class Reconciler:
         control = next((o for o in focus["objectives"] if o["id"] == CONTROL), None)
         concerns = self.concerns(focus, now)
         self.alert_changes(concerns)
-        adapters = {"linear": self.refresh_linear(focus, now), "marketing": self.marketing(now),
-            "scanners": {"status": "unknown", "reason": "No project-scanner execution adapter configured; inspect project evidence"},
+        adapters = {"linear": self.refresh_linear(focus, now), "marketing": self.marketing(now, focus),
+            "scanners": published_adapter(focus, "kc-reset-push", "scheduled_scan", now, 8),
+            "collector": published_adapter(focus, "kc-reset-push", "source_freshness", now, 6),
+            "tech_scout_receipt": published_adapter(focus, CONTROL, "tech_scout_freshness", now, 192),
             "opportunities": {"status": "unknown", "reason": "No automatic opportunity research performed"}}
         self.publish_metrics(control, adapters, now)
         warnings = self.publish_reports(focus, control, concerns, adapters, now)
         self.drain(now)
-        self.state["last_completed_at"] = iso(now)
+        completed = datetime.now(timezone.utc)
+        health = {"objective_id": CONTROL, "metric_id": "reconciler_health", "value": {"status": "completed",
+            "completed_at": iso(completed), "objectives_checked": len(focus["objectives"]), "source_jobs_executed": False},
+            "observed_at": iso(completed), "source": "Actual portfolio reconciler completion; source execution claims remain with source receipts", "evidence": []}
+        health["idempotency_key"] = "portfolio:reconciler-health:" + digest(health)
+        self.enqueue(health["idempotency_key"], "portfolio_metric", {"p_observation": health})
+        self.drain(completed)
+        self.state["last_completed_at"] = iso(completed)
         self.state["done"] = {k: v for k, v in self.state["done"].items() if stamp(v) and now - stamp(v) < timedelta(days=60)}
         self.save()
         return {"status": "completed", "checked_at": iso(now), "objectives_checked": len(focus["objectives"]),
