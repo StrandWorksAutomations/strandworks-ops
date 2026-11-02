@@ -1,0 +1,485 @@
+{
+  "checked_at": "2026-11-02T19:56:47.096294+00:00",
+  "issue": "STR-1069",
+  "source_fix": "fb567bb",
+  "pull_request": "https://github.com/StrandWorksAutomations/strandworks-ops/pull/7",
+  "scope": "Today business deadline totals now include the same portfolio review/delivery records as Timeline.",
+  "validation": {
+    "dashboard_tests_passed": 470,
+    "test_files": 38,
+    "typescript": "passed",
+    "independent_source_review": "passed; no actionable issue",
+    "private_rendered_routes": {
+      "started_at_utc": "2026-11-02T19:55:13.385334+00:00",
+      "project": "strandworks-cockpit",
+      "target": "preview",
+      "expected_source": "cbcafd38929f291025d15c46ce54c701895304f5",
+      "expected_cockpit_tree": "ca670c11f18f61470046ef771ad23447353ce5ff",
+      "source_fix": "fb567bb",
+      "production_changed": false,
+      "protection_mode_changed": false,
+      "setup_code_added": false,
+      "branch_read_mode": "main default; no branch overrides",
+      "preview_secret_rotated": true,
+      "native_helper_generation_notice_seen": false,
+      "production_legacy_baselines_from_root": {
+        "kinetic-clinician": 0,
+        "strandworks": 8,
+        "strandworks-medical": 39,
+        "tenetrix": 1,
+        "advertising": 0,
+        "sag": 1,
+        "3rd-rider": 0,
+        "wobble-ward": 0
+      },
+      "checks": {
+        "unauth_focus": {
+          "http": 307,
+          "attempt": 1
+        },
+        "auth_focus_eight_goals": {
+          "http": 200,
+          "objective_count": 8,
+          "objective_ids": [
+            "advertising-reset-push",
+            "kc-reset-push",
+            "portfolio-control",
+            "sag-reset-push",
+            "smr-reset-push",
+            "tenetrix-reset-push",
+            "third-rider-reset-push",
+            "ww-reset-push"
+          ],
+          "attempt": 1
+        },
+        "auth_today_deadline_totals": {
+          "http": 200,
+          "integer_deadline_totals": {
+            "kinetic-clinician": 2,
+            "strandworks": 10,
+            "strandworks-medical": 41,
+            "tenetrix": 3,
+            "advertising": 2,
+            "sag": 3,
+            "3rd-rider": 2,
+            "wobble-ward": 2
+          },
+          "discovered_business_route_count": 12,
+          "attempt": 1
+        },
+        "timeline_kinetic-clinician": {
+          "http": 200,
+          "business": "kinetic-clinician",
+          "objective_id": "kc-reset-push",
+          "timeline_href": "/timeline?business=kinetic-clinician&days=14",
+          "today_deadline_total": 2,
+          "timeline_summary_count": 2,
+          "timeline_entry_count": 2,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 0,
+          "production_legacy_baseline": 0,
+          "legacy_refs_retained": [],
+          "attempt": 1
+        },
+        "timeline_strandworks": {
+          "http": 200,
+          "business": "strandworks",
+          "objective_id": "portfolio-control",
+          "timeline_href": "/timeline?business=strandworks&days=14",
+          "today_deadline_total": 10,
+          "timeline_summary_count": 10,
+          "timeline_entry_count": 10,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 8,
+          "production_legacy_baseline": 8,
+          "legacy_refs_retained": [
+            "D-0151",
+            "D-0041",
+            "D-0152",
+            "D-0153",
+            "D-0154",
+            "D-0108",
+            "D-0155",
+            "D-0086"
+          ],
+          "attempt": 1
+        },
+        "timeline_strandworks-medical": {
+          "http": 200,
+          "business": "strandworks-medical",
+          "objective_id": "smr-reset-push",
+          "timeline_href": "/timeline?business=strandworks-medical&days=14",
+          "today_deadline_total": 41,
+          "timeline_summary_count": 41,
+          "timeline_entry_count": 41,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 39,
+          "production_legacy_baseline": 39,
+          "legacy_refs_retained": [
+            "D-0036",
+            "D-0042"
+          ],
+          "attempt": 1
+        },
+        "timeline_tenetrix": {
+          "http": 200,
+          "business": "tenetrix",
+          "objective_id": "tenetrix-reset-push",
+          "timeline_href": "/timeline?business=tenetrix&days=14",
+          "today_deadline_total": 3,
+          "timeline_summary_count": 3,
+          "timeline_entry_count": 3,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 1,
+          "production_legacy_baseline": 1,
+          "legacy_refs_retained": [
+            "D-0091"
+          ],
+          "attempt": 1
+        },
+        "timeline_advertising": {
+          "http": 200,
+          "business": "advertising",
+          "objective_id": "advertising-reset-push",
+          "timeline_href": "/timeline?business=advertising&days=14",
+          "today_deadline_total": 2,
+          "timeline_summary_count": 2,
+          "timeline_entry_count": 2,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 0,
+          "production_legacy_baseline": 0,
+          "legacy_refs_retained": [],
+          "attempt": 1
+        },
+        "timeline_sag": {
+          "http": 200,
+          "business": "sag",
+          "objective_id": "sag-reset-push",
+          "timeline_href": "/timeline?business=sag&days=14",
+          "today_deadline_total": 3,
+          "timeline_summary_count": 3,
+          "timeline_entry_count": 3,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 1,
+          "production_legacy_baseline": 1,
+          "legacy_refs_retained": [
+            "D-0017"
+          ],
+          "attempt": 1
+        },
+        "timeline_3rd-rider": {
+          "http": 200,
+          "business": "3rd-rider",
+          "objective_id": "third-rider-reset-push",
+          "timeline_href": "/timeline?business=3rd-rider&days=14",
+          "today_deadline_total": 2,
+          "timeline_summary_count": 2,
+          "timeline_entry_count": 2,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 0,
+          "production_legacy_baseline": 0,
+          "legacy_refs_retained": [],
+          "attempt": 1
+        },
+        "timeline_wobble-ward": {
+          "http": 200,
+          "business": "wobble-ward",
+          "objective_id": "ww-reset-push",
+          "timeline_href": "/timeline?business=wobble-ward&days=14",
+          "today_deadline_total": 2,
+          "timeline_summary_count": 2,
+          "timeline_entry_count": 2,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-03T22:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 0,
+          "production_legacy_baseline": 0,
+          "legacy_refs_retained": [],
+          "attempt": 1
+        },
+        "auth_marketing_voice_entry": {
+          "http": 200,
+          "writing_voice_entry_present": true,
+          "live_revision_asserted": false,
+          "attempt": 1
+        }
+      },
+      "business_timelines": [
+        {
+          "http": 200,
+          "business": "kinetic-clinician",
+          "objective_id": "kc-reset-push",
+          "timeline_href": "/timeline?business=kinetic-clinician&days=14",
+          "today_deadline_total": 2,
+          "timeline_summary_count": 2,
+          "timeline_entry_count": 2,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 0,
+          "production_legacy_baseline": 0,
+          "legacy_refs_retained": [],
+          "attempt": 1
+        },
+        {
+          "http": 200,
+          "business": "strandworks",
+          "objective_id": "portfolio-control",
+          "timeline_href": "/timeline?business=strandworks&days=14",
+          "today_deadline_total": 10,
+          "timeline_summary_count": 10,
+          "timeline_entry_count": 10,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 8,
+          "production_legacy_baseline": 8,
+          "legacy_refs_retained": [
+            "D-0151",
+            "D-0041",
+            "D-0152",
+            "D-0153",
+            "D-0154",
+            "D-0108",
+            "D-0155",
+            "D-0086"
+          ],
+          "attempt": 1
+        },
+        {
+          "http": 200,
+          "business": "strandworks-medical",
+          "objective_id": "smr-reset-push",
+          "timeline_href": "/timeline?business=strandworks-medical&days=14",
+          "today_deadline_total": 41,
+          "timeline_summary_count": 41,
+          "timeline_entry_count": 41,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 39,
+          "production_legacy_baseline": 39,
+          "legacy_refs_retained": [
+            "D-0036",
+            "D-0042"
+          ],
+          "attempt": 1
+        },
+        {
+          "http": 200,
+          "business": "tenetrix",
+          "objective_id": "tenetrix-reset-push",
+          "timeline_href": "/timeline?business=tenetrix&days=14",
+          "today_deadline_total": 3,
+          "timeline_summary_count": 3,
+          "timeline_entry_count": 3,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 1,
+          "production_legacy_baseline": 1,
+          "legacy_refs_retained": [
+            "D-0091"
+          ],
+          "attempt": 1
+        },
+        {
+          "http": 200,
+          "business": "advertising",
+          "objective_id": "advertising-reset-push",
+          "timeline_href": "/timeline?business=advertising&days=14",
+          "today_deadline_total": 2,
+          "timeline_summary_count": 2,
+          "timeline_entry_count": 2,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 0,
+          "production_legacy_baseline": 0,
+          "legacy_refs_retained": [],
+          "attempt": 1
+        },
+        {
+          "http": 200,
+          "business": "sag",
+          "objective_id": "sag-reset-push",
+          "timeline_href": "/timeline?business=sag&days=14",
+          "today_deadline_total": 3,
+          "timeline_summary_count": 3,
+          "timeline_entry_count": 3,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 1,
+          "production_legacy_baseline": 1,
+          "legacy_refs_retained": [
+            "D-0017"
+          ],
+          "attempt": 1
+        },
+        {
+          "http": 200,
+          "business": "3rd-rider",
+          "objective_id": "third-rider-reset-push",
+          "timeline_href": "/timeline?business=3rd-rider&days=14",
+          "today_deadline_total": 2,
+          "timeline_summary_count": 2,
+          "timeline_entry_count": 2,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-02T23:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 0,
+          "production_legacy_baseline": 0,
+          "legacy_refs_retained": [],
+          "attempt": 1
+        },
+        {
+          "http": 200,
+          "business": "wobble-ward",
+          "objective_id": "ww-reset-push",
+          "timeline_href": "/timeline?business=wobble-ward&days=14",
+          "today_deadline_total": 2,
+          "timeline_summary_count": 2,
+          "timeline_entry_count": 2,
+          "portfolio_date_count": 2,
+          "portfolio_review_present": true,
+          "portfolio_delivery_present": true,
+          "review_at": "2026-11-03T22:00:00+00:00",
+          "delivery_at": "2026-11-04T05:00:00+00:00",
+          "legacy_date_count": 0,
+          "production_legacy_baseline": 0,
+          "legacy_refs_retained": [],
+          "attempt": 1
+        }
+      ],
+      "failure_count": 0,
+      "success": true,
+      "scope": "Read-only private Today/Timeline date counts, Focus goal presence and voice entry; no browser/local build, saves, revision assertion, source or Production edits",
+      "followups": [
+        {
+          "recorded_at_utc": "2026-11-02T19:55:13.385455+00:00",
+          "scope": "Legacy Today project summary pings",
+          "finding": "Older ok/no reports summaries remain despite newer shared reports, per root Production browser review.",
+          "next_action": "Reconcile legacy summary cues with durable shared report freshness in a separately scoped follow-up.",
+          "in_current_fix": false
+        }
+      ],
+      "source_commit_at_deploy": "cbcafd38929f291025d15c46ce54c701895304f5",
+      "source_cockpit_tree_id": "ca670c11f18f61470046ef771ad23447353ce5ff",
+      "source_objectives_checked_at": "2026-11-02T19:55:13.831684+00:00",
+      "preview_url": "https://strandworks-cockpit-rmp89bdoc-strandworks.vercel.app",
+      "deployment_id": "dpl_57FYE9RezT8ww7wywU3tpnaXKn4j",
+      "state": "READY",
+      "deployment_target": "preview",
+      "finished_at_utc": "2026-11-02T19:56:47.096294+00:00",
+      "credential_handling": "Independent Preview secret and120-second owner cookies only in process memory; exact secret stdin and cookie curl-config stdin; no values/bodies saved or printed",
+      "commands_without_values": [
+        "vercel env add SESSION_SECRET preview --sensitive --force [exact independent value via stdin]",
+        "vercel deploy --yes [cockpit cwd; no branch override]",
+        "vercel inspect PREVIEW_URL --json [selected metadata only]",
+        "vercel curl PATH --deployment PREVIEW_URL -- --config - --silent --show-error --max-time 90 --write-out HTTP_STATUS [owner cookie only in stdin config]"
+      ],
+      "native_helper_metadata": "Existing authenticated native vercel curl route reused; no bypass-generation notice or explicit key creation request.",
+      "tracked_files_modified": false
+    }
+  },
+  "independent_runtime_readback": {
+    "checked_at": "2026-11-02T19:52:31.757694+00:00",
+    "droplet": {
+      "status": "completed",
+      "checked_at": "2026-11-02T19:45:02.002872+00:00",
+      "completed_at": "2026-11-02T19:45:02.734402+00:00",
+      "objectives_checked": 8,
+      "pending_writes": 0,
+      "managed_cron_count": 1,
+      "retired_cron_count": 0,
+      "daily_digest_receipts": [],
+      "weekly_review_receipts": [],
+      "source_matches": true
+    },
+    "mac": {
+      "status": "completed",
+      "completed_at": "2026-11-02T19:39:38.294685+00:00",
+      "source_jobs_executed": false,
+      "pending_writes": 0,
+      "publisher_hook_count": 1,
+      "master_loaded": true,
+      "runtime_source_matches": true
+    },
+    "first_daily_digest_due": "2026-11-02T17:00:00-05:00",
+    "first_friday_review_due": "2026-11-06T16:00:00-05:00",
+    "jobs_triggered": false,
+    "schedulers_created": 0
+  },
+  "rollout": {
+    "local": "committed and pushed",
+    "private": "verified",
+    "production": "pending guarded rollout",
+    "owner_acceptance": "pending"
+  },
+  "remaining": [
+    {
+      "work": "Reconcile legacy Today/Projects summary evidence with current shared WorkReports, retaining explicit source dates and separate local/deployed/accepted states.",
+      "owner": "Codex coordinator, STR-1069",
+      "next_action": "Next metered packet before November2 18:00Eastern owner review; private verification before release.",
+      "review_at": "2026-11-02T18:00:00-05:00"
+    },
+    {
+      "work": "Observe actual19:00Eastern scheduled KC scan after completion;13:00failed and no successful scan is claimed.",
+      "owner": "Existing KC worker; Codex verification",
+      "review_at": "2026-11-02T19:30:00-05:00"
+    },
+    {
+      "work": "Actual first daily digest and Friday review receipts are not yet due at this source check.",
+      "owner": "Existing code-only droplet reconciler",
+      "next_due": [
+        "2026-11-02T17:00:00-05:00",
+        "2026-11-06T16:00:00-05:00"
+      ]
+    }
+  ]
+}
