@@ -324,7 +324,7 @@ def metric_preview(value, limit=180):
 def focus_text(snapshot):
     lines = [f"PORTFOLIO FOCUS — checked {owner_time(snapshot['checked_at'])}"]
     for objective in snapshot.get("objectives", []):
-        lines.append(f"- {objective['id']} [{objective['status']}] {objective['title']} ({objective['project']})")
+        lines.append(f"- {objective['id']} [{objective['status']}; priority={objective.get('priority', 'unset')}] {objective['title']} ({objective['project']})")
         lines.append(f"  outcome: {compact_text(objective['outcome'])}")
         lines.append(f"  owner: {objective.get('accountable_owner') or 'unset'}; target: {owner_time(objective.get('target_at'))}; next review: {owner_time(objective.get('review_at'))}")
         if objective.get("issue_ids"):

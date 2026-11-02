@@ -238,7 +238,7 @@ class PortfolioCliTests(unittest.TestCase):
                  "summary": {"scheduled": 19, "drafts": 15}, "issues": [{"detail": long}], "raw": long}
         snapshot = {"checked_at": "2026-11-02T12:00:00Z", "objectives": [], "metrics": [], "leases": [], "reports": []}
         for key, owner in (("one", "Jonathan"), ("two", "Educator lane")):
-            snapshot["objectives"].append({"id": key, "project": key, "status": "active", "title": key,
+            snapshot["objectives"].append({"id": key, "project": key, "status": "active", "title": key, "priority": 2,
                 "outcome": long, "accountable_owner": owner, "target_at": "2026-11-04T05:00:00Z",
                 "review_at": "2026-11-03T22:00:00Z", "metric_definitions": [{"id": "health"}]})
             snapshot["metrics"].append({"id": 1, "objective_id": key, "metric_id": "health", "value": value,
@@ -254,6 +254,7 @@ class PortfolioCliTests(unittest.TestCase):
         self.assertIn("source_observed_at=2026-11-01T12:00:00Z", rendered)
         self.assertIn("owner: Jonathan", rendered)
         self.assertIn("owner: Educator lane", rendered)
+        self.assertEqual(rendered.count("priority=2"), 2)
         self.assertIn("target: 2026-11-04 00:00 EST", rendered)
         self.assertIn("next review: 2026-11-03 17:00 EST", rendered)
         self.assertEqual(rendered.count("- report "), 6)

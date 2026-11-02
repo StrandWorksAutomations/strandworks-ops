@@ -44,7 +44,10 @@ def stamp(value):
     if not value:
         return None
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        # The installed macOS Python3.9 rejects strftime's valid -0500 offset.
+        # Scanner receipts use that form; normalize only the final UTC offset.
+        normalized = re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(normalized)
         return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed
     except (ValueError, AttributeError):
         return None
