@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "revision": 3,
-  "updated_at": "2026-11-02T19:17:47.897Z",
+  "revision": 4,
+  "updated_at": "2026-11-02T19:45:56.011Z",
   "rules": [
     {
       "id": "shared-plain-language",
@@ -101,6 +101,21 @@
       "active": true,
       "created_at": "2026-11-02T19:17:47.897Z",
       "updated_at": "2026-11-02T19:17:47.897Z"
+    },
+    {
+      "id": "95c5e2b6-7be3-4261-b206-bb08b62d720a",
+      "brand_id": "7530099",
+      "post_id": "405007359",
+      "post_uuid": null,
+      "original_text": "TXA does not make a clot. It stops the one you already have from dissolving.\n\nTranexamic acid is a synthetic lysine analogue. It occupies the lysine-binding sites on plasminogen, so plasminogen and plasmin cannot bind fibrin. Clot lysis is inhibited. The drug is not pro-thrombotic in itself; it stabilizes clot that has already formed rather than generating new clot. That mechanism is why the entry's trauma regimen reads the way it does: 1 g IV over 10 min, then 1 g IV over 8 h, started within 3 hours of injury. It is also why the first clinical pearl is the clock. After 3 hours, CRASH-2 showed increased bleeding-related death. Two more lines from the full-detail entry: infuse the loading dose over at least 10 minutes, because a push drops the pressure, and do not run it in the same line as blood products or penicillins.\n\nOpen the tranexamic acid entry and read its clinical pearls.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #Pharmacology #TraumaNursing #Paramedic",
+      "original_sha256": "e4c2997a3731ec90aea35d4d2a3981e5c2744562a1796248ac63a13908403f98",
+      "scope": "brand",
+      "flags": [],
+      "rewrite": "TXA does not initiate clotting, it protects the clotting process your body is already involved in. ",
+      "note": "TXA does not make a clot. It stops the one you already have from dissolving.",
+      "active": true,
+      "created_at": "2026-11-02T19:45:56.011Z",
+      "updated_at": "2026-11-02T19:45:56.011Z"
     }
   ],
   "history": [
@@ -134,6 +149,17 @@
       "action": "save_feedback",
       "entity": "feedback",
       "entity_id": "93b3c475-1fc2-4b0e-a6b1-889b997ba9c8",
+      "scope": "brand",
+      "brand_id": "7530099"
+    },
+    {
+      "revision": 4,
+      "at": "2026-11-02T19:45:56.011Z",
+      "actor": "owner",
+      "source": "cockpit",
+      "action": "save_feedback",
+      "entity": "feedback",
+      "entity_id": "95c5e2b6-7be3-4261-b206-bb08b62d720a",
       "scope": "brand",
       "brand_id": "7530099"
     }
