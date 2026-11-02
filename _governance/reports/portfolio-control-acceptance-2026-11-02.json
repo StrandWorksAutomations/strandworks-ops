@@ -1,0 +1,107 @@
+{
+  "checked_at": "2026-11-02T19:27:03.008364+00:00",
+  "stage": "operational; portfolio push and product acceptance continue",
+  "dashboard": "https://dashboard.strandautomationworks.com/focus",
+  "timeline": "https://dashboard.strandautomationworks.com/timeline",
+  "bootstrap": {
+    "status": "passed",
+    "fresh_contexts": [
+      "Codex subagent fork_turns=none",
+      "Claude newsession7c7580e4-43e2-415a-b0c0-dcf78b653360"
+    ],
+    "source_calls_each": 1,
+    "ordered_priorities_match": true,
+    "objectives": [
+      {
+        "id": "kc-reset-push",
+        "priority": 1
+      },
+      {
+        "id": "portfolio-control",
+        "priority": 1
+      },
+      {
+        "id": "smr-reset-push",
+        "priority": 1
+      },
+      {
+        "id": "tenetrix-reset-push",
+        "priority": 1
+      },
+      {
+        "id": "advertising-reset-push",
+        "priority": 2
+      },
+      {
+        "id": "sag-reset-push",
+        "priority": 2
+      },
+      {
+        "id": "third-rider-reset-push",
+        "priority": 2
+      },
+      {
+        "id": "ww-reset-push",
+        "priority": 2
+      }
+    ],
+    "known_unknowns_retained": true,
+    "model_and_speed": "Default settings; Claude actual standard speed/service tier; no model override"
+  },
+  "validation": {
+    "dashboard_tests": 458,
+    "system_python39_control_tests": 58,
+    "typescript": "passed",
+    "production_build": "passed",
+    "real_postgresql_claim_recovery_auth_idempotency": "passed; migration and CLI acceptance suite",
+    "chat_inactivity_48h": "simulated clock/checkpoint failure detection passed",
+    "source_unavailability": "unknown/stale remain visible; no auto-completion",
+    "retry_deduplication": "database and durable outbox tests passed",
+    "browser": "existing authenticated owner session:8actualprojectviews;4weeklydates;Nov3orientation09:00Eastern;Focus4operationalattentionitems",
+    "contact_pipeline": "newoffer/stage/action/followupfields; synthetic transaction checks rolled back"
+  },
+  "production": {
+    "deployment_id": "dpl_8Mnd9FuBrxmgm8Eb3JrSmLGBNXM9",
+    "source_commit": "208d5c0",
+    "web_tree": "e0f78971cc5b81e52df5b0b9b2eef657344a7fd8",
+    "private_attention_preview": "https://strandworks-cockpit-3yzviirtg-strandworks.vercel.app",
+    "combined_private_preview": "https://strandworks-cockpit-c7jmt0oc3-strandworks.vercel.app",
+    "concurrent_marketing_voice": "Implementation matches separately verified8c601f1; auth/read/4attention/Marketing checks pass. Liveownerfeedbackevolved; stale expectedrevision assertions stopped2attempts. No POST/save/reset executed in combinedprobe. Preserve live revisions.",
+    "limits": "Physical phone keyboard and combined-preview cross-origin POST were not executed; unchangedvoiceAPIguards are unit-tested and source-reviewed. Product acceptance is separate."
+  },
+  "runtime": {
+    "reconciler": "one existing operations droplet cron every15min; codeonly; remote latestcompletedwith0pendingwrites",
+    "publisher": "one existing Mac master hook every900s; savedsource receipts only; source times retained",
+    "reporting": "daily17:00Eastern and Friday16:00Eastern; firstdailyreceipt notyetdue at this snapshot",
+    "guidance": "four existing Codex/Claude guidance files updated through idempotent backup/hash installer",
+    "retired_execution": "seven legacy jobs disabled; unrelatedjobs preserved",
+    "heartbeat": "one hourly originatingchat coordinator; Codex/Claude guards separate; endsNov4midnight orCodexguardstop",
+    "orientation": "Nov3 09:00Eastern; avoid new heavy/interactive work from08:30untilowneravailable"
+  },
+  "quota": {
+    "codex_ceiling_used_percent": 93.2,
+    "claude_ceiling_used_percent": 64.8,
+    "fable_ceiling_used_percent": 81,
+    "claude_reset": "2026-11-03T05:00:00-05:00 latestnativeandoriginalownerreport",
+    "claude_cutoff": "2026-11-03T04:29:00-05:00 earlierfixedcutoffretained",
+    "new_allowance_authorized": false,
+    "usage_credits": "off"
+  },
+  "remaining": {
+    "kc": "Observe actualNov2 19:00Eastern scheduled scanner receipt;13:00failedwith0groups. Aboutcopy remainsreviewcandidate; full publicreleasegates/renewedauthorization apply. Kitconfirmedsubscriber countunknown: no configured readcredential.",
+    "tenetrix": "Content/device/access/educator acceptance and13revieweligible/7held institutional routes; no anatomy/billing/course production release.",
+    "smr": "Commercialqualification, deliveredcost/variance and realprivatefinancialreporting require current owner/lender evidence; syntheticworkflowvalidated only.",
+    "wobble": "Owner reportsassetdrivesunavailable;2671existinglinksblocked. Unityclosed; preflightrequired; no playableloopacceptance.",
+    "sag": "Entity/name/partner decisions and current pursuit followups; noformation/submissions bypacket.",
+    "third_rider": "Native/device/field accuracy/latency acceptance; investorclaimsfollowdemonstratedscope.",
+    "advertising": "UnattendedMetricoolauth missing; current paidspend/deliveryunknown; boothrehearsalandconversionattributionpending.",
+    "credential_rotation": "Ownerdeferred; inlineLinearcredentialremoved; configuredkeyrotationnotcomplete; nextreviewNov3 17:00Eastern"
+  },
+  "weekly_review_refs": {
+    "2026-11-06": "D-0154",
+    "2026-11-13": "D-0155",
+    "2026-11-20": "D-0156",
+    "2026-11-27": "D-0157"
+  },
+  "owner_acceptance": "pending; no blanketcompletionclaimed"
+}
