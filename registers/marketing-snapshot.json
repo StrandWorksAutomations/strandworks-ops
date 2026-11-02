@@ -1,0 +1,1045 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-11-02T15:47:57Z",
+  "timezone": "America/New_York",
+  "sources": [
+    {
+      "name": "Metricool getBrandSettings",
+      "checked_at_utc": "2026-11-02T15:47:57Z",
+      "scope": "All five brands returned by the connected account; public labels and network handles/IDs only.",
+      "availability": "available",
+      "notes": "Network configuration presence is reported connected. Authentication health, profile completeness and public activity were not independently tested. Profile URLs for Instagram/TikTok/YouTube are derived from reported handles/IDs; no public URLs were returned for Facebook/LinkedIn profiles."
+    },
+    {
+      "name": "Metricool getScheduledPosts",
+      "checked_at_utc": "2026-11-02T15:46:18Z",
+      "scope": "Tenetrix brand 7530099, November 2-8 and November 9 2026, America/New_York, extendedRange false.",
+      "availability": "available",
+      "notes": "17 content records. Draft overrides provider PENDING. One record explicitly reports PUBLISHED on Facebook and Instagram with post URLs. Those public pages were not independently visited. Other brand queues and prior history were not checked."
+    }
+  ],
+  "source_completeness": {
+    "brands_returned": 5,
+    "queues_checked": [
+      "7530099"
+    ],
+    "queue_local_date_start": "2026-11-02",
+    "queue_local_date_end": "2026-11-09",
+    "historical_publication_audit_complete": false,
+    "all_created_accounts_inventory_complete": false,
+    "paid_ad_data_included": false,
+    "automatic_refresh_configured": false,
+    "notes": [
+      "This is a dated snapshot, not a live Metricool feed.",
+      "Local seven-platform profile kits are asset packages and do not prove LinkedIn, Threads or Bluesky accounts exist.",
+      "No TikTok or YouTube queue records were returned for this date range; historical activity is unknown.",
+      "Queue writing remains owned by the growth lane; this audit made no queue changes."
+    ]
+  },
+  "summary": {
+    "content_records": 17,
+    "scheduled_content_records": 13,
+    "reported_published_content_records": 1,
+    "draft_content_records": 3,
+    "next_scheduled_at_utc": "2026-11-02T22:00:00.000Z",
+    "scheduled_through_at_utc": "2026-11-08T23:00:00.000Z",
+    "scheduled_networks": [
+      "facebook",
+      "instagram"
+    ],
+    "draft_precedence": true
+  },
+  "brands": [
+    {
+      "id": "7449381",
+      "key": "kinetic-clinician",
+      "name": "Kinetic Clinician",
+      "timezone": "America/New_York",
+      "website": "https://kineticclinician.com",
+      "accounts": [
+        {
+          "platform": "facebook",
+          "handle": "1428142013710264",
+          "profile_url": null,
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "instagram",
+          "handle": "kineticclinician",
+          "profile_url": "https://www.instagram.com/kineticclinician/",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "linkedin",
+          "handle": "urn:li:organization:146763118",
+          "profile_url": null,
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "tiktok",
+          "handle": "kineticclinician",
+          "profile_url": "https://www.tiktok.com/@kineticclinician",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "youtube",
+          "handle": "UCiPtWhRgHcY0FWfUcnkUW2Q",
+          "profile_url": "https://www.youtube.com/channel/UCiPtWhRgHcY0FWfUcnkUW2Q",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        }
+      ],
+      "queue_status": "not_checked",
+      "queue_scope": null
+    },
+    {
+      "id": "7529982",
+      "key": "kinetic-medic",
+      "name": "The Kinetic Medic",
+      "timezone": "America/New_York",
+      "website": null,
+      "accounts": [
+        {
+          "platform": "facebook",
+          "handle": "1374251355774242",
+          "profile_url": null,
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "instagram",
+          "handle": "thekineticmedic",
+          "profile_url": "https://www.instagram.com/thekineticmedic/",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "linkedin",
+          "handle": "urn:li:organization:146772147",
+          "profile_url": null,
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        }
+      ],
+      "queue_status": "not_checked",
+      "queue_scope": null
+    },
+    {
+      "id": "7530041",
+      "key": "strandworks",
+      "name": "Strandworks",
+      "timezone": "America/New_York",
+      "website": null,
+      "accounts": [
+        {
+          "platform": "facebook",
+          "handle": "920469537823690",
+          "profile_url": null,
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "instagram",
+          "handle": "strandworksllc",
+          "profile_url": "https://www.instagram.com/strandworksllc/",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "tiktok",
+          "handle": "Strandworks",
+          "profile_url": "https://www.tiktok.com/@Strandworks",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "youtube",
+          "handle": "UCRk5gxGgnsOAbFrJuE2pXeg",
+          "profile_url": "https://www.youtube.com/channel/UCRk5gxGgnsOAbFrJuE2pXeg",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        }
+      ],
+      "queue_status": "not_checked",
+      "queue_scope": null
+    },
+    {
+      "id": "7530099",
+      "key": "tenetrix-insight",
+      "name": "Tenetrix Insight",
+      "timezone": "America/New_York",
+      "website": null,
+      "accounts": [
+        {
+          "platform": "facebook",
+          "handle": "851013428106346",
+          "profile_url": null,
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "instagram",
+          "handle": "tenetrixinsight",
+          "profile_url": "https://www.instagram.com/tenetrixinsight/",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "tiktok",
+          "handle": "adminlwcbg5",
+          "profile_url": "https://www.tiktok.com/@adminlwcbg5",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z",
+          "attention": {
+            "status": "needs_attention",
+            "title": "Rename placeholder TikTok handle before scheduling",
+            "detail": "Current connector still reports adminlwcbg5. Queue guidance requires the owner to rename it before TikTok posts are scheduled.",
+            "source": "Shared-Campaigns/2026-10-23-Social-Queue-Takeover/README.md"
+          }
+        },
+        {
+          "platform": "youtube",
+          "handle": "UC7LK1nGNN2mL9z-4h-99cdg",
+          "profile_url": "https://www.youtube.com/channel/UC7LK1nGNN2mL9z-4h-99cdg",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        }
+      ],
+      "queue_status": "checked",
+      "queue_scope": {
+        "from_date": "2026-11-02",
+        "through_date": "2026-11-09",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "id": "7569066",
+      "key": "ember-and-vellum",
+      "name": "Ember & Vellum",
+      "timezone": "America/New_York",
+      "website": null,
+      "accounts": [
+        {
+          "platform": "facebook",
+          "handle": "944205588787118",
+          "profile_url": null,
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "instagram",
+          "handle": "emberandvellum",
+          "profile_url": "https://www.instagram.com/emberandvellum/",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        },
+        {
+          "platform": "youtube",
+          "handle": "UC-_Anbh5fwepdEVGvjPhZYg",
+          "profile_url": "https://www.youtube.com/channel/UC-_Anbh5fwepdEVGvjPhZYg",
+          "profile_url_verified": false,
+          "connection_status": "reported_connected",
+          "checked_at_utc": "2026-11-02T15:47:57Z"
+        }
+      ],
+      "queue_status": "not_checked",
+      "queue_scope": null
+    }
+  ],
+  "posts": [
+    {
+      "id": "404630939",
+      "brand_id": "7530099",
+      "title": "Two weeks on the App Store. What's missing from Tenetrix Insight? A card you reach for that isn't there, a calculator you'd add, a drug entry that needs a line. Tell us and it goes on the build list.",
+      "text": "Two weeks on the App Store. What's missing from Tenetrix Insight? A card you reach for that isn't there, a calculator you'd add, a drug entry that needs a line. Tell us and it goes on the build list.\n\nSupport and feedback: https://tenetrix.org/support\n\nReference only. Verify against current guidelines and institutional protocols.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\n#TenetrixInsight #NurseLife #EMS #Paramedic",
+      "first_comment_text": "",
+      "scheduled_at_utc": "2026-11-02T15:00:00.000Z",
+      "scheduled_at_local": "2026-11-02T10:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "reported_published",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-3239730764626347908.jpeg",
+          "type": "image",
+          "alt": "Tenetrix Insight app screenshot: home screen with clinical reference categories",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-3239730764626347908.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PUBLISHED",
+          "detailed_status": "Published",
+          "post_url": "https://facebook.com/122161063515185248/posts/122163027171185248",
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PUBLISHED",
+          "detailed_status": "Published",
+          "post_url": "https://www.instagram.com/p/DfPlXXvlUqF/",
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "404630939",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "404286225",
+      "brand_id": "7530099",
+      "title": "You don't stop needing a reference after graduation.",
+      "text": "You don't stop needing a reference after graduation.\n\nTenetrix Insight's reference and study tools are free. An optional one-time Foundations purchase adds the guided anatomy and physiology lessons.\n\nReference only. Verify against current guidelines and institutional protocols.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\n#TenetrixInsight #ClinicalLearning #EMS",
+      "first_comment_text": "",
+      "scheduled_at_utc": "2026-11-02T17:00:00.000Z",
+      "scheduled_at_local": "2026-11-02T12:00:00",
+      "timezone": "America/New_York",
+      "draft": true,
+      "isDraft": true,
+      "derived_status": "draft",
+      "auto_publish": true,
+      "media": [],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "404286225",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "402517404",
+      "brand_id": "7530099",
+      "title": "If you have not tried it yet: Tenetrix Insight is on the App Store for iPhone and iPad. 450+ reference cards, 416 medications, 70+ calculators, waveform simulations, atlases, flashcards and practice questions, all offline.",
+      "text": "If you have not tried it yet: Tenetrix Insight is on the App Store for iPhone and iPad. 450+ reference cards, 416 medications, 70+ calculators, waveform simulations, atlases, flashcards and practice questions, all offline.\n\nFree reference and study tools. Foundations is an optional one-time purchase.\nReference only. Verify against current guidelines and institutional protocols.\n\nDownload Tenetrix Insight:\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\n#TenetrixInsight #Strandworks #NurseLife #EMS #NursingStudent",
+      "first_comment_text": "",
+      "scheduled_at_utc": "2026-11-02T22:00:00.000Z",
+      "scheduled_at_local": "2026-11-02T17:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-13709212360406512866.jpeg",
+          "type": "image",
+          "alt": "Tenetrix Insight app screenshot: anatomy atlas with labeled organ structures",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-13709212360406512866.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "402517404",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007359",
+      "brand_id": "7530099",
+      "title": "TXA does not make a clot. It stops the one you already have from dissolving.",
+      "text": "TXA does not make a clot. It stops the one you already have from dissolving.\n\nTranexamic acid is a synthetic lysine analogue. It occupies the lysine-binding sites on plasminogen, so plasminogen and plasmin cannot bind fibrin. Clot lysis is inhibited. The drug is not pro-thrombotic in itself; it stabilizes clot that has already formed rather than generating new clot. That mechanism is why the entry's trauma regimen reads the way it does: 1 g IV over 10 min, then 1 g IV over 8 h, started within 3 hours of injury. It is also why the first clinical pearl is the clock. After 3 hours, CRASH-2 showed increased bleeding-related death. Two more lines from the full-detail entry: infuse the loading dose over at least 10 minutes, because a push drops the pressure, and do not run it in the same line as blood products or penicillins.\n\nOpen the tranexamic acid entry and read its clinical pearls.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #Pharmacology #TraumaNursing #Paramedic",
+      "first_comment_text": "Sources as the entry lists them: CRASH-2 (Lancet 2010); WHO Essential Medicines; WOMAN. Full-detail entry: statref://drug/tranexamic-acid. The trauma regimen, the 3-hour window, the 10-minute loading infusion and the line incompatibilities are all quoted from that entry.",
+      "scheduled_at_utc": "2026-11-03T15:00:00.000Z",
+      "scheduled_at_local": "2026-11-03T10:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-14957653669247407225.jpeg",
+          "type": "image",
+          "alt": "Tenetrix Insight drug screen for tranexamic acid, dark mode, showing the mechanism of action paragraph under the drug name.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-14957653669247407225.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007359",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007407",
+      "brand_id": "7530099",
+      "title": "HR 118, SBP 92. Divide the first by the second before you call it borderline.",
+      "text": "HR 118, SBP 92. Divide the first by the second before you call it borderline.\n\nShock index is heart rate over systolic blood pressure. SI = HR / SBP. For this patient, 118 / 92 = 1.28. The calculator labels that result High, significant shock, consider MTP. The bands it uses: below 0.5 low-normal, 0.5 to under 0.7 normal, 0.7 to 1.0 elevated with possible hypovolemia, above 1.0 high. A pulse of 118 is tachycardic. A systolic of 92 sits just above the SBP <90 trauma criterion on the MTP card. The ratio says more than either value, which is why the Massive Transfusion Protocol card lists a shock index above 1.0 among its clinical activation signs. The source behind the calculator is Allgöwer and Burri, 1967. Tag the triage nurse who already does this division in their head.\n\nRun your own numbers in the Shock Index calculator.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #TriageNurse #EmergencyNursing #ClinicalCalculators",
+      "first_comment_text": "Calculator shock_index (statref://calculators/shock_index): SI = HR / SBP, source Allgöwer M, Burri C. Schockindex. Dtsch Med Wochenschr 1967. Bands as coded: <0.5 low-normal, 0.5 to <0.7 normal, 0.7–1.0 elevated (possible hypovolemia), >1.0 high (consider MTP). The MTP card (statref://card/massive-transfusion-protocol) lists 'Shock index >1.0 (HR/SBP)' under clinical signs and 'SBP <90 despite fluids' under trauma criteria for activation.",
+      "scheduled_at_utc": "2026-11-03T22:00:00.000Z",
+      "scheduled_at_local": "2026-11-03T17:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-5687333247046340550.jpeg",
+          "type": "image",
+          "alt": "Shock Index calculator in Tenetrix Insight with heart rate 118 and systolic BP 92 entered and a result of 1.28 shown in red.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-5687333247046340550.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007407",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007503",
+      "brand_id": "7530099",
+      "title": "Tension pneumothorax, tamponade, hypothermia. Which ABCDE letter does each one kill in?",
+      "text": "Tension pneumothorax, tamponade, hypothermia. Which ABCDE letter does each one kill in?\n\nWeek one is orientation. The ABCDE card gives the order. Airway with C-spine protection, breathing, circulation with hemorrhage control, disability, exposure. Treat life threats as they are found before moving to the next letter. The ATLS Primary Survey card then names what each letter is hunting: tension pneumothorax in B, massive hemothorax in B and C, cardiac tamponade and massive hemorrhage in C, severe TBI in D, hypothermia in E. Find what kills, fix what kills, then move on. The last slide is the Anatomical orientation lesson; Saturday's question comes from it. Free reference and study tools.\n\nSwipe through the two cards and the lesson.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #ATLS #NursingStudent #Paramedic #PrimarySurvey",
+      "first_comment_text": "Answer key: tension pneumothorax, B; cardiac tamponade, C; hypothermia, E (as the ATLS Primary Survey card lists them). Cards: statref://card/mnemonic-abcde (ABCDE — Primary Survey; source ATLS 10th Edition), statref://card/trauma-atls-primary-survey (ATLS Primary Survey; references ATLS 10e, CRASH-2, EAST PMG). Lesson: statref://learn/lesson/anatomy-orientation (Anatomical orientation, 6 min).",
+      "scheduled_at_utc": "2026-11-04T15:00:00.000Z",
+      "scheduled_at_local": "2026-11-04T10:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-10376933405335947210.jpeg",
+          "type": "image",
+          "alt": "Carousel slide one: black background with the words Which letter does each of these kill in, above three injuries listed in white.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-10376933405335947210.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-2170422800120232782.jpeg",
+          "type": "image",
+          "alt": "ABCDE Primary Survey card in Tenetrix Insight listing airway, breathing, circulation, disability and exposure.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-2170422800120232782.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-8360690011845828546.jpeg",
+          "type": "image",
+          "alt": "ATLS Primary Survey card differential list naming what kills in B, C, D and E.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-8360690011845828546.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-10110931204200224051.jpeg",
+          "type": "image",
+          "alt": "ATLS Primary Survey card header with the Act Now line: find what kills, fix what kills, then move on.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-10110931204200224051.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-6069216110573204264.jpeg",
+          "type": "image",
+          "alt": "Anatomical orientation lesson opening in Tenetrix Insight with its two learning objectives.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-6069216110573204264.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007503",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007560",
+      "brand_id": "7530099",
+      "title": "Four collared patients, GCS 15, stable vitals. One leaves without imaging. Which?",
+      "text": "Four collared patients, GCS 15, stable vitals. One leaves without imaging. Which?\n\nAll four are alert blunt-trauma patients, aged 16 or over, seen within 48 hours, systolic at or above 90 and breathing 10 to 24 a minute, so the Canadian C-Spine Rule applies. A: 68 years old, ground-level fall, no deficits, no midline tenderness. B: 30 years old, simple rear-end collision, walked at the scene, no midline tenderness, actively turns the head 45 degrees each way. C: 24 years old, dove head-first into shallow water, neck pain only. D: 40 years old, tripped on a curb, immediate neck pain, midline tenderness, has not sat up or walked since. Which one reaches NO RADIOGRAPHY on the algorithm, and which rule question stops each of the others? Answer and the three questions in the first comment.\n\nComment A, B, C or D, then check the flowchart on the Cervical Spine Clearance card.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #CSpine #EmergencyMedicine #TraumaNursing",
+      "first_comment_text": "B. Question 1, high-risk factors (age ≥65, dangerous mechanism, paraesthesias in the extremities): A is 68, so radiography; C is an axial load to the head (diving), so radiography. Question 2, a low-risk factor must be present before range of motion is tested (simple rear-end MVC, sitting in the ED, ambulatory at any time, delayed-onset neck pain, absence of midline tenderness): D has none, so radiography, because it is not safe to test rotation. B has low-risk factors and, at Question 3, actively rotates 45° left and right, so NO RADIOGRAPHY. The endpoint card quotes the derivation: sensitivity 100 %, specificity 42.5 % (Stiell 2001, n = 8,924); validation CCR 99.4 % vs NEXUS 90.7 % (Stiell 2003). Algorithm cards ccr-entry, ccr-high, ccr-low, ccr-rotate, ccr-no-xr, ccr-xr on statref://card/msk-cervical-spine-clearance.",
+      "scheduled_at_utc": "2026-11-04T22:00:00.000Z",
+      "scheduled_at_local": "2026-11-04T17:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-11810252556488372933.jpeg",
+          "type": "image",
+          "alt": "Cervical Spine Clearance card in Tenetrix Insight showing the Canadian C-Spine Rule flowchart with question one and question two nodes.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-11810252556488372933.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007560",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007619",
+      "brand_id": "7530099",
+      "title": "Crash Responder Safety Week. MARCH reorders the survey: hemorrhage first, airway second.",
+      "text": "Crash Responder Safety Week. MARCH reorders the survey: hemorrhage first, airway second.\n\nMove Over or Slow Down is this week's message for drivers passing a crash scene. MARCH is the tactical trauma survey; the card lists it for penetrating or blast trauma, prehospital combat casualty care and mass-casualty triage, and it puts massive hemorrhage ahead of the airway. One letter per slide. M, massive hemorrhage: control life-threatening external bleeding first; tourniquet high and tight for extremities, wound packing and direct pressure for junctional wounds. A, airway: chin lift or jaw thrust, nasopharyngeal airway, recovery position. R, respiration: needle decompression for tension pneumothorax, vented chest seal. C, circulation: reassess hemorrhage control, IV or IO access, permissive hypotension, TXA within 3 h, blood products for shock. H, hypothermia and head: remove wet clothing, insulate, warm fluids. The card explains the order: exsanguination is the leading cause of preventable death on the battlefield, which is why MARCH diverges from civilian ABC. What does your rig carry for M?\n\nTell us in the comments what your service stocks for M, then open the MARCH card.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #CrashResponderSafetyWeek #EMS #TCCC",
+      "first_comment_text": "Card: MARCH — Tactical Trauma, statref://card/mnemonic-march. Source as the card cites it: Committee on Tactical Combat Casualty Care (CoTCCC) Guidelines; Joint Trauma System. Pearl from the card: tourniquets are safe for up to ~2 h with minimal sequelae; note the application time on the device or patient. Crash Responder Safety Week (Nov 2–6) and the Move Over or Slow Down message are the national campaign for responders working roadside scenes.",
+      "scheduled_at_utc": "2026-11-05T15:00:00.000Z",
+      "scheduled_at_local": "2026-11-05T10:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-11931471320183770373.jpeg",
+          "type": "image",
+          "alt": "Carousel slide with the letter M in large type and the words Massive hemorrhage, with the MARCH card text below on a black background.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-11931471320183770373.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-13035683107342787708.jpeg",
+          "type": "image",
+          "alt": "Large letter A for Airway above the MARCH card row describing airway steps.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-13035683107342787708.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-14485275446856131510.jpeg",
+          "type": "image",
+          "alt": "Large letter R for Respiration above the MARCH card row on tension pneumothorax and chest seals.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-14485275446856131510.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-2166661389567065986.jpeg",
+          "type": "image",
+          "alt": "Large letter C for Circulation above the MARCH card row on access, permissive hypotension and TXA.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-2166661389567065986.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-4406273980721724265.jpeg",
+          "type": "image",
+          "alt": "Large letter H for Hypothermia and Head above the MARCH card row and the why-order-matters line.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-4406273980721724265.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007619",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007675",
+      "brand_id": "7530099",
+      "title": "Three nights in a row, done. How are you getting home this morning?",
+      "text": "Three nights in a row, done. How are you getting home this morning?\n\nDrowsy Driving Prevention Week runs Nov 1 to 7. No card for this one, no clinical claim, just the question most of us answer at 07:30 with the sun in our eyes. Pick the one you actually do, not the one you should. A: Drive myself, windows down, radio up. B: Nap in the car in the staff lot before I start the engine. C: Rideshare, taxi, or someone picks me up. D: Transit, bike or walk, no driving at all. Reply with a letter. The first comment names the week and who runs it.\n\nReply A, B, C or D in the comments.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\n#TenetrixInsight #NightShift #DrowsyDrivingPreventionWeek #NurseLife",
+      "first_comment_text": "Drowsy Driving Prevention Week, Nov 1–7, is run by the National Sleep Foundation. Opinion poll only; nothing clinical to cite today.",
+      "scheduled_at_utc": "2026-11-05T22:00:00.000Z",
+      "scheduled_at_local": "2026-11-05T17:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-2657103087013106784.jpeg",
+          "type": "image",
+          "alt": "Black image with the question How are you getting home this morning and four lettered options A to D in white type.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-2657103087013106784.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007675",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007735",
+      "brand_id": "7530099",
+      "title": "The lowest GCS is 3, not 0. Motor (1–__) is the term missing from the formula.",
+      "text": "The lowest GCS is 3, not 0. Motor (1–__) is the term missing from the formula.\n\nFormula Friday. The formula line on the calculator reads GCS = Eye (1–4) + Verbal (1–5) + Motor (1–__); range 3–15. The three components as the app lists them. Eye opening: 4 spontaneous, 3 to speech, 2 to pain, 1 none. Verbal response: 5 oriented, 4 confused, 3 inappropriate words, 2 incomprehensible sounds, 1 none. Motor response is the third component, and its top score is the blank. The lowest possible total is 3, not 0, because every component scores at least 1. The calculator's bands: 13 and above mild impairment, 9 to 12 moderate, 8 or below severe, consider definitive airway. Source: Teasdale and Jennett, Lancet 1974. Put the missing maximum in the comments. The answer is pinned in the first comment.\n\nComment the number, then open the GCS calculator and score a patient from memory.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #GCS #NeuroAssessment #NCLEX #NREMT",
+      "first_comment_text": "6. Motor response as the calculator lists it: 6 obeys commands, 5 localizes pain, 4 withdraws from pain, 3 abnormal flexion (decorticate), 2 extension (decerebrate), 1 none. Full formula line: GCS = Eye (1–4) + Verbal (1–5) + Motor (1–6); range 3–15. Calculator gcs, statref://calculators/gcs; source Teasdale G, Jennett B. Lancet 1974;2:81–84.",
+      "scheduled_at_utc": "2026-11-06T15:00:00.000Z",
+      "scheduled_at_local": "2026-11-06T10:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-5606501290073474616.jpeg",
+          "type": "image",
+          "alt": "Glasgow Coma Scale calculator formula line in Tenetrix Insight, dark mode, with the motor maximum blanked out.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-5606501290073474616.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007735",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007179",
+      "brand_id": "7530099",
+      "title": "Line down across the car. Patient still inside. Who goes first?",
+      "text": "Line down across the car. Patient still inside. Who goes first?\n\nNobody, until the source is confirmed isolated. Crash Responder Safety Week ends today, and the Electrical Injury card in Tenetrix Insight starts where the call does: scene safety first.\n\nThen it covers why the burn you can see undersells the injury. Current runs through muscle, so the card flags rhabdo, compartment syndrome along the current path, and how long to keep them on the monitor.\n\nFree reference and study tools. Foundations is an optional one-time purchase.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #CrashResponderSafetyWeek #EMS #Paramedic",
+      "first_comment_text": "Card: Electrical Injury / Lightning Strike (statref://card/env-electrical-lightning), Environmental. Scene safety, rhabdomyolysis, compartment syndrome and monitoring lines are quoted from that card.",
+      "scheduled_at_utc": "2026-11-06T22:00:00.000Z",
+      "scheduled_at_local": "2026-11-06T17:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-7320455975069548750.jpeg",
+          "type": "image",
+          "alt": "Tenetrix Insight Electrical Injury / Lightning Strike card, marked time-critical, with the Act Now box and the first interventions on scene safety and CPR.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-7320455975069548750.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007179",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007788",
+      "brand_id": "7530099",
+      "title": "Fifty-five full-detail drugs, tier one only: indications on the back. Start there.",
+      "text": "Fifty-five full-detail drugs, tier one only: indications on the back. Start there.\n\nNov 2 to 8 is Forensic Nurses Week. The card for the weekend is Trauma Assessment: primary survey A to E, then the secondary survey with a head-to-toe exam, the SAMPLE history, and the mechanism of injury documented for injury-pattern prediction. One pearl from it: hypotension in trauma is hemorrhage until proven otherwise. Then the flashcards. Pick the High-Yield (Full Detail) deck, the 55 medications with full pharmacology detail, and set it to tier 1 (T1). At that tier each card shows the drug name and class on the front and reveals its indications on the back. Missed cards come back sooner; known ones space out. Tier 2 adds dosing and mechanism when you are ready for it. Free reference and study tools.\n\nOpen the flashcards, choose High-Yield (Full Detail), tier T1, and start.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #ForensicNursesWeek #NursingStudent #Flashcards",
+      "first_comment_text": "Card: Trauma Assessment, statref://card/trauma-assessment (primary and secondary survey sections, pearls). Deck: High-Yield (Full Detail), 'the fully-detailed core drugs', on the flashcard screen at statref://learn; tiers as the app labels them: T1 Foundation (Indications), T2 Pharmacology (adds Dosing, Action / Mechanism, Pharmacokinetics), T3 Safety, T4 Clinical; the card front always shows the drug name and class.",
+      "scheduled_at_utc": "2026-11-07T15:00:00.000Z",
+      "scheduled_at_local": "2026-11-07T10:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-11211755426764310997.jpeg",
+          "type": "image",
+          "alt": "Tenetrix Insight flashcard setup screen with the High-Yield (Full Detail) deck selected and the T1 Foundation tier highlighted.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-11211755426764310997.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007788",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007844",
+      "brand_id": "7530099",
+      "title": "You face a patient in anatomical position. Their left clavicle is on which side?",
+      "text": "You face a patient in anatomical position. Their left clavicle is on which side?\n\nThat is the first prediction question in Anatomical orientation, a six-minute guided lesson. Two objectives: apply anatomical laterality from the patient's perspective, and use medial, lateral, ipsilateral and contralateral to describe relationships. The observation step sends you into the atlas: choose Skeleton, search Left clavicle, and rotate from the front to the back while following the highlighted bone rather than its screen position. The lesson states its own limit: the BodyParts3D source is one adult reference, and rotation changes the camera, not anatomical identity. Answer the clavicle question in the comments; the lesson's explanation is in the first comment. Free reference and study tools. Foundations is an optional one-time purchase.\n\nComment your side, then take the six-minute lesson.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #Anatomy #NursingStudent #ParamedicStudent",
+      "first_comment_text": "Your right side. The lesson's explanation: anatomical left and right are defined from the patient's perspective; when you face the patient, their left is on your right. Lesson anatomy-orientation, statref://learn/lesson/anatomy-orientation, 6 min, in the Body structures module.",
+      "scheduled_at_utc": "2026-11-07T23:00:00.000Z",
+      "scheduled_at_local": "2026-11-07T18:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-9202006601847228605.jpeg",
+          "type": "image",
+          "alt": "Anatomical orientation lesson in Tenetrix Insight showing the prediction question about the left clavicle with three answer options.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-9202006601847228605.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007844",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007892",
+      "brand_id": "7530099",
+      "title": "Caliper legs on two R waves read 800 ms. Every strip this winter starts from this one.",
+      "text": "Caliper legs on two R waves read 800 ms. Every strip this winter starts from this one.\n\nThis strip is the baseline every strip this winter gets compared against. Regular. A P wave before every QRS. The caliper tool is on: press and drag across the trace and the readout gives the interval in ms, in small boxes, in seconds, and as a rate if the span is one R to R. One small box is 40 ms at 25 mm/s. The six-second strip is 30 large boxes. Its clinical pearl: always start ECG interpretation by identifying the baseline rhythm. Name the rhythm and the rate; the answer is in the first comment.\n\nComment the rhythm and the rate, then open the waveform library and put the caliper on it yourself.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #ECG #RhythmStrip #CriticalCareNursing",
+      "first_comment_text": "Normal Sinus Rhythm at 75 bpm. The caliper converts an R–R span to rate as 60,000 / ms: 60,000 / 800 = 75. 800 ms is 20 small boxes (40 ms each) or 4 large boxes. Pattern 'Normal Sinus Rhythm' (id nsr), statref://waveforms?category=cardiac&topic=nsr; normal values as listed: Rate 60–100 bpm | PR 0.12–0.20 s | QRS <0.12 s | QTc <0.44 s. The same morphology above 100 bpm has its own entry, Sinus Tachycardia, and it will come back this winter. Related card: statref://card/12-lead-ecg-interpretation.",
+      "scheduled_at_utc": "2026-11-08T15:00:00.000Z",
+      "scheduled_at_local": "2026-11-08T10:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-14046839628193525300.jpeg",
+          "type": "image",
+          "alt": "ECG strip on black in Tenetrix Insight with two yellow caliper legs on consecutive R waves and a readout of 800 ms, pattern name cropped.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-14046839628193525300.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007892",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "405007961",
+      "brand_id": "7530099",
+      "title": "The MTP card's bottom line: activate on clinical judgement, never on a hemoglobin.",
+      "text": "The MTP card's bottom line: activate on clinical judgement, never on a hemoglobin.\n\nThe Hemorrhagic Shock / Massive Transfusion bundle gathers the set: the MTP card, Trauma Assessment, the TXA and calcium chloride entries, and Tuesday's shock index. Keep: 1:1:1 pRBC to FFP to platelets; pack 1 is 6 units pRBC, 6 units FFP, 1 apheresis platelets; calcium 1 to 2 g IV per 4 units pRBC; lethal triad is temperature under 35 °C, pH under 7.2, coagulopathy. Score it: Revised Trauma Score for GCS 10, SBP 80, RR 32 returns 5.88, moderate mortality risk. November is National Diabetes Month; the Hyperosmolar Hyperglycemic State bundle is under Endocrine / Metabolic on the Conditions list. It is also National Family Caregivers Month, for the people caring for someone at home. Next week: breathing and oxygen, and ventilation is not oxygenation.\n\nOpen the Hemorrhagic Shock / Massive Transfusion bundle before week two starts.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #MassiveTransfusion #TraumaNursing #Paramedic",
+      "first_comment_text": "Bundle: statref://conditions/hemorrhagic-shock. Card quoted: statref://card/massive-transfusion-protocol (bottom line, MTP product ratios, cooler pack 1, pearls, lethal triad). Calculator: statref://calculators/revised_trauma_score, RTS = 0.9368 × GCS_c + 0.7326 × SBP_c + 0.2908 × RR_c; for GCS 10 (coded 3), SBP 80 (coded 3), RR 32 (coded 3) the app returns 5.88 (range 0–7.84), moderate mortality risk; source Champion HR et al., J Trauma 1989. Diabetes Month pointer: statref://conditions, Endocrine / Metabolic group (Hyperosmolar Hyperglycemic State bundle). Week 2 opens Monday with the Oxygen Delivery Devices card.",
+      "scheduled_at_utc": "2026-11-08T23:00:00.000Z",
+      "scheduled_at_local": "2026-11-08T18:00:00",
+      "timezone": "America/New_York",
+      "draft": false,
+      "isDraft": false,
+      "derived_status": "scheduled",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-18010713007586122868.jpeg",
+          "type": "image",
+          "alt": "Hemorrhagic Shock / Massive Transfusion condition bundle in Tenetrix Insight listing cards, medications and calculators on a dark screen.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-18010713007586122868.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "405007961",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "402745007",
+      "brand_id": "7530099",
+      "title": "Nasal cannula at 6 L/min: roughly 44% FiO2. Non-rebreather at 15: up to 95%.",
+      "text": "Nasal cannula at 6 L/min: roughly 44% FiO2. Non-rebreather at 15: up to 95%.\n\nFlow rate is not FiO2. From the card Oxygen Delivery Devices: Nasal cannula, 1–6 L/min: FiO2 about 20% + (4% × L/min), so 24% at 1 L and 44% at 6. Simple face mask, 5–10 L/min, 35–50%, never below 5 L/min or the patient rebreathes CO2. Venturi, fixed 24, 28, 31, 35, 40 or 50% by adapter. Non-rebreather, 10–15 L/min, 60–95%, and the reservoir bag must stay inflated. High-flow nasal cannula, up to 60 L/min, 21–100%, with dead-space washout and a mild PEEP effect. Every one of these changes the oxygen going in. None of them tells you whether CO2 is coming out. That is this week's mechanism: ventilation is not oxygenation. The last slide is the Breathing and oxygen module, whose Foundations lessons walk the same path from air to tissue. Foundations is an optional one-time purchase. Swipe, then save this for the next time you chart it.\n\nOpen Oxygen Delivery Devices in Tenetrix Insight, link in bio.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #MechanismMonday #OxygenTherapy #NurseEducation",
+      "first_comment_text": "Card: Oxygen Delivery Devices (statref://card/oxygen-delivery-devices). Sources on the card: BTS 2017 Guideline for Oxygen Use in Adults; AARC Oxygen Therapy for Adults in the Acute Care Facility; Egan's Fundamentals of Respiratory Care, 12th ed. Module: Breathing and oxygen — distinguish ventilation, gas exchange and oxygen carriage.",
+      "scheduled_at_utc": "2026-11-09T15:00:00.000Z",
+      "scheduled_at_local": "2026-11-09T10:00:00",
+      "timezone": "America/New_York",
+      "draft": true,
+      "isDraft": true,
+      "derived_status": "draft",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-8727908542438140246.jpeg",
+          "type": "image",
+          "alt": "Black slide reading Flow rate is not FiO2, with the line Device to FiO2, as the card lists it.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-8727908542438140246.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-8875751353510283526.jpeg",
+          "type": "image",
+          "alt": "Oxygen Delivery Devices card, nasal cannula section with FiO2 from 24% at 1 L/min to 44% at 6 L/min.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-8875751353510283526.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-11516185395634598337.jpeg",
+          "type": "image",
+          "alt": "Oxygen Delivery Devices card, simple face mask and Venturi mask sections.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-11516185395634598337.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-4880114903356431211.jpeg",
+          "type": "image",
+          "alt": "Oxygen Delivery Devices card, non-rebreather mask and high-flow nasal cannula sections.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-4880114903356431211.jpeg"
+        },
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-18022124179274482956.jpeg",
+          "type": "image",
+          "alt": "Breathing and oxygen module screen in Tenetrix Insight listing the Oxygen: air to tissue lesson.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-18022124179274482956.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "402745007",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    },
+    {
+      "id": "402745060",
+      "brand_id": "7530099",
+      "title": "Three phases, one square wave, and a number a monitor should print beside every breath.",
+      "text": "Three phases, one square wave, and a number a monitor should print beside every breath.\n\nStrip Monday. Label cropped. This trace comes from the Respiratory and Ventilator family in the waveform library, default parameters, nothing adjusted. Three things to name in the comments: the pattern, the three phases the shape is divided into, and the number a monitor should print beside it. One more for the paramedics: what does a sudden loss of this waveform mean in the back of the truck? The answer, the phase names and the equipment card that goes with it are in the first comment. Next Monday's strip comes from the same family.\n\nGuess in the comments, then open the waveform library in Tenetrix Insight, link in bio.\n\nhttps://tenetrix.org/projects/tenetrix-insight?utm_source=facebook&utm_medium=organic_social&utm_campaign=tenetrix_winter_2026_27&utm_content=ti042\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #StripMonday #AirwayManagement #Paramedic",
+      "first_comment_text": "Normal Capnography. Phases as the app names them: Phase I dead space, Phase II mixing, Phase III alveolar plateau. A square waveform indicates complete exhalation. ETCO2 35–45 mmHg, matching the respiratory rate. The pearl: sudden loss of waveform = tube displacement, cardiac arrest, or disconnect. The card Capnography (EtCO2) (statref://card/equip-capnography) adds the troubleshooting line — sudden flat line: verify ETT placement immediately, check for circuit disconnection, tube displacement or apnea — and the CPR lines: compression target EtCO2 above 10 mmHg, ROSC shows as a sudden spike to above 30–40 mmHg. Sources on the card: AARC 2011 Clinical Practice Guideline, AHA ACLS 2020, ASA monitoring standards. Open: statref://waveforms?category=respiratory&topic=capnography-normal",
+      "scheduled_at_utc": "2026-11-09T22:00:00.000Z",
+      "scheduled_at_local": "2026-11-09T17:00:00",
+      "timezone": "America/New_York",
+      "draft": true,
+      "isDraft": true,
+      "derived_status": "draft",
+      "auto_publish": true,
+      "media": [
+        {
+          "url": "https://static.metricool.com/planner/202610/7449381-file-14457016691213229123.jpeg",
+          "type": "image",
+          "alt": "Yellow waveform on a dark monitor: flat baseline, sharp upstroke, flat plateau, sharp downstroke, repeating; no label shown.",
+          "thumbnail_url": "https://static.metricool.com/planner/202610/7449381-file-14457016691213229123.jpeg"
+        }
+      ],
+      "providers": [
+        {
+          "platform": "facebook",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        },
+        {
+          "platform": "instagram",
+          "status": "PENDING",
+          "detailed_status": "Pending",
+          "post_url": null,
+          "publication_verified_independently": false
+        }
+      ],
+      "source": "Metricool",
+      "source_post_id": "402745060",
+      "source_checked_at_utc": "2026-11-02T15:46:18Z",
+      "publication_date_scope": "Metricool publicationDate record time; not proof of exact publication completion time."
+    }
+  ]
+}

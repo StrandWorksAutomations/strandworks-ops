@@ -1,0 +1,47 @@
+{
+  "checked_at_utc": "2026-11-02T16:03:25Z",
+  "source": "Meta Ads Manager, reopened published ad and ad-set Review",
+  "campaigns": [
+    {
+      "id": "120246988753830669",
+      "brand_id": "7530099",
+      "title": "Student feature tour V5",
+      "status": "Preparing",
+      "delivery_verified": false,
+      "meta_review_approval_verified": false,
+      "starts_at_utc": "2026-11-02T16:00:00Z",
+      "ends_at_utc": "2026-11-09T16:00:00Z",
+      "budget_usd": 35,
+      "budget_type": "lifetime",
+      "placements": [
+        "Facebook Feed",
+        "Facebook Stories",
+        "Facebook Reels",
+        "Instagram Feed",
+        "Instagram Stories",
+        "Instagram Reels"
+      ],
+      "poster_url": "/marketing/tenetrix-feature-tour-v5.jpg",
+      "source_url": "https://adsmanager.facebook.com/adsmanager/manage/ads?act=694871183589403&selected_ad_ids=120246988753830669",
+      "notes": "US women ages 18-40, iOS 16+, Nurse education interest. Audience expansion is off.",
+      "instagram_account": "tenetrixinsight",
+      "switch": "ON",
+      "publish_button_enabled": false,
+      "discard_draft_button_enabled": false,
+      "probe_ad_off_and_unpublished": true,
+      "amount_spent_usd_observed": 0
+    }
+  ],
+  "poster_provenance": {
+    "source": "Approved Tenetrix-Student-Feature-Tour-v5.mp4",
+    "source_sha256": "f261f23241aa1aa6295f5bde6b8321e2c87950873c1ba4aa8a68acf8a44bc891",
+    "source_frame_seconds": 1.1,
+    "poster_sha256": "657275390280f2d9bc46fbccb85f2678ed201b6ea3868e10e8f39892c00ee67b",
+    "output_dimensions": [
+      405,
+      720
+    ],
+    "private_account_screenshot_copied": false
+  },
+  "publication_verified_at_utc": "2026-11-02T15:54:42Z"
+}

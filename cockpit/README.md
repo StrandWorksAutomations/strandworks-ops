@@ -40,6 +40,16 @@ dates use Supabase through server-only REST calls.
   emails, open owner-loop decisions and stalled rulings. Missing sources
   are shown as unavailable, never as a clear queue. Retired QA questions
   are excluded. Source mappings live in `src/lib/businesses.ts`.
+- **Marketing** — an authenticated visual week board and gallery of actual
+  Metricool post media, captions and source-reported states. Account strips
+  cover the connected brands; only checked queues show post counts. A draft
+  flag takes precedence over provider pending states, and elapsed pending
+  slots require verification. Paid creative and its verified Meta settings
+  are shown separately. Source snapshots live in
+  `registers/marketing-snapshot.json` and `registers/marketing-paid.json`;
+  their check times and coverage are visible. This is a saved read-only
+  overview, not an automatic feed or a second publishing queue. Creative
+  posters under `/marketing/` pass through the existing session middleware.
 - **Replies** — group replies are held separately until a current Facebook check
   confirms the Kinetic Clinician Page's comment box in that exact group. Personal
   membership and pending Page join requests are shown separately from usable Page
