@@ -30,6 +30,36 @@ UserPromptSubmit  → swd hook --event prompt     (re-checks at most every 45 s,
 
 Backend: Supabase `bniuiwbwumpymxiesyyt`, migration `owner_loop_v1`. Tables are RLS-locked; agents use the token-gated `owner_loop_ask / inbox / get / transition` RPCs; only the cockpit's service role can call `owner_loop_rule`.
 
+### Local portfolio runtime (installed November 2, 2026)
+
+From the current source checkout, preview the filesystem-only installation, then
+apply with a backup folder outside the repository and runtime:
+
+```sh
+python3 loop/install_local_runtime.py
+python3 loop/install_local_runtime.py --apply --backup-dir /path/outside-repo/backups
+python3 -m unittest discover -s loop -p test_install_local_runtime.py -v
+```
+
+The installer copies `swd`, `reconcile.py`, `publish_local.py`, `meter.py` and
+`portfolio-push.json` into `~/PROJECTS/_ops/portfolio-control/`, with a SHA-256
+receipt at `runtime-install.json`. It copies the marketing snapshot and latest
+dated saved scout unchanged, retaining their original check times. It validates
+`bash -n`, keeps exactly one 900-second publisher hook in the existing master,
+and retires only `qa_inbox_sweep`, `drift_gmail_sweep`, `drift_appstore_sweep`,
+`drift_morning_brief`, `drift_morning_ingest_sweep`, `drift_morning_ingest` and
+`drift_evening_push`. Unrelated jobs and paused job-watch stay intact. It creates
+no scheduler and runs no source job or remote publication. Re-run after intended
+helper, plan or saved-evidence updates; the saved scout copy is not a new scan.
+
+| Installed entrypoint | Purpose / existing cadence |
+|---|---|
+| `loop/portfolio-push.json` → `~/PROJECTS/_ops/portfolio-control/portfolio-push.json` | Eight approved objectives, allocations, reset cutoffs and dated reviews; shared live records are read through `swd focus -p portfolio --json`. |
+| `~/.local/bin/swd` / `~/PROJECTS/_ops/portfolio-control/swd` | Shared focus, owner decisions, claims, checkpoints, reports and metrics. Existing `loop/install.sh` refreshes the PATH CLI copy; the runtime installer refreshes its sibling helper copy. |
+| `~/PROJECTS/_ops/lib/master_run.sh` → `_ops/portfolio-control/publish_local.py` | Existing `com.claude.schedule.master-runner` launch agent; publisher interval 900 seconds. Saved inputs are runtime `marketing-snapshot.json` and `inputs/tech-scout/*tech-scout*.md`; local completion is `~/.cache/strandworks/portfolio-local-publisher/latest.json`. |
+| Droplet `/opt/claude-ops/portfolio-control/run.sh` → `reconcile.py` + sibling `swd` | Existing root cron: `*/15 * * * * /opt/claude-ops/portfolio-control/run.sh >> /var/log/portfolio-control.log 2>&1 # portfolio-control-managed`. State/completion: `/var/lib/strandworks/portfolio-control/{state.json,latest.json}`. Existing owner-loop credentials and Linear key are reused; no LLM call. This local installer does not modify the droplet. |
+| Codex automation `portfolio-reset-push` | Existing active hourly heartbeat (`~/.codex/automations/portfolio-reset-push/automation.toml`); agent continuation is separate from the local publisher and droplet reconciliation. |
+
 ## Shared project focus and work handoffs
 
 `portfolio_control_v1` adds shared outcomes, metric observations, session claims
