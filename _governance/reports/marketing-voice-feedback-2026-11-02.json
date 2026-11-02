@@ -1,7 +1,6 @@
 {
-  "status": "LOCAL_GUI_VERIFIED_PENDING_PRODUCTION_DEPLOY",
+  "status": "PRODUCTION_DEPLOYED_GUI_SAVE_AND_AUTHORING_VERIFIED",
   "date": "2026-11-02",
-  "test_data_only": true,
   "qa_data_root": "/Users/jonathanbouren/.codex/tmp/marketing-voice-qa-35sylp7k",
   "canonical_seed": {
     "revision": 0,
@@ -25,12 +24,14 @@
     "Original social snapshot and paid snapshot unchanged"
   ],
   "browser_limit": "Viewport emulation; physical phone keyboard not tested",
-  "production_limit": "Production authenticated UI and GitHub-backed writes not yet exercised. GitHub CAS is covered by mocked HTTP tests.",
+  "production_limit": "Per-post feedback variants and concurrent edit conflicts verified locally; live GitHub-backed save verified through an unchanged approved rule. Physical phone keyboard not tested.",
   "queue_changes": false,
   "auth_changes": false,
   "screenshots": [
     "/Users/jonathanbouren/.codex/tmp/marketing-voice-feedback/phone-2026-11-02.png",
-    "/Users/jonathanbouren/.codex/tmp/marketing-voice-feedback/phone-form-2026-11-02.png"
+    "/Users/jonathanbouren/.codex/tmp/marketing-voice-feedback/phone-form-2026-11-02.png",
+    "/Users/jonathanbouren/.codex/tmp/marketing-voice-feedback/production-saved-rules-2026-11-02.png",
+    "/Users/jonathanbouren/.codex/tmp/marketing-voice-feedback/production-phone-form-2026-11-02.png"
   ],
   "qa_fixture_reset_to_clean_seed": true,
   "automated_checks": {
@@ -40,5 +41,31 @@
     "typescript": "PASS in production build",
     "next_version": "15.5.20",
     "integrated_main_base": "5e1c13d"
+  },
+  "verified_at": "2026-11-02T18:59:34.643985+00:00",
+  "local_test_data_only": true,
+  "production_verification": {
+    "url": "https://dashboard.strandautomationworks.com/marketing",
+    "deployment_id": "dpl_EBuKL3fTmsJWY5cq4dJinoz5R79p",
+    "code_commit": "8c601f13cd01da90767ef81dcf5723106e2aaff4",
+    "ready_state": "READY",
+    "authenticated_guide_load": true,
+    "save_test": "Existing approved Tenetrix rule saved with identical text/scope/active state; no synthetic preferences",
+    "live_revision": 1,
+    "rules": 7,
+    "feedback": 0,
+    "save_commit": "d0b703cddf4f1b84db7afc918c81f164e5826aed",
+    "persisted_after_browser_reload": true,
+    "authoring_helper_fetched_same_revision": true,
+    "anonymous_page_status": 307,
+    "anonymous_api_status": 401
+  },
+  "authoring_integration": {
+    "repository": "StrandWorksAutomations/advertising",
+    "commit": "deb40942ae4a42b49405a63155d6eb47a162188c",
+    "tests_passed": 9,
+    "fresh_source_mode": "current_main",
+    "observed_voice_revision": 1,
+    "observed_voice_source_sha": "d0b703cddf4f1b84db7afc918c81f164e5826aed"
   }
 }
