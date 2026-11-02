@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "revision": 9,
-  "updated_at": "2026-11-02T19:58:14.453Z",
+  "revision": 10,
+  "updated_at": "2026-11-02T20:11:35.859Z",
   "rules": [
     {
       "id": "shared-plain-language",
@@ -146,6 +146,21 @@
       "active": true,
       "created_at": "2026-11-02T19:58:14.453Z",
       "updated_at": "2026-11-02T19:58:14.453Z"
+    },
+    {
+      "id": "d7f86df2-b544-427f-a922-ee8d804943de",
+      "brand_id": "7530099",
+      "post_id": "405007560",
+      "post_uuid": null,
+      "original_text": "Four collared patients, GCS 15, stable vitals. One leaves without imaging. Which?\n\nAll four are alert blunt-trauma patients, aged 16 or over, seen within 48 hours, systolic at or above 90 and breathing 10 to 24 a minute, so the Canadian C-Spine Rule applies. A: 68 years old, ground-level fall, no deficits, no midline tenderness. B: 30 years old, simple rear-end collision, walked at the scene, no midline tenderness, actively turns the head 45 degrees each way. C: 24 years old, dove head-first into shallow water, neck pain only. D: 40 years old, tripped on a curb, immediate neck pain, midline tenderness, has not sat up or walked since. Which one reaches NO RADIOGRAPHY on the algorithm, and which rule question stops each of the others? Answer and the three questions in the first comment.\n\nComment A, B, C or D, then check the flowchart on the Cervical Spine Clearance card.\n\nhttps://apps.apple.com/us/app/tenetrix-insight/id6755968457\n\nReference only. Verify against current guidelines and institutional protocols.\n\n#TenetrixInsight #CSpine #EmergencyMedicine #TraumaNursing",
+      "original_sha256": "33ad1dd2c2512a0957aadb79e299f69eb9f6e31b348c0fe912488daeb9e245a5",
+      "scope": "brand",
+      "flags": [],
+      "rewrite": "Four trauma patients in cervical collars. \nOne can be transported immediately, which is it?",
+      "note": "Four collared patients",
+      "active": true,
+      "created_at": "2026-11-02T20:11:35.859Z",
+      "updated_at": "2026-11-02T20:11:35.859Z"
     }
   ],
   "history": [
@@ -245,6 +260,17 @@
       "action": "save_feedback",
       "entity": "feedback",
       "entity_id": "8d8901f6-669a-48d4-a773-813428cf80d6",
+      "scope": "brand",
+      "brand_id": "7530099"
+    },
+    {
+      "revision": 10,
+      "at": "2026-11-02T20:11:35.859Z",
+      "actor": "owner",
+      "source": "cockpit",
+      "action": "save_feedback",
+      "entity": "feedback",
+      "entity_id": "d7f86df2-b544-427f-a922-ee8d804943de",
       "scope": "brand",
       "brand_id": "7530099"
     }
