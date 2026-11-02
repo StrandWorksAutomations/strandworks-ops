@@ -31,6 +31,57 @@ OLD_COMMENT = "# Portfolio receipt publisher: reads existing evidence; no scans,
 SCHEDULE = re.compile(r'''^\s*if\s+should_run_(?:interval(?:_backoff)?|daily|weekly)\s+["']([^"']+)["'].*;\s*then\s*$''')
 EXECUTE = re.compile(r'''\bexecute_job\s+["']([^"']+)["']''')
 SCOUT = re.compile(r"^(\d{4}-\d{2}-\d{2})-(\d{6})-.*tech-scout.*\.md$")
+GUIDANCE_BEGIN = "<!-- BEGIN portfolio-control quota handoff -->"
+GUIDANCE_END = "<!-- END portfolio-control quota handoff -->"
+QUOTA_GUIDANCE = """## Portfolio quota handoff — approved November 2–4, 2026
+
+For portfolio packets, use the fixed kickoff provider allocations in
+`~/PROJECTS/_ops/portfolio-control/portfolio-push.json` and the canonical
+`meter.py` beside it. Run `swd focus -p portfolio --json` for current shared
+goals, source-dated quota metrics and handoffs; these global instructions route
+the checks and do not record live percentages or grant additional allowance.
+
+- Before sustained provider work, after every packet, and at least every two
+  hours while active, run the correct provider meter. Include provider usage
+  from other chats; a packet's token totals or estimated dollars are not quota.
+- Codex: `python3 ~/PROJECTS/_ops/portfolio-control/meter.py codex --publish`
+  reads actual provider rate-limit reports across local sessions.
+- Claude: obtain the latest native `/usage` snapshot through the existing
+  built-in route, retaining every exposed limit row, then run
+  `python3 ~/PROJECTS/_ops/portfolio-control/meter.py claude --claude-snapshot /path/to/latest-native-usage.json --publish`.
+  Keep additional limit rows in the snapshot; never infer allowance from
+  tokens or dollars. Ask Jonathan for a snapshot only if the built-in route
+  is unavailable.
+- Unknown, invalid, older-than-two-hours or newly reset allowance blocks work
+  by that provider. Refresh through the built-in route when available; proceed
+  only when the meter permits every exposed limit. A reset grants no new
+  allocation. Preserve the default model and speed.
+- Stop at the earliest approved cap, 30 minutes before any verified provider
+  reset, or this plan's close: November 4, 2026 at 00:00 America/New_York.
+  Later allocations require Jonathan's explicit authorization.
+"""
+
+
+def rewrite_guidance(text):
+    """Maintain only this installer's marked quota block, preserving the rest."""
+    block = GUIDANCE_BEGIN + "\n" + QUOTA_GUIDANCE.rstrip() + "\n" + GUIDANCE_END
+    if text.count(GUIDANCE_BEGIN) != text.count(GUIDANCE_END) or text.count(GUIDANCE_BEGIN) > 1:
+        raise ValueError("ambiguous quota guidance markers")
+    if GUIDANCE_BEGIN in text:
+        start = text.index(GUIDANCE_BEGIN)
+        end = text.index(GUIDANCE_END)
+        if end < start:
+            raise ValueError("reversed quota guidance markers")
+        return text[:start] + block + text[end + len(GUIDANCE_END):]
+    separator = "" if not text or text.endswith("\n\n") else "\n" if text.endswith("\n") else "\n\n"
+    return text + separator + block + "\n"
+
+
+def guidance_targets(projects_root):
+    """Use existing portfolio/global guidance only; custom roots stay isolated."""
+    return (projects_root / "AGENTS.md", projects_root / "CLAUDE.md",
+            projects_root.parent / ".codex/AGENTS.md",
+            projects_root.parent / ".claude/CLAUDE.md")
 
 
 def sha(data):
@@ -191,8 +242,13 @@ def install(source_repo, projects_root, backup_dir=None, apply=False):
     objectives = [item["id"] for item in manifest["objectives"]]
     if len(objectives) != 8 or len(set(objectives)) != 8:
         raise ValueError("expected eight distinct approved portfolio objectives")
+    guidance = {}
+    for path in guidance_targets(projects_root):
+        if path.is_file():
+            original = path.read_bytes()
+            guidance[path] = (original, rewrite_guidance(original.decode()).encode())
     receipt = {
-        "version": 2, "source_repo": "StrandWorksAutomations/strandworks-ops",
+        "version": 3, "source_repo": "StrandWorksAutomations/strandworks-ops",
         "source_branch": git_value(source_repo, "branch", "--show-current"),
         "source_commit": git_value(source_repo, "rev-parse", "HEAD"),
         "source_dirty": bool(git_value(source_repo, "status", "--porcelain", "--", "loop", "registers/marketing-snapshot.json", "briefings/" + scout.name)),
@@ -204,6 +260,7 @@ def install(source_repo, projects_root, backup_dir=None, apply=False):
                        "scope": "Existing saved receipt only; no new research executed"},
         "master_sha256": sha(rewritten.encode()), "publisher_interval_seconds": 900,
         "retired_jobs": list(RETIRED), "scheduler_created": False,
+        "guidance_sha256": {str(path): sha(updated) for path, (_, updated) in guidance.items()},
     }
     receipt_path = runtime / "runtime-install.json"
     previous = json.loads(receipt_path.read_bytes()) if receipt_path.exists() else {}
@@ -214,6 +271,7 @@ def install(source_repo, projects_root, backup_dir=None, apply=False):
                if not (runtime / name).exists() or (runtime / name).read_bytes() != data]
     if original_master != rewritten:
         planned.append(str(master))
+    planned.extend(str(path) for path, (original, updated) in guidance.items() if original != updated)
     if not receipt_path.exists() or receipt_path.read_bytes() != receipt_bytes:
         planned.append(str(receipt_path))
     if apply:
@@ -222,10 +280,14 @@ def install(source_repo, projects_root, backup_dir=None, apply=False):
         backup_dir = Path(backup_dir).resolve()
         if backup_dir.is_relative_to(source_repo) or backup_dir.is_relative_to(runtime):
             raise ValueError("backups must be outside source repository and runtime")
+        if any(path.read_bytes() != original for path, (original, _) in guidance.items()):
+            raise ValueError("guidance changed during preflight; retry against a stable snapshot")
         # Backups precede each replacement. Source files are never changed.
         for name, data in payloads.items():
             replace(runtime / name, data, 0o755 if name == "swd" else stat.S_IMODE(source_info[name].st_mode), backup_dir, source_info[name])
         replace(master, rewritten.encode(), stat.S_IMODE(master.stat().st_mode), backup_dir)
+        for path, (_, updated) in guidance.items():
+            replace(path, updated, stat.S_IMODE(path.stat().st_mode), backup_dir)
         replace(receipt_path, receipt_bytes, 0o644, backup_dir)
         bash_check(master.read_text())
     return {"status": "installed" if apply else "plan", "changed_paths": planned,

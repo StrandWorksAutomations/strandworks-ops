@@ -47,6 +47,14 @@ class RuntimeInstallationTests(unittest.TestCase):
         self.scout.write_text("---\ndate: 2026-11-02\ntime: 09:06 CST\n---\nSaved research, not a new run.\n")
         os.utime(self.marketing, ns=(1600000000000000000, 1600000000000000000))
         os.utime(self.scout, ns=(1600000001000000000, 1600000001000000000))
+        self.guidance = {}
+        for index, path in enumerate(installer.guidance_targets(self.projects)):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            content = (f"# Existing guidance {index}\n\n"
+                       "## Company facts\nStrandworks Medical Resources LLC and SAG International are separate.\n\n"
+                       "## Owner loop\nPreserve existing approval and work handoff rules.\n")
+            path.write_text(content)
+            self.guidance[path] = content.encode()
 
     def apply(self):
         return installer.install(self.repo, self.projects, self.backups, apply=True)
@@ -91,12 +99,59 @@ class RuntimeInstallationTests(unittest.TestCase):
         subprocess.run(command, capture_output=True, check=True)
         before = {str(p): p.read_bytes() for p in self.runtime.rglob("*") if p.is_file()}
         master = self.master.read_bytes()
+        guidance = {path: path.read_bytes() for path in self.guidance}
         backup_names = sorted(p.name for p in self.backups.iterdir())
         result = subprocess.run(command, capture_output=True, text=True, check=True)
         self.assertEqual(json.loads(result.stdout)["changed_paths"], [])
         self.assertEqual(before, {str(p): p.read_bytes() for p in self.runtime.rglob("*") if p.is_file()})
         self.assertEqual(master, self.master.read_bytes())
+        self.assertEqual(guidance, {path: path.read_bytes() for path in self.guidance})
         self.assertEqual(backup_names, sorted(p.name for p in self.backups.iterdir()))
+
+    def test_quota_guidance_updates_only_its_block_and_preserves_company_facts(self):
+        prefix = "# Owner guidance\n\n## Companies\nStrandworks LLC; separate SMR and SAG ventures.\n\n"
+        suffix = "\n\n## Unrelated delivery rules\nKeep this text and its spacing.\n"
+        old = installer.GUIDANCE_BEGIN + "\nOld quota routing.\n" + installer.GUIDANCE_END
+        result = installer.rewrite_guidance(prefix + old + suffix)
+        self.assertTrue(result.startswith(prefix))
+        self.assertTrue(result.endswith(suffix))
+        self.assertNotIn("Old quota routing.", result)
+        self.assertEqual(result.count(installer.GUIDANCE_BEGIN), 1)
+        self.assertEqual(result, installer.rewrite_guidance(result))
+        for text in (prefix, prefix.rstrip(), ""):
+            appended = installer.rewrite_guidance(text)
+            self.assertTrue(appended.startswith(text))
+            self.assertEqual(appended, installer.rewrite_guidance(appended))
+
+    def test_install_backs_up_and_receipts_all_existing_guidance_without_changing_surroundings(self):
+        self.apply()
+        receipt = json.loads((self.runtime / "runtime-install.json").read_bytes())
+        for path, original in self.guidance.items():
+            updated = path.read_bytes()
+            self.assertTrue(updated.startswith(original))
+            self.assertEqual(updated.count(installer.GUIDANCE_BEGIN.encode()), 1)
+            self.assertEqual(receipt["guidance_sha256"][str(path.resolve())], installer.sha(updated))
+            backup = self.backups / (installer.sha(original)[:16] + "--" + path.name + ".bak")
+            self.assertEqual(backup.read_bytes(), original)
+
+    def test_ambiguous_quota_guidance_refuses_before_any_write(self):
+        path = next(iter(self.guidance))
+        for markers in (installer.GUIDANCE_BEGIN,
+                        installer.GUIDANCE_END + "\n" + installer.GUIDANCE_BEGIN,
+                        (installer.GUIDANCE_BEGIN + "\n" + installer.GUIDANCE_END + "\n") * 2):
+            with self.subTest(markers=markers):
+                path.write_text(markers)
+                with self.assertRaisesRegex(ValueError, "quota guidance markers"):
+                    self.apply()
+                self.assertEqual(path.read_text(), markers)
+                self.assertFalse(self.runtime.exists())
+                self.assertFalse(self.backups.exists())
+
+    def test_missing_guidance_is_not_created(self):
+        for path in self.guidance:
+            path.unlink()
+        self.apply()
+        self.assertTrue(all(not path.exists() for path in self.guidance))
 
     def test_mixed_job_or_unrecognized_active_retirement_refuses_without_writes(self):
         for bad in [runner().replace('execute_job "qa_inbox_sweep"', 'execute_job "unrelated"', 1), runner() + '\nexecute_job "qa_inbox_sweep" /bin/true\n']:
@@ -128,6 +183,7 @@ class RuntimeInstallationTests(unittest.TestCase):
         self.assertEqual(installer.install(self.repo, self.projects)["status"], "plan")
         self.assertFalse(self.runtime.exists())
         self.assertFalse(self.backups.exists())
+        self.assertEqual(self.guidance, {path: path.read_bytes() for path in self.guidance})
         for invalid_backup in [None, self.repo / "backups", self.runtime / "backups"]:
             with self.assertRaises(ValueError):
                 installer.install(self.repo, self.projects, invalid_backup, apply=True)
