@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.stubGlobal("React", React);
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-import { KINETIC_PAGE_ID, facebookGroupId, filterGroups, groupFilterCounts, pageAccessLabel, pageAccessReady, pendingDecision, replyGroupIds, replyPageAccess, resultLine, safeLinks, snoozedUntil, validateGroupJoined, validatePagePostAction, validateReplyAction, type KcGroup, type KcPageAccess, type KcReply } from "../src/lib/kc-replies";
+import { KINETIC_PAGE_ID, facebookGroupId, filterGroups, groupFilterCounts, latestJoinLimit, pageAccessLabel, pageAccessReady, pendingDecision, replyGroupIds, replyPageAccess, resultLine, safeLinks, snoozedUntil, validateGroupJoined, validatePagePostAction, validateReplyAction, type KcGroup, type KcPageAccess, type KcReply } from "../src/lib/kc-replies";
 import { JobLinks, ReplyCard } from "../app/replies/ReplyCard";
 import { GroupsPanel } from "../app/replies/GroupsPanel";
 
@@ -47,6 +47,30 @@ describe("full group inventory filters", () => {
     expect(html).toContain("Showing 1 of 156 groups");
     expect(html).toContain("EMS Jobs");
     expect(html).not.toContain("Travel Nursing");
+  });
+});
+
+describe("observed group join limits", () => {
+  const now = Date.parse("2026-11-02T01:00:00Z");
+  const event = { observed_at: "2026-11-02T00:54:28.205374+00:00", source_group_id: "860364397721438", source_url: "https://www.facebook.com/groups/860364397721438/", expires_at: null };
+  const limited: KcGroup = { id: event.source_group_id, name: "Kentucky EMS", meta: "", lane: "ems", status: "joined", url: event.source_url, stats: { page_access: { ...readyAccess, status: "unavailable" }, last_join_limit: event } };
+  it("finds the event in the full inventory even when the selected ready filter hides its group", () => {
+    const usable: KcGroup = { ...limited, id: "1", name: "EMS Jobs", stats: { page_access: readyAccess } };
+    const all = [usable, limited];
+    expect(filterGroups(all, "ready", "").map((g) => g.id)).toEqual(["1"]);
+    expect(latestJoinLimit(all, now)).toEqual(event);
+  });
+  it("selects the most recent observed event without inventing an expiry", () => {
+    const older = { ...limited, stats: { last_join_limit: { ...event, observed_at: "2026-11-01T12:00:00Z" } } };
+    expect(latestJoinLimit([limited, older], now)).toEqual(event);
+    expect(latestJoinLimit([limited, older], now)?.expires_at).toBeNull();
+  });
+  it("does not keep showing stale, future, invalid, or unrelated observations", () => {
+    for (const observed_at of ["2026-10-01T12:00:00Z", "2026-11-03T12:00:00Z", "invalid", "2026-11-02T00:54:28"]) {
+      expect(latestJoinLimit([{ ...limited, stats: { last_join_limit: { ...event, observed_at } } }], now)).toBeNull();
+    }
+    expect(latestJoinLimit([{ ...limited, id: "other" }], now)).toBeNull();
+    expect(latestJoinLimit([], now)).toBeNull();
   });
 });
 

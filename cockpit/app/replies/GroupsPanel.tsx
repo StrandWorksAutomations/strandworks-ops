@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GROUP_FILTERS, filterGroups, groupAccessStatus, groupFilterCounts, pageAccessHelp, pageAccessLabel, type GroupFilter, type KcGroup } from "@/lib/kc-replies";
+import { GROUP_FILTERS, filterGroups, groupAccessStatus, groupFilterCounts, latestJoinLimit, pageAccessHelp, pageAccessLabel, type GroupFilter, type KcGroup } from "@/lib/kc-replies";
 
 // The scan list is distinct from the Page's right to participate in each group.
 export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
@@ -13,6 +13,7 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
   const visible = filterGroups(groups, filter, query);
   const personal = groups.filter((g) => g.stats.personal_member_observed).length;
   const pageMembers = groups.filter((g) => g.stats.page_member_observed).length;
+  const joinLimit = latestJoinLimit(groups);
 
   async function markJoined(id: string) {
     setError(null);
@@ -32,6 +33,10 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
         {personal ? <> {personal} personal memberships recorded.</> : null}
         {pageMembers ? <> {pageMembers} Page memberships recorded.</> : null}
       </p>
+      {joinLimit ? <p className="card meta" role="status">
+        <strong>Last observed group join limit.</strong> Facebook limited the last group join attempt on <time dateTime={joinLimit.observed_at}>{new Date(joinLimit.observed_at).toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET</time>.
+        {" "}It gave no end time. Further join attempts were stopped after that notice.
+      </p> : null}
       <div className="group-controls">
         <label className="meta" htmlFor="group-search">Find a group</label>
         <input id="group-search" className="answer-input group-search" type="search" placeholder="Group name, topic or Facebook ID" value={query} onChange={(event) => setQuery(event.target.value)} />

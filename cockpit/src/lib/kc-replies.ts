@@ -46,9 +46,11 @@ export type KcPageAccess = {
 };
 export const UNKNOWN_PAGE_ACCESS: KcPageAccess = { status: "unknown", actor_id: KINETIC_PAGE_ID, checked_at: null, note: "", proof_url: "" };
 
+export type KcJoinLimit = { observed_at: string; source_group_id: string; source_url: string; expires_at: null };
+
 export type KcGroup = {
   id: string; name: string; meta: string; lane: string; status: "joined" | "to_join"; url: string;
-  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess; group_aliases?: string[]; personal_member_observed?: string | null; page_member_observed?: string | null };
+  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess; group_aliases?: string[]; personal_member_observed?: string | null; page_member_observed?: string | null; last_join_limit?: KcJoinLimit | null };
 };
 
 export type KcPagePost = { id: string; draft: string; links: KcJobLink[]; status: "draft" | "approved" | "posted" | "dismissed"; created_at: string };
@@ -197,6 +199,19 @@ export function groupFilterCounts(groups: KcGroup[]): Record<GroupFilter, number
   const counts = { ready: 0, pending: 0, unavailable: 0, unknown: 0, all: groups.length };
   for (const group of groups) counts[groupAccessStatus(group)] += 1;
   return counts;
+}
+
+/** A recent observed join-limit event, not a claim that the limit is still active. */
+export function latestJoinLimit(groups: KcGroup[], at = Date.now()): KcJoinLimit | null {
+  const events = groups.flatMap((group) => {
+    const event = group.stats.last_join_limit;
+    if (!event || event.expires_at !== null || !/(?:Z|[+-]\d{2}:\d{2})$/.test(event.observed_at)) return [];
+    const observed = Date.parse(event.observed_at);
+    if (!Number.isFinite(observed) || observed > at || at - observed > 14 * 86400_000) return [];
+    if (!groupIds(group).includes(event.source_group_id) || facebookGroupId(event.source_url) !== event.source_group_id) return [];
+    return [event];
+  });
+  return events.sort((a, b) => Date.parse(b.observed_at) - Date.parse(a.observed_at))[0] ?? null;
 }
 
 /** Search the full saved inventory; filters never remove a group from that inventory. */
