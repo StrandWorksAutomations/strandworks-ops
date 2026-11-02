@@ -228,6 +228,10 @@ class PortfolioDatabaseTests(unittest.TestCase):
 
 
 class PortfolioCliTests(unittest.TestCase):
+    def test_owner_time_preserves_eastern_calendar_day_and_orientation_hour(self):
+        self.assertEqual(swd.owner_time("2026-11-04T05:00:00Z"), "2026-11-04 00:00 EST")
+        self.assertEqual(swd.owner_time("2026-11-03T14:00:00Z"), "2026-11-03 09:00 EST")
+        self.assertEqual(swd.owner_time("2026-07-04T04:00:00Z"), "2026-07-04 00:00 EDT")
     def test_human_focus_is_compact_but_json_and_history_retain_full_evidence(self):
         long = "receipt-detail " * 1000
         value = {"status": "stale", "source_observed_at": "2026-11-01T12:00:00Z",

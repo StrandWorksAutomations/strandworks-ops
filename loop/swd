@@ -129,6 +129,18 @@ def parse_due(s):
     return (dt if dt.tzinfo else dt.replace(tzinfo=OWNER_TZ)).isoformat()
 
 
+def owner_time(value):
+    if not value:
+        return "unset"
+    try:
+        when = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=OWNER_TZ)
+        return when.astimezone(OWNER_TZ).strftime("%Y-%m-%d %H:%M %Z")
+    except (TypeError, ValueError):
+        return str(value)
+
+
 def ago(iso):
     if not iso:
         return "—"
@@ -162,7 +174,7 @@ def fmt_item(i, verbose=False):
     head = f"{i['ref']} [{i['status']}] ({i['project']}, {i['kind']}, from {i['origin_agent']}, {ago(i['created_at'])})"
     lines = [head, f"  {i['title']}"]
     if i.get("due_at"):
-        lines.append(f"  due: {i['due_at'][:16].replace('T', ' ')} ({ago(i['due_at'])})")
+        lines.append(f"  due: {owner_time(i['due_at'])} ({ago(i['due_at'])})")
     if i.get("ruling"):
         via = i.get("ruled_via") or ""
         source = "dashboard" if via == "dashboard" else f"given in chat, recorded by {via[5:] or 'an agent'}"
@@ -310,11 +322,11 @@ def metric_preview(value, limit=180):
 
 
 def focus_text(snapshot):
-    lines = [f"PORTFOLIO FOCUS — checked {snapshot['checked_at']}"]
+    lines = [f"PORTFOLIO FOCUS — checked {owner_time(snapshot['checked_at'])}"]
     for objective in snapshot.get("objectives", []):
         lines.append(f"- {objective['id']} [{objective['status']}] {objective['title']} ({objective['project']})")
         lines.append(f"  outcome: {compact_text(objective['outcome'])}")
-        lines.append(f"  owner: {objective.get('accountable_owner') or 'unset'}; target: {objective.get('target_at') or 'unset'}; next review: {objective.get('review_at') or 'unset'}")
+        lines.append(f"  owner: {objective.get('accountable_owner') or 'unset'}; target: {owner_time(objective.get('target_at'))}; next review: {owner_time(objective.get('review_at'))}")
         if objective.get("issue_ids"):
             lines.append("  Linear: " + ", ".join(objective["issue_ids"]))
         latest = {}
@@ -326,13 +338,13 @@ def focus_text(snapshot):
         for metric in objective.get("metric_definitions", []):
             observation = latest.get(metric["id"])
             value = metric_preview(observation["value"]) if observation else "unknown"
-            lines.append(f"  metric {metric['id']}: {value}" + (f" (observed {observation['observed_at']})" if observation else " (no observation)"))
+            lines.append(f"  metric {metric['id']}: {value}" + (f" (observed {owner_time(observation['observed_at'])})" if observation else " (no observation)"))
     now = datetime.now(timezone.utc)
     for lease in snapshot.get("leases", []):
         if lease.get("released_at"):
             continue
         expired = datetime.fromisoformat(lease["expires_at"].replace("Z", "+00:00")) <= now
-        lines.append(f"- {lease['issue_id']}: {'RECOVERY REQUIRED' if expired else 'claimed'} by {lease['agent']} session {lease['session_id']}; expires {lease['expires_at']}")
+        lines.append(f"- {lease['issue_id']}: {'RECOVERY REQUIRED' if expired else 'claimed'} by {lease['agent']} session {lease['session_id']}; expires {owner_time(lease['expires_at'])}")
         if lease.get("checkpoint"):
             lines.append("  checkpoint: " + compact_text(lease["checkpoint"]))
         if lease.get("next_action"):
@@ -343,7 +355,7 @@ def focus_text(snapshot):
         if reports_seen.get(objective, 0) >= 3:
             continue
         reports_seen[objective] = reports_seen.get(objective, 0) + 1
-        lines.append(f"- report {report['issue_id']} at {report['created_at']}: {compact_text(report['result'])}")
+        lines.append(f"- report {report['issue_id']} at {owner_time(report['created_at'])}: {compact_text(report['result'])}")
         if report.get("next_action"):
             lines.append("  next: " + compact_text(report["next_action"]))
     lines.append("Linear owns issue status. Claim before writing; checkpoint every 15 minutes; leases expire after 60 minutes.")
@@ -484,7 +496,7 @@ def hook_context(event, payload):
         out += [f"- {i['ref']} {i['title']} ({ago(i['created_at'])})" for i in mine_open]
     if dated:
         out.append("Upcoming deadlines/milestones:")
-        out += [f"- {i['ref']} {i['title']} — due {i['due_at'][:10]} ({ago(i['due_at'])})" for i in dated]
+        out += [f"- {i['ref']} {i['title']} — due {owner_time(i['due_at'])} ({ago(i['due_at'])})" for i in dated]
     if focus and focus.get("objectives"):
         out.append(focus_text(focus))
     text = "\n".join(out)
