@@ -1,0 +1,319 @@
+{
+  "scope": "Reconciled project summaries; local results, deployment and owner acceptance remain independent reported facts.",
+  "dashboard_tests_passed": 516,
+  "control_tests_passed": 64,
+  "typescript": "passed",
+  "source_review": "Attribution, unknown sources, historical labeling, numeric timestamp ordering and nested links reviewed.",
+  "private_full": {
+    "started_at_utc": "2026-11-02T20:41:17.401378+00:00",
+    "project": "strandworks-cockpit",
+    "target": "preview",
+    "expected_tree": "83d81e9efa06c14def01d8acd62775cd8ff9086c",
+    "production_changed": false,
+    "protection_mode_changed": false,
+    "setup_code_added": false,
+    "native_helper_generation_notice_seen": false,
+    "preview_secret_rotated": true,
+    "checks": {
+      "authenticated_today": {
+        "http": 200,
+        "nested_anchors": 0,
+        "known_project_rows": 14,
+        "handoffs": [
+          {
+            "objective_id": "kc-reset-push",
+            "slug": "highest-paying",
+            "source_report_id": 21,
+            "source_created_at": "2026-11-02T18:23:16.765427+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3,
+            "current_source_and_scan_signal_count": 3
+          },
+          {
+            "objective_id": "portfolio-control",
+            "slug": "strandworks-ops",
+            "source_report_id": 38,
+            "source_created_at": "2026-11-02T20:37:28.825446+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "smr-reset-push",
+            "slug": "contracting-startup",
+            "source_report_id": 37,
+            "source_created_at": "2026-11-02T20:35:00.697907+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "tenetrix-reset-push",
+            "slug": "tenetrix-insight",
+            "source_report_id": 25,
+            "source_created_at": "2026-11-02T19:07:32.370471+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "advertising-reset-push",
+            "slug": "advertising",
+            "source_report_id": 29,
+            "source_created_at": "2026-11-02T19:07:33.822151+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "sag-reset-push",
+            "slug": "sag-international",
+            "source_report_id": 27,
+            "source_created_at": "2026-11-02T19:07:33.04634+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "third-rider-reset-push",
+            "slug": "3rdrider",
+            "source_report_id": 28,
+            "source_created_at": "2026-11-02T19:07:33.474077+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "ww-reset-push",
+            "slug": "wobble-ward",
+            "source_report_id": 19,
+            "source_created_at": "2026-11-02T18:13:17.864812+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3,
+            "current_blocking_signal": true,
+            "historical_jul21_ok_separate": true,
+            "unqualified_green_ok_count": 0
+          }
+        ],
+        "unknown_phase_rows": 7,
+        "evidence_numerator": 8,
+        "evidence_denominator": 14,
+        "control_independent_phases": {
+          "Local result": "Review candidate (reported) \u00b7 27ba4fe;516tests and typecheck passed November2; rendered private verification pending.",
+          "Deployment": "Production verified (reported) \u00b7 Existing date-counter release1c5a5a8 verified Nov2 15:00Eastern. This new summary candidate is not yet deployed.",
+          "Owner acceptance": "Pending owner review \u00b7 Owner acceptance of this increment has not been recorded."
+        },
+        "control_report_id": 38,
+        "derived_recent_project_slugs": [
+          "3rdrider",
+          "advertising",
+          "contracting-startup",
+          "highest-paying",
+          "sag-international",
+          "strandworks-ops",
+          "tenetrix-insight",
+          "wobble-ward"
+        ],
+        "derived_recent_evidence_count": 8,
+        "attempt": 1
+      },
+      "authenticated_projects": {
+        "http": 200,
+        "nested_anchors": 0,
+        "known_project_rows": 38,
+        "handoffs": [
+          {
+            "objective_id": "kc-reset-push",
+            "slug": "highest-paying",
+            "source_report_id": 21,
+            "source_created_at": "2026-11-02T18:23:16.765427+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3,
+            "current_source_and_scan_signal_count": 3
+          },
+          {
+            "objective_id": "portfolio-control",
+            "slug": "strandworks-ops",
+            "source_report_id": 38,
+            "source_created_at": "2026-11-02T20:37:28.825446+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "smr-reset-push",
+            "slug": "contracting-startup",
+            "source_report_id": 37,
+            "source_created_at": "2026-11-02T20:35:00.697907+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "tenetrix-reset-push",
+            "slug": "tenetrix-insight",
+            "source_report_id": 25,
+            "source_created_at": "2026-11-02T19:07:32.370471+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "advertising-reset-push",
+            "slug": "advertising",
+            "source_report_id": 29,
+            "source_created_at": "2026-11-02T19:07:33.822151+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "sag-reset-push",
+            "slug": "sag-international",
+            "source_report_id": 27,
+            "source_created_at": "2026-11-02T19:07:33.04634+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "third-rider-reset-push",
+            "slug": "3rdrider",
+            "source_report_id": 28,
+            "source_created_at": "2026-11-02T19:07:33.474077+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3
+          },
+          {
+            "objective_id": "ww-reset-push",
+            "slug": "wobble-ward",
+            "source_report_id": 19,
+            "source_created_at": "2026-11-02T18:13:17.864812+00:00",
+            "visible_source_date_matches": true,
+            "phase_field_count": 3,
+            "current_blocking_signal": true,
+            "historical_jul21_ok_separate": true,
+            "unqualified_green_ok_count": 0
+          }
+        ],
+        "unknown_phase_rows": 7,
+        "control_independent_phases": {
+          "Local result": "Review candidate (reported) \u00b7 27ba4fe;516tests and typecheck passed November2; rendered private verification pending.",
+          "Deployment": "Production verified (reported) \u00b7 Existing date-counter release1c5a5a8 verified Nov2 15:00Eastern. This new summary candidate is not yet deployed.",
+          "Owner acceptance": "Pending owner review \u00b7 Owner acceptance of this increment has not been recorded."
+        },
+        "control_report_id": 38,
+        "attempt": 1
+      },
+      "wobble_detail_history": {
+        "http": 200,
+        "register_check_history_heading": true,
+        "unqualified_green_ok_count": 0,
+        "nested_anchors": 0,
+        "attempt": 1
+      },
+      "focus_eight_goals": {
+        "http": 200,
+        "objective_count": 8,
+        "nested_anchors": 0,
+        "attempt": 1
+      },
+      "date_counter_preserved": {
+        "http": 200,
+        "today_wobble_dates": 2,
+        "timeline_dates": 2,
+        "portfolio_review_delivery_entries": 2,
+        "attempt": 1
+      },
+      "marketing_entry_preserved": {
+        "http": 200,
+        "voice_entry_present": true,
+        "revision_asserted": false,
+        "attempt": 1
+      }
+    },
+    "failure_count": 0,
+    "success": true,
+    "followups": [
+      {
+        "recorded_at": "2026-11-02T20:41:17.401478+00:00",
+        "scope": "Today project-name phone wrapping",
+        "status": "Root-owned separate one-line follow-up; not changed in this pinned readback"
+      }
+    ],
+    "source_commit_at_deploy": "b1a470fa8fa55095bea71f3fba46b94c81bef54d",
+    "cockpit_tree": "83d81e9efa06c14def01d8acd62775cd8ff9086c",
+    "source_checked_at": "2026-11-02T20:41:17.720068+00:00",
+    "preview_url": "https://strandworks-cockpit-idkyz9y4j-strandworks.vercel.app",
+    "deployment_id": "dpl_7U6btwrt6BGmLcceMj61sSAK4r4r",
+    "state": "READY",
+    "deployment_target": "preview",
+    "finished_at_utc": "2026-11-02T20:42:15.683263+00:00",
+    "secret_handling": "Preview-only independent secret exact raw stdin;120-second app cookies curl-config stdin; values retained only in process memory and discarded",
+    "verification_scope": "Native remote Preview build plus authenticated read-only HTTP; displayed source claims verified, not new production deployment/owner acceptance; no browser/local build/source edits or voice mutations.",
+    "tracked_files_modified_by_task": false
+  },
+  "private_final": {
+    "started_at_utc": "2026-11-02T20:43:23.655108+00:00",
+    "target": "preview",
+    "expected_source": "06a3f8021b683c9c886be45c66888d78f6f4a89a",
+    "expected_cockpit_tree": "1909ff848f3777685ee12d885520d394238e57e2",
+    "first_full_proof": "/Users/jonathanbouren/Documents/Codex/2026-11-02/we/work/private-dashboard-project-summary-verification.json",
+    "first_full_proof_sha256": "1990b09d05a517e4b6746f0b31429a68e060356bb2ef4c6e960967882984e95a",
+    "unchanged_flow_proof_reused": true,
+    "production_changed": false,
+    "protection_mode_changed": false,
+    "setup_code_added": false,
+    "checks": {
+      "today": {
+        "http": 200,
+        "shared_handoff_count": 8,
+        "shared_goal_ids": [
+          "advertising-reset-push",
+          "kc-reset-push",
+          "portfolio-control",
+          "sag-reset-push",
+          "smr-reset-push",
+          "tenetrix-reset-push",
+          "third-rider-reset-push",
+          "ww-reset-push"
+        ],
+        "independent_phase_groups": 8,
+        "phase_field_count": 24,
+        "nested_anchors": 0,
+        "attempt": 1,
+        "project_name_count": 14,
+        "explicit_normal_wrap_count": 14,
+        "evidence_numerator": 8,
+        "evidence_denominator": 14
+      },
+      "projects": {
+        "http": 200,
+        "shared_handoff_count": 8,
+        "shared_goal_ids": [
+          "advertising-reset-push",
+          "kc-reset-push",
+          "portfolio-control",
+          "sag-reset-push",
+          "smr-reset-push",
+          "tenetrix-reset-push",
+          "third-rider-reset-push",
+          "ww-reset-push"
+        ],
+        "independent_phase_groups": 8,
+        "phase_field_count": 24,
+        "nested_anchors": 0,
+        "attempt": 1
+      }
+    },
+    "failure_count": 0,
+    "success": true,
+    "scope": "Final name-wrap delta plus Today/Projects content only; no repeated full-route tour, browser, local build, source/voice/Production mutation",
+    "source_commit_at_deploy": "06a3f8021b683c9c886be45c66888d78f6f4a89a",
+    "cockpit_tree": "1909ff848f3777685ee12d885520d394238e57e2",
+    "changed_web_paths_since_full_proof": [
+      "cockpit/app/page.tsx"
+    ],
+    "preview_url": "https://strandworks-cockpit-h5nlxlske-strandworks.vercel.app",
+    "deployment_id": "dpl_4sbs2nXoXfyUKLhnx5Dh3RXbi4SD",
+    "state": "READY",
+    "deployment_target": "preview",
+    "finished_at_utc": "2026-11-02T20:44:18.903444+00:00",
+    "secret_handling": "Independent Preview-only secret exact raw stdin and120-second owner cookie via curl-config stdin; values only in process memory, discarded"
+  },
+  "quota_precision": "Same UTC reset calendar minute only; raw provider timestamps, original baseline and fixed allocation preserved. Other minutes/days/weeks, stale/unknown readings, reserve and earlier cutoff deny. D0170/D0171 records retain owner directions.",
+  "rollout": {
+    "private": "verified",
+    "production": "pending guarded rollout",
+    "owner_acceptance": "pending"
+  }
+}

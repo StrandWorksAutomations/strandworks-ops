@@ -365,6 +365,15 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 .loop-card h3 { margin: 9px 0 6px; font-size: 18px; overflow-wrap: anywhere; }
 .loop-card .prose { max-width: 80ch; overflow-x: auto; overflow-wrap: anywhere; }
 .loop-card > .badge { margin: 4px 0 8px; }
+.project-summary-body { flex: 1; min-width: 0; }
+.project-evidence { overflow-wrap: anywhere; }
+.project-evidence p { margin: 8px 0; }
+.project-delivery { display: grid; gap: 5px; margin: 10px 0; font-size: 12px; }
+.project-delivery > div { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.project-delivery dt { color: var(--muted); }
+.project-delivery dd { margin: 0; }
+.project-attention { padding-left: 18px; font-size: 12px; }
+.project-register-check { margin-top: 10px; }
 .loop-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; color: var(--muted); font-size: 12px; }
 .loop-meta .badge { margin-left: 0; }
 .loop-due { margin-top: 8px; font-size: 12px; }

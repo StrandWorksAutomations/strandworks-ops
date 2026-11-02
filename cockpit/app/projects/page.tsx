@@ -2,15 +2,17 @@ import Link from "next/link";
 import { Chrome } from "../components/Chrome";
 import { readRepoFile } from "@/lib/repo";
 import { buildProjectFootprint, tierRank, type RegisterInputs } from "@/lib/projects";
-import { loadProjects } from "@/lib/projects-load";
+import { loadProjectInventory } from "@/lib/projects-load";
 import { parseScouts, scoutForTokens } from "@/lib/scouts";
-import { parseChecks, latestCheck, checkStatusClass } from "@/lib/checks";
-import { redactForDisplay } from "@/lib/redact";
+import { parseChecks } from "@/lib/checks";
+import { fetchPortfolio } from "@/lib/portfolio-data";
+import { projectEvidence } from "@/lib/project-evidence";
+import { ProjectEvidenceSummary } from "../components/ProjectEvidenceSummary";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function ProjectsIndex() {
-  const [services, assets, access, models, subscriptions, dashboardMd, checksCsv] = await Promise.all([
+  const [services, assets, access, models, subscriptions, dashboardMd, checksCsv, portfolio, inventory] = await Promise.all([
     readRepoFile("registers/services.csv"),
     readRepoFile("registers/assets.csv"),
     readRepoFile("registers/access.csv"),
@@ -18,40 +20,43 @@ export default async function ProjectsIndex() {
     readRepoFile("registers/subscriptions.csv"),
     readRepoFile("DASHBOARD.md"),
     readRepoFile("registers/checks.csv"),
+    fetchPortfolio(),
+    loadProjectInventory().catch(() => null),
   ]);
   const inputs: RegisterInputs = { services, assets, access, models, subscriptions };
   const scouts = parseScouts(dashboardMd);
   const checks = parseChecks(checksCsv);
 
-  const PROJECTS = await loadProjects();
+  const now = new Date();
+  const PROJECTS = inventory ?? [];
   const rows = PROJECTS.map((p) => ({
     p,
     fp: buildProjectFootprint(p, inputs, PROJECTS),
     scout: scoutForTokens(scouts, p.tokens),
-    check: latestCheck(checks, p),
+    evidence: projectEvidence(p, checks, portfolio, now),
   })).sort((a, b) => {
     // tier first (flagship → frozen), then most recently touched
     const t = tierRank(a.p.tier) - tierRank(b.p.tier);
     if (t !== 0) return t;
-    return (b.p.lastCommit || b.check?.date || "").localeCompare(a.p.lastCommit || a.check?.date || "");
+    const time = (entry: typeof a) => Date.parse(entry.evidence.report?.created_at || entry.p.lastCommit || entry.evidence.check?.date || "") || 0;
+    return time(b) - time(a);
   });
   const counts = { active: 0, idle: 0, dormant: 0 };
   for (const { p } of rows) if (p.activity in counts) counts[p.activity as keyof typeof counts]++;
 
   return (
-    <Chrome title="Projects" sub={`${rows.length} repos · ${counts.active} active · ${counts.idle} idle · ${counts.dormant} dormant`} active="/projects">
-      {rows.map(({ p, fp, scout, check }, i) => (
-        <Link key={p.slug} href={`/projects/${p.slug}`}>
+    <Chrome title="Projects" sub={inventory === null ? "project inventory unavailable" : `${rows.length} repos · repo activity: ${counts.active} active · ${counts.idle} idle · ${counts.dormant} dormant`} active="/projects">
+      {inventory === null ? <p className="card meta" role="status">Project inventory unavailable; coverage is unknown.</p> : null}
+      {portfolio === null || checksCsv === null ? <p className="card meta" role="status">Project evidence is incomplete: {portfolio === null ? "shared reports unavailable" : ""}{portfolio === null && checksCsv === null ? "; " : ""}{checksCsv === null ? "register checks unavailable" : ""}.</p> : null}
+      {rows.map(({ p, fp, scout, evidence }, i) => (
+        <div key={p.slug}>
           {i === 0 || tierRank(rows[i - 1].p.tier) !== tierRank(p.tier) ? (
             <div className="section-head"><h2>{p.tier || "unclassified"}</h2></div>
           ) : null}
-          <div className="card">
+          <article className="card" aria-label={`${p.name} project summary`}>
             <h3>
-              {p.name}
-              {p.activity ? <span className={`badge ${p.activity === "active" ? "good" : p.activity === "dormant" ? "bad" : ""}`}>{p.activity}{p.lastCommit ? ` · ${p.lastCommit.slice(5)}` : ""}</span> : null}
-              {check ? (
-                <span className={`badge ${checkStatusClass(check.status)}`}>{check.status || check.kind}</span>
-              ) : null}
+              <Link href={`/projects/${p.slug}`}>{p.name}</Link>
+              {p.activity ? <span className="badge">Repo {p.activity}{p.lastCommit ? ` · ${p.lastCommit}` : ""}</span> : null}
               {fp.spendMonthlyUsd > 0 || fp.spendHasUncosted ? (
                 <span className="badge brass">
                   ${fp.spendMonthlyUsd}/mo{fp.spendHasUncosted ? "+" : ""}
@@ -62,11 +67,7 @@ export default async function ProjectsIndex() {
               ) : null}
             </h3>
             <div className="meta">{p.role}</div>
-            {check ? (
-              <div className="meta" style={{ marginTop: 4 }}>
-                <span className="mono">{check.date.slice(5)}</span> · {redactForDisplay(check.summary)}
-              </div>
-            ) : null}
+            <ProjectEvidenceSummary evidence={evidence} available={{ checks: checksCsv !== null, portfolio: portfolio !== null }} />
             <div className="chips">
               {p.surfaces.map((s) => <span key={s} className="chip">{s}</span>)}
               {p.supabaseRef ? <span className="chip">supabase</span> : null}
@@ -82,8 +83,8 @@ export default async function ProjectsIndex() {
                 </span>
               ) : null}
             </div>
-          </div>
-        </Link>
+          </article>
+        </div>
       ))}
 
       <div className="section-head">

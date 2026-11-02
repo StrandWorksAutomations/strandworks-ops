@@ -128,6 +128,19 @@ An objective is a complete replacement document:
 
 Report and observation examples (example values, not live project claims):
 
+Today and Projects show original report text and current attention separately
+from historical register checks. For explicit delivery summaries, `validation`
+may contain a JSON string with `delivery.local`, `delivery.deployment` and
+`delivery.owner_acceptance`, each an object with `status` and optional `detail`.
+Local statuses: `in_progress`, `review_candidate`, `complete`, `blocked`.
+Deployment statuses: `not_deployed`, `private_review`, `production_deployed`,
+`production_verified`, `blocked`. Owner acceptance: `pending`, `accepted`,
+`changes_requested`. Omitted, `unknown`, invalid and unrecognized statuses show
+**Not recorded**. Include the source date, commit/build and scope in `detail`;
+existing Production and a new local candidate can have different states.
+These are reported facts, never inferred from result text, test counts or a
+repository activity badge. Evidence publication does not establish acceptance.
+
 ```json
 {"issue_id":"STR-1234","objective_id":"kc-reliability","session_id":"YOUR-CHAT-ID",
  "agent":"codex","result":"Review build ready","evidence":["https://example.com/review"],

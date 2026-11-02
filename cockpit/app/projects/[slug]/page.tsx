@@ -15,7 +15,7 @@ import { extractSurfaces } from "@/lib/projects";
 import { loadProjects } from "@/lib/projects-load";
 import { writeMode } from "@/lib/rule-writer";
 import { ProjectEditor } from "../ProjectEditor";
-import { parseChecks, checksForProject, checkStatusClass } from "@/lib/checks";
+import { parseChecks, checksForProject } from "@/lib/checks";
 
 export const dynamic = "force-dynamic";
 
@@ -168,25 +168,23 @@ export default async function ProjectPage({
       />
 
       <div className="section-head">
-        <h2>Status &amp; checks</h2>
+        <h2>Register check history</h2>
         <span className="meta">registers/checks.csv</span>
       </div>
       {checks.length === 0 ? (
         <div className="card">
           <div className="meta">
-            No status reports yet. Any agent — session, scout, or the
-            persistent checks-and-balances instance — appends reports to
-            registers/checks.csv and they land here.
+            {checksCsv === null ? "Register checks unavailable." : "No register checks recorded."} Current handoffs, blockers and delivery evidence appear in the shared goals above.
           </div>
         </div>
       ) : (
         <div className="ledger">
           {checks.slice(0, 10).map((c, i) => (
             <div key={i} className="l-row" style={{ alignItems: "flex-start" }}>
-              <span className="l-date">{c.date.slice(5)}</span>
+              <span className="l-date">{c.date || "unknown"}</span>
               <span className="l-name" style={{ whiteSpace: "normal" }}>
-                <span className={`badge ${checkStatusClass(c.status)}`} style={{ marginLeft: 0, marginRight: 8 }}>
-                  {c.status || c.kind}
+                <span className="badge" style={{ marginLeft: 0, marginRight: 8 }}>
+                  Register entry · {c.status || c.kind}
                 </span>
                 {redactForDisplay(c.summary)}
                 <span className="l-sub"> — {c.source}{c.kind ? ` · ${c.kind}` : ""}</span>
