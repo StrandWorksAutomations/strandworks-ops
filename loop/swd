@@ -74,6 +74,12 @@ def rpc(fn, args, timeout=8.0):
         raise LoopError(f"{fn}: network error {e}") from None
 
 
+def canonical_project(project):
+    # The application is an independent nested repo; its portfolio identity is
+    # the wrapper's 3rdrider name. Historical owner-loop items use both forms.
+    return "3rdrider" if project in ("3rd-rider", "3rdrider") else project
+
+
 def detect_project(cwd=None):
     cwd = Path(cwd or os.getcwd()).resolve()
     if cwd == PROJECTS_ROOT:
@@ -84,12 +90,12 @@ def detect_project(cwd=None):
             capture_output=True, text=True, timeout=1.5,
         ).stdout.strip()
         if common:
-            return Path(common).parent.name
+            return canonical_project(Path(common).parent.name)
     except (OSError, subprocess.SubprocessError):
         pass
     try:
         rel = cwd.relative_to(PROJECTS_ROOT)
-        return rel.parts[0] if rel.parts else "portfolio"
+        return canonical_project(rel.parts[0]) if rel.parts else "portfolio"
     except ValueError:
         return "portfolio"
 

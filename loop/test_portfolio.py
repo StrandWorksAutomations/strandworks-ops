@@ -39,7 +39,7 @@ class PortfolioDatabaseTests(unittest.TestCase):
         cls.psql = ["psql", "-X", "-q", "-t", "-A", "-v", "ON_ERROR_STOP=1", "-h", cls.tmp.name, "-p", str(cls.port), "-U", "postgres", "postgres"]
         try:
             cls.run_sql("create role anon; create role authenticated; create role service_role; create schema extensions;")
-            for filename in ("20261024_owner_loop_v1.sql", "20261024_owner_loop_v2_review_fixes.sql", "20261102_portfolio_control_v1.sql"):
+            for filename in ("20261024_owner_loop_v1.sql", "20261024_owner_loop_v2_review_fixes.sql", "20261102_portfolio_control_v1.sql", "20261102_portfolio_project_alias.sql"):
                 cls.run_sql((ROOT / "supabase/migrations" / filename).read_text())
             cls.run_sql(f"insert into owner_loop_agent_tokens(token_sha256,label) values(encode(extensions.digest('{TOKEN}','sha256'),'hex'),'test');")
         except BaseException:
@@ -139,8 +139,34 @@ class PortfolioDatabaseTests(unittest.TestCase):
             with self.assertRaisesRegex(swd.LoopError, "unavailable"):
                 swd.cmd_focus(argparse.Namespace(project="portfolio", json=True))
 
+    def test_nested_project_alias_preserves_both_owner_loop_spellings(self):
+        for suffix, project in (("canonical", "3rdrider"), ("legacy", "3rd-rider")):
+            self.rpc("portfolio_objective_upsert", {"id": "third-" + suffix, "project": project, "title": suffix, "outcome": "Verified observation"})
+            self.run_sql(f"insert into owner_loop_items(project,title,kind) values('{project}','Third Rider {suffix}','decision');")
+        self.claim("STR-91005", "third-canonical", "nested-chat")
+        for project in ("3rdrider", "3rd-rider"):
+            snapshot = self.rpc("portfolio_focus", project)
+            self.assertEqual({o["id"] for o in snapshot["objectives"]}, {"third-canonical", "third-legacy"})
+            self.assertEqual({i["project"] for i in snapshot["owner_loop"]}, {"3rdrider", "3rd-rider"})
+            self.assertEqual(snapshot["leases"][0]["session_id"], "nested-chat")
+        self.assertEqual(self.rpc("portfolio_focus", "unrelated-project")["objectives"], [])
+
 
 class PortfolioCliTests(unittest.TestCase):
+    def test_nested_git_detection_uses_canonical_portfolio_identity(self):
+        with patch.object(swd.subprocess, "run", return_value=argparse.Namespace(stdout="/tmp/3rd-rider/.git\n")):
+            self.assertEqual(swd.detect_project("/tmp/3rd-rider/frontend"), "3rdrider")
+
+    def test_fresh_nested_hook_reads_objective_and_historical_ruling_in_one_call(self):
+        snapshot = {"checked_at": "2026-11-02T12:00:00Z", "objectives": [{"id": "third-rider-reset-push", "status": "active", "project": "3rdrider", "title": "Reproduce prototype", "outcome": "Verified demo"}], "metrics": [], "leases": [], "reports": [],
+            "owner_loop": [{"ref": "D-9001", "status": "ruled", "project": "3rd-rider", "kind": "decision", "origin_agent": "codex", "created_at": "2026-11-02T10:00:00Z", "ruled_at": "2026-11-02T11:00:00Z", "title": "Historical nested decision", "ruling": "A", "options": []}]}
+        with tempfile.TemporaryDirectory() as directory, patch.object(swd, "STATE_DIR", Path(directory)), patch.object(swd.subprocess, "run", return_value=argparse.Namespace(stdout="/tmp/3rd-rider/.git\n")), patch.object(swd, "rpc", return_value=snapshot) as rpc:
+            context = swd.hook_context("session-start", {"cwd": "/tmp/3rd-rider/frontend", "session_id": "fresh-nested-chat"})
+        self.assertIn("third-rider-reset-push", context)
+        self.assertIn("D-9001", context)
+        self.assertEqual(rpc.call_count, 1)
+        self.assertEqual(rpc.call_args.args[1]["p_project"], "3rdrider")
+
     def test_report_file_session_is_used_without_live_session_environment(self):
         payload = {"session_id": "saved-session", "agent": "claude", "result": "saved evidence"}
         with patch.object(swd, "json_input", return_value=payload), patch.object(swd, "rpc", return_value={}) as rpc, patch.object(swd, "detect_session", return_value=None):
