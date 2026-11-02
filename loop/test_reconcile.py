@@ -59,6 +59,8 @@ class FakeRemote:
 
 
 class ReconcilerTests(unittest.TestCase):
+    def test_real_scanner_compact_offset_is_supported_on_the_installed_runtime(self):
+        self.assertEqual(reconcile.stamp("2026-11-02T13:00:44-0500").astimezone(UTC), datetime(2026,11,2,18,0,44,tzinfo=UTC))
     def runner(self, remote=None, saved=None):
         remote = remote or FakeRemote()
         saved = saved or state()
