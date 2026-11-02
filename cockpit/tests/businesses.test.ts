@@ -5,16 +5,16 @@ import { email, loopItem, dueItem, NOW } from "./inbox-fixtures";
 
 const empty = { emails: [], latestEmail: [], items: [], events: [], dueItems: [], projects: [] };
 describe("business source mapping", () => {
-  it("keeps the nine businesses in the requested order", () => {
+  it("keeps existing business order and covers the three additional workstreams", () => {
     expect(BUSINESSES.map((business) => business.key)).toEqual(["kinetic-clinician", "kinetic-medic", "tenetrix", "strandworks",
-      "strandworks-medical", "sag", "ember-vellum", "medsim", "personal-career"]);
+      "strandworks-medical", "sag", "ember-vellum", "medsim", "personal-career", "wobble-ward", "3rd-rider", "advertising"]);
   });
   it.each([
     ["highest-paying", "kinetic-clinician"], ["kinetic-clinician", "kinetic-clinician"], ["the-kinetic-medic", "kinetic-medic"],
     ["BadgeMedia", "tenetrix"], ["tenetrix-orchard", "tenetrix"], ["SmartBadge", "tenetrix"], ["tenetrix-insight", "tenetrix"],
     ["strandworks-ops", "strandworks"], ["strand-automation-works-new", "strandworks"], ["strandworks-corporate", "strandworks"],
     ["portfolio", "strandworks"], ["contracting-startup", "strandworks-medical"], ["wildfire", "strandworks-medical"],
-    ["sag-international", "sag"], ["ember-and-vellum", "ember-vellum"], ["MedSim-Game", "medsim"], ["medsim-physio", "medsim"],
+    ["sag-international", "sag"], ["wobble-ward", "wobble-ward"], ["3rdrider", "3rd-rider"], ["ADVERTISING", "advertising"], ["ember-and-vellum", "ember-vellum"], ["MedSim-Game", "medsim"], ["medsim-physio", "medsim"],
   ])("maps project folder %s to %s", (folder, key) => {
     expect(businessForProject(folder)?.key).toBe(key);
     expect(businessForProject(`/Users/owner/PROJECTS/${folder}/`)?.key).toBe(key);

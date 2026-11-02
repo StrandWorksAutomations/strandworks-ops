@@ -1,3 +1,5 @@
+import { fetchPortfolio } from "@/lib/portfolio-data";
+import { PortfolioObjectives } from "../../components/PortfolioObjectives";
 import { notFound } from "next/navigation";
 import { Chrome } from "../../components/Chrome";
 import { readRepoFile } from "@/lib/repo";
@@ -15,7 +17,7 @@ import { writeMode } from "@/lib/rule-writer";
 import { ProjectEditor } from "../ProjectEditor";
 import { parseChecks, checksForProject, checkStatusClass } from "@/lib/checks";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
   return (await loadProjects()).map((p) => ({ slug: p.slug }));
@@ -95,6 +97,7 @@ export default async function ProjectPage({
     readRepoFile("DASHBOARD.md"),
     readRepoFile("registers/checks.csv"),
   ]);
+  const portfolio = await fetchPortfolio(proj.path);
   const inputs: RegisterInputs = { services, assets, access, models, subscriptions };
   const fp = buildProjectFootprint(proj, inputs, PROJECTS);
   const scouts = parseScouts(dashboardMd);
@@ -108,6 +111,8 @@ export default async function ProjectPage({
       sub={`$${fp.spendMonthlyUsd}/mo dedicated${fp.sharedMonthlyUsd > 0 ? ` + $${fp.sharedMonthlyUsd} shared` : ""}${fp.spendHasUncosted ? " (+uncosted)" : ""}`}
       active="/projects"
     >
+      <div className="section-head"><h2>Goals &amp; active work</h2></div>
+      <PortfolioObjectives data={portfolio} />
       <div className="card">
         <div className="meta">{proj.role}</div>
         <dl>

@@ -1,0 +1,358 @@
+{
+  "id": "portfolio-push-2026-11-02",
+  "session": "01a19ced-0972-7241-9384-d06fcc42589f",
+  "kickoff": "2026-11-02T12:05:00-05:00",
+  "close": "2026-11-04T00:00:00-05:00",
+  "review_windows": [
+    "2026-11-02T18:00:00-05:00",
+    "2026-11-03T17:00:00-05:00"
+  ],
+  "weekly_milestones": [
+    "2026-11-06",
+    "2026-11-13",
+    "2026-11-20",
+    "2026-11-27"
+  ],
+  "quota": {
+    "codex": {
+      "used_at_kickoff": 66,
+      "remaining_at_kickoff": 34,
+      "allowed_points": 27.2,
+      "stop_at_used": 93.2,
+      "reset_at": "2026-11-04T01:35:27-05:00",
+      "stop_at": "2026-11-04T01:05:27-05:00",
+      "source": "provider session rate-limit metadata 2026-11-02T17:05:09Z"
+    },
+    "claude": {
+      "used_at_kickoff": 64,
+      "remaining_at_kickoff": 36,
+      "allowed_points": 28.8,
+      "stop_at_used": 92.8,
+      "reset_at": "2026-11-03T05:00:00-05:00",
+      "stop_at": "2026-11-03T04:30:00-05:00",
+      "source": "owner /usage answers in originating chat"
+    }
+  },
+  "objectives": [
+    {
+      "id": "portfolio-control",
+      "project": "strandworks-ops",
+      "title": "Shared portfolio control",
+      "outcome": "Fresh Codex and Claude sessions recover goals, decisions, metrics, ownership, evidence and next work; independent reconciliation continues while chats are idle.",
+      "priority": 1,
+      "target_at": "2026-11-04T00:00:00-05:00",
+      "review_at": "2026-11-02T18:00:00-05:00",
+      "accountable_owner": "Jonathan Bouren; execution coordinator Codex",
+      "linear_project_id": "ebd645aa-a612-4df2-9751-832a55edf932",
+      "issue_ids": [],
+      "metric_definitions": [
+        {
+          "id": "bootstrap_checks",
+          "label": "Bootstrap checks"
+        },
+        {
+          "id": "linear_snapshot",
+          "label": "Linear snapshot"
+        },
+        {
+          "id": "adapter_health",
+          "label": "Adapter health"
+        },
+        {
+          "id": "codex_budget",
+          "label": "Codex budget"
+        },
+        {
+          "id": "claude_budget",
+          "label": "Claude budget"
+        },
+        {
+          "id": "scheduler_retirement",
+          "label": "Scheduler retirement"
+        }
+      ],
+      "status": "active",
+      "allocation_percent": 20
+    },
+    {
+      "id": "kc-reset-push",
+      "project": "highest-paying",
+      "title": "Kinetic Clinician reliability and company face",
+      "outcome": "Reconcile active reliability work, verify scheduled scanner coverage and changed user flows, and prepare consistent brand/conversion and outreach paths.",
+      "priority": 1,
+      "target_at": "2026-11-04T00:00:00-05:00",
+      "review_at": "2026-11-02T18:00:00-05:00",
+      "accountable_owner": "Jonathan Bouren; execution coordinator Codex",
+      "linear_project_id": "e4c7aa82-001f-4f0d-983e-eeb5fc024304",
+      "issue_ids": [],
+      "metric_definitions": [
+        {
+          "id": "source_freshness",
+          "label": "Source freshness"
+        },
+        {
+          "id": "failed_sources",
+          "label": "Failed sources"
+        },
+        {
+          "id": "field_coverage",
+          "label": "Field coverage"
+        },
+        {
+          "id": "valid_destinations",
+          "label": "Valid destinations"
+        },
+        {
+          "id": "page_ready_groups",
+          "label": "Page ready groups"
+        },
+        {
+          "id": "scheduled_scan",
+          "label": "Scheduled scan"
+        },
+        {
+          "id": "confirmed_signups",
+          "label": "Confirmed signups"
+        },
+        {
+          "id": "qualified_conversations",
+          "label": "Qualified conversations"
+        }
+      ],
+      "status": "active",
+      "allocation_percent": 25
+    },
+    {
+      "id": "tenetrix-reset-push",
+      "project": "BadgeMedia",
+      "title": "Tenetrix education and school pilots",
+      "outcome": "Review shoulder-girdle lesson; deliver private directions/planes prototype and educator pilot package with10 EMS and10 nursing/allied institutional accounts.",
+      "priority": 1,
+      "target_at": "2026-11-04T00:00:00-05:00",
+      "review_at": "2026-11-02T18:00:00-05:00",
+      "accountable_owner": "Jonathan Bouren; execution coordinator Codex",
+      "linear_project_id": "1cfd5f55-ea49-4ee7-91d8-bd85dfe3877d",
+      "issue_ids": [],
+      "metric_definitions": [
+        {
+          "id": "qualified_institutions",
+          "label": "Qualified institutions"
+        },
+        {
+          "id": "demos",
+          "label": "Demos"
+        },
+        {
+          "id": "pilot_agreements",
+          "label": "Pilot agreements"
+        },
+        {
+          "id": "learner_starts",
+          "label": "Learner starts"
+        },
+        {
+          "id": "learner_completions",
+          "label": "Learner completions"
+        },
+        {
+          "id": "educator_findings",
+          "label": "Educator findings"
+        },
+        {
+          "id": "paid_conversion",
+          "label": "Paid conversion"
+        }
+      ],
+      "status": "active",
+      "allocation_percent": 20
+    },
+    {
+      "id": "smr-reset-push",
+      "project": "contracting-startup",
+      "title": "SMR launch, buyers, equipment and records",
+      "outcome": "Reconcile four launch lanes, trace equipment requirements to current price evidence and gaps, qualify20 training+10 agency/deployment accounts, and demonstrate booking-to-lender reporting.",
+      "priority": 1,
+      "target_at": "2026-11-04T00:00:00-05:00",
+      "review_at": "2026-11-02T18:00:00-05:00",
+      "accountable_owner": "Jonathan Bouren; execution coordinator Codex",
+      "linear_project_id": "0279bce4-4c12-4825-996b-b3347fb3475b",
+      "issue_ids": [],
+      "metric_definitions": [
+        {
+          "id": "qualified_buyers",
+          "label": "Qualified buyers"
+        },
+        {
+          "id": "followups_due",
+          "label": "Followups due"
+        },
+        {
+          "id": "buyer_conversations",
+          "label": "Buyer conversations"
+        },
+        {
+          "id": "quotes_bookings",
+          "label": "Quotes bookings"
+        },
+        {
+          "id": "invoiced_revenue",
+          "label": "Invoiced revenue"
+        },
+        {
+          "id": "collected_revenue",
+          "label": "Collected revenue"
+        },
+        {
+          "id": "equipment_readiness",
+          "label": "Equipment readiness"
+        },
+        {
+          "id": "lender_requests",
+          "label": "Lender requests"
+        }
+      ],
+      "status": "active",
+      "allocation_percent": 20
+    },
+    {
+      "id": "ww-reset-push",
+      "project": "wobble-ward",
+      "title": "Wobble Ward complete gameplay loop",
+      "outcome": "Existing cast and accepted props: menu/badge board\u2192one selected level\u2192pause/resume\u2192result\u2192return, with touch/HUD evidence. Character production stays paused.",
+      "priority": 2,
+      "target_at": "2026-11-04T00:00:00-05:00",
+      "review_at": "2026-11-02T18:00:00-05:00",
+      "accountable_owner": "Jonathan Bouren; execution coordinator Codex",
+      "linear_project_id": "ea056edb-c018-48b6-aedd-bf0cd5431531",
+      "issue_ids": [],
+      "metric_definitions": [
+        {
+          "id": "accepted_playable_flows",
+          "label": "Accepted playable flows"
+        },
+        {
+          "id": "blocking_defects",
+          "label": "Blocking defects"
+        },
+        {
+          "id": "accepted_props",
+          "label": "Accepted props"
+        },
+        {
+          "id": "tested_devices",
+          "label": "Tested devices"
+        },
+        {
+          "id": "performance",
+          "label": "Performance"
+        }
+      ],
+      "status": "active",
+      "allocation_percent": 10
+    },
+    {
+      "id": "sag-reset-push",
+      "project": "sag-international",
+      "title": "SAG founder facts and live pursuits",
+      "outcome": "Reconcile current entity/partner evidence and existing brand/website claims; refresh five live pursuits with route, owner, next action and date.",
+      "priority": 2,
+      "target_at": "2026-11-04T00:00:00-05:00",
+      "review_at": "2026-11-02T18:00:00-05:00",
+      "accountable_owner": "Jonathan Bouren; execution coordinator Codex",
+      "linear_project_id": "5d61ad28-25a1-40bf-b375-1366b71a43fb",
+      "issue_ids": [],
+      "metric_definitions": [
+        {
+          "id": "qualified_pursuits",
+          "label": "Qualified pursuits"
+        },
+        {
+          "id": "partner_responses",
+          "label": "Partner responses"
+        },
+        {
+          "id": "proposal_stages",
+          "label": "Proposal stages"
+        },
+        {
+          "id": "formation_dependencies",
+          "label": "Formation dependencies"
+        }
+      ],
+      "status": "active",
+      "allocation_percent": 2
+    },
+    {
+      "id": "third-rider-reset-push",
+      "project": "3rdrider",
+      "title": "3rd Rider reproducible capability",
+      "outcome": "Reproduce browser/Lens observation\u2192confirmation\u2192export demonstration; evaluate three official-source technology options before investor promotion.",
+      "priority": 2,
+      "target_at": "2026-11-04T00:00:00-05:00",
+      "review_at": "2026-11-02T18:00:00-05:00",
+      "accountable_owner": "Jonathan Bouren; execution coordinator Codex",
+      "linear_project_id": "d6595740-d29c-412e-94cd-354fc1f908a3",
+      "issue_ids": [],
+      "metric_definitions": [
+        {
+          "id": "reproducible_capabilities",
+          "label": "Reproducible capabilities"
+        },
+        {
+          "id": "field_accuracy",
+          "label": "Field accuracy"
+        },
+        {
+          "id": "latency",
+          "label": "Latency"
+        },
+        {
+          "id": "confirmation_export",
+          "label": "Confirmation export"
+        },
+        {
+          "id": "device_evidence",
+          "label": "Device evidence"
+        }
+      ],
+      "status": "active",
+      "allocation_percent": 2
+    },
+    {
+      "id": "advertising-reset-push",
+      "project": "ADVERTISING",
+      "title": "Campaign reconciliation and booth brief",
+      "outcome": "Reconcile scheduled/draft/published/paid states with one queue owner; validate destinations/conversions and prepare modular booth demo, lead-capture and offline plan.",
+      "priority": 2,
+      "target_at": "2026-11-04T00:00:00-05:00",
+      "review_at": "2026-11-02T18:00:00-05:00",
+      "accountable_owner": "Jonathan Bouren; execution coordinator Codex",
+      "linear_project_id": "ebd645aa-a612-4df2-9751-832a55edf932",
+      "issue_ids": [],
+      "metric_definitions": [
+        {
+          "id": "delivery_failures",
+          "label": "Delivery failures"
+        },
+        {
+          "id": "approved_coverage",
+          "label": "Approved coverage"
+        },
+        {
+          "id": "spend",
+          "label": "Spend"
+        },
+        {
+          "id": "qualified_conversions",
+          "label": "Qualified conversions"
+        },
+        {
+          "id": "followup_completion",
+          "label": "Followup completion"
+        }
+      ],
+      "status": "active",
+      "allocation_percent": 1
+    }
+  ]
+}

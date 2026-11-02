@@ -1,3 +1,5 @@
+import { fetchPortfolio } from "@/lib/portfolio-data";
+import { portfolioAttention } from "@/lib/portfolio";
 import Link from "next/link";
 import { Chrome } from "./components/Chrome";
 import { readRepoFile, listRepoDir } from "@/lib/repo";
@@ -77,10 +79,11 @@ export default async function Today() {
     }
   }
 
-  const [dueItems, ownerLoopItems, intake, events, loadedProjects, jobsPending, repliesPending] = await Promise.all([
+  const [dueItems, ownerLoopItems, intake, events, loadedProjects, jobsPending, repliesPending, portfolio] = await Promise.all([
     fetchDueItems(), fetchOwnerLoopItems(), fetchIntakeOverview(), fetchBusinessLatestEvents(), loadProjects().catch(() => null),
     countPendingJobSubmissions(),
     countRepliesToReview(),
+    fetchPortfolio(),
   ]);
   const dueInWindow = (dueItems ?? []).filter(inAlertWindow).length;
   const queue = buildAttentionQueue({
@@ -126,6 +129,7 @@ export default async function Today() {
 
   return (
     <Chrome title="Today" sub="the whole operation, triaged" active="/">
+      <Link href="/focus" className="card" style={{ display: "block" }}><h2>Shared project focus</h2><div className="meta">{portfolio ? `${portfolio.objectives.filter((o) => o.status !== "complete").length} objectives · ${portfolioAttention(portfolio, now).length} need attention · ${portfolio.leases.length} work sessions` : "Shared records unavailable"} · goals, evidence and recovery →</div></Link>
       <BusinessBoard cards={businesses} available={{ intake: intake !== null, loop: !loopUnavailable,
         events: events !== null, dates: dueItems !== null, projects: loadedProjects !== null }} now={now} jobsPending={jobsPending} repliesPending={repliesPending} />
       <div className="grid">

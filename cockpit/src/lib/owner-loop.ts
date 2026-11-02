@@ -129,7 +129,7 @@ export function groupOwnerLoopItems(items: OwnerLoopItem[], now: Date): OwnerLoo
 
 export type TimelineEntry = {
   id: string;
-  source: "owner-loop" | "business";
+  source: "owner-loop" | "business" | "portfolio";
   ref: string | null;
   title: string;
   project: string;

@@ -62,3 +62,14 @@ describe("table specs", () => {
     expect(daysUntil(null, "2026-09-01")).toBeNull();
   });
 });
+
+
+describe("contact pipeline", () => {
+  it("accepts explicit buyer readiness and follow-up without inventing contact activity", () => {
+    const result = sanitizePatch("contacts", { offer: "Educator pilot", pipeline_stage: "relationship_hold", next_action: "Check existing institutional relationship", next_contact_at: "2026-11-06", verified_at: "2026-11-02", source_url: "https://example.edu/program" });
+    expect(result.patch.pipeline_stage).toBe("relationship_hold");
+    expect(result.patch.next_contact_at).toBe("2026-11-06");
+    expect(result.patch).not.toHaveProperty("last_contact_at");
+    expect(() => sanitizePatch("contacts", { pipeline_stage: "imaginary" })).toThrow();
+  });
+});

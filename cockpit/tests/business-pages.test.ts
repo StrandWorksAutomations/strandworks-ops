@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { email, loopItem, dueItem, NOW } from "./inbox-fixtures";
 
 vi.stubGlobal("React", React);
+vi.mock("../src/lib/portfolio-data", () => ({ fetchPortfolio: vi.fn().mockResolvedValue({ objectives: [], metrics: [], leases: [], reports: [] }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("../src/lib/owner-loop-data", () => ({ fetchOwnerLoopItems: vi.fn(), fetchOwnerLoopEvents: vi.fn() }));
 vi.mock("../src/lib/intake-data", () => ({ fetchIntake: vi.fn() }));

@@ -5,7 +5,7 @@
 export type Tab = { href: string; label: string; boundary?: true };
 
 export const TABS: Tab[] = [
-  { href: "/operate", label: "Operate" },
+  { href: "/focus", label: "Focus" },
   { href: "/", label: "Today" },
   { href: "/inbox", label: "Inbox" },
   { href: "/decisions", label: "Decide" },

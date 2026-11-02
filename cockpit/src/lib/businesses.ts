@@ -13,6 +13,9 @@ export const BUSINESSES = [
   { key: "ember-vellum", name: "Ember & Vellum", projects: ["ember-and-vellum"], entities: ["ember vellum", "ember and vellum"] },
   { key: "medsim", name: "MedSim", projects: ["MedSim-Game", "medsim-physio"], entities: ["medsim", "med sim"] },
   { key: "personal-career", name: "Personal career & licenses", projects: [], entities: ["personal career", "personal licenses", "jonathan bouren"] },
+  { key: "wobble-ward", name: "Wobble Ward", projects: ["wobble-ward"], entities: ["wobble ward"] },
+  { key: "3rd-rider", name: "3rd Rider", projects: ["3rdrider", "3rd-rider"], entities: ["3rd rider", "3rdrider"] },
+  { key: "advertising", name: "Advertising", projects: ["ADVERTISING"], entities: ["advertising"] },
 ] as const;
 export type BusinessKey = typeof BUSINESSES[number]["key"];
 
