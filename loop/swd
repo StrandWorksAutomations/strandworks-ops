@@ -276,12 +276,45 @@ def observation_rank(row):
     return when, int(row.get("id", 0))
 
 
+def compact_text(value, limit=220):
+    text = " ".join(str(value).split())
+    return text if len(text) <= limit else text[:limit - 1] + "…"
+
+
+def metric_preview(value, limit=180):
+    if value is None:
+        return "unknown"
+    if not isinstance(value, dict):
+        return compact_text(json.dumps(value, ensure_ascii=False), limit)
+    parts = []
+    for key in ("status", "source_observed_at"):
+        if key in value:
+            parts.append(f"{key}={value[key] if value[key] is not None else 'unknown'}")
+    def totals(mapping, prefix=""):
+        for key, item in mapping.items():
+            if key in ("status", "source_observed_at"):
+                continue
+            label = prefix + key
+            if isinstance(item, (int, float, bool)):
+                parts.append(f"{label}={json.dumps(item)}")
+            elif isinstance(item, list):
+                parts.append(f"{label}={len(item)} items")
+    for key in ("summary", "counts", "totals"):
+        if isinstance(value.get(key), dict):
+            totals(value[key])
+    totals(value)
+    for key in ("reason", "error", "availability"):
+        if isinstance(value.get(key), str):
+            parts.append(f"{key}={value[key]}")
+    return compact_text(", ".join(parts) if parts else json.dumps(value, ensure_ascii=False), limit)
+
+
 def focus_text(snapshot):
     lines = [f"PORTFOLIO FOCUS — checked {snapshot['checked_at']}"]
     for objective in snapshot.get("objectives", []):
         lines.append(f"- {objective['id']} [{objective['status']}] {objective['title']} ({objective['project']})")
-        lines.append(f"  outcome: {objective['outcome']}")
-        lines.append(f"  target: {objective.get('target_at') or 'unset'}; next review: {objective.get('review_at') or 'unset'}")
+        lines.append(f"  outcome: {compact_text(objective['outcome'])}")
+        lines.append(f"  owner: {objective.get('accountable_owner') or 'unset'}; target: {objective.get('target_at') or 'unset'}; next review: {objective.get('review_at') or 'unset'}")
         if objective.get("issue_ids"):
             lines.append("  Linear: " + ", ".join(objective["issue_ids"]))
         latest = {}
@@ -292,7 +325,7 @@ def focus_text(snapshot):
                     latest[observation["metric_id"]] = observation
         for metric in objective.get("metric_definitions", []):
             observation = latest.get(metric["id"])
-            value = json.dumps(observation["value"]) if observation else "unknown"
+            value = metric_preview(observation["value"]) if observation else "unknown"
             lines.append(f"  metric {metric['id']}: {value}" + (f" (observed {observation['observed_at']})" if observation else " (no observation)"))
     now = datetime.now(timezone.utc)
     for lease in snapshot.get("leases", []):
@@ -301,20 +334,20 @@ def focus_text(snapshot):
         expired = datetime.fromisoformat(lease["expires_at"].replace("Z", "+00:00")) <= now
         lines.append(f"- {lease['issue_id']}: {'RECOVERY REQUIRED' if expired else 'claimed'} by {lease['agent']} session {lease['session_id']}; expires {lease['expires_at']}")
         if lease.get("checkpoint"):
-            lines.append("  checkpoint: " + lease["checkpoint"])
+            lines.append("  checkpoint: " + compact_text(lease["checkpoint"]))
         if lease.get("next_action"):
-            lines.append("  next: " + lease["next_action"])
+            lines.append("  next: " + compact_text(lease["next_action"]))
     reports_seen = {}
     for report in snapshot.get("reports", []):
         objective = report["objective_id"]
         if reports_seen.get(objective, 0) >= 3:
             continue
         reports_seen[objective] = reports_seen.get(objective, 0) + 1
-        lines.append(f"- report {report['issue_id']} at {report['created_at']}: {report['result']}")
+        lines.append(f"- report {report['issue_id']} at {report['created_at']}: {compact_text(report['result'])}")
         if report.get("next_action"):
-            lines.append("  next: " + report["next_action"])
+            lines.append("  next: " + compact_text(report["next_action"]))
     lines.append("Linear owns issue status. Claim before writing; checkpoint every 15 minutes; leases expire after 60 minutes.")
-    lines.append("Older evidence: swd history OBJECTIVE --kind reports|metrics [--limit 20] [--before-id CURSOR].")
+    lines.append("Full records: swd focus --json; older evidence: swd history OBJECTIVE --kind reports|metrics [--limit 20] [--before-id CURSOR].")
     return "\n".join(lines)
 
 
@@ -325,7 +358,8 @@ def cmd_focus(a):
     else:
         print(focus_text(snapshot))
         for item in snapshot.get("owner_loop", []):
-            print(fmt_item(item, verbose=True))
+            print(fmt_item(item, verbose=False))
+        print("Full owner context: swd show REF.")
 
 
 def cmd_objective(a):

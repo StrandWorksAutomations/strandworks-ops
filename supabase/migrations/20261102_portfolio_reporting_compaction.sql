@@ -19,6 +19,15 @@ create view public.portfolio_latest_metrics with (security_barrier=true) as
 revoke all on public.portfolio_latest_metrics from public,anon,authenticated;
 grant select on public.portfolio_latest_metrics to service_role;
 
+create view public.portfolio_recent_reports with (security_barrier=true) as
+  select r.id,r.issue_id,r.objective_id,r.session_id,r.agent,r.result,r.evidence,
+    r.validation,r.remaining,r.next_action,r.idempotency_key,r.created_at
+  from public.portfolio_objectives o cross join lateral
+    (select * from public.portfolio_work_reports r0 where r0.objective_id=o.id
+     order by r0.created_at desc,r0.id desc limit 3) r;
+revoke all on public.portfolio_recent_reports from public,anon,authenticated;
+grant select on public.portfolio_recent_reports to service_role;
+
 create or replace function public.portfolio_focus(p_token text,p_project text default 'portfolio') returns jsonb
 language plpgsql security definer set search_path = public as $$
 begin
@@ -36,9 +45,7 @@ begin
         and (p_project is null or p_project='portfolio'
           or public.portfolio_project_key(l.project)=public.portfolio_project_key(p_project))),'[]'),
     'reports',coalesce((select jsonb_agg(to_jsonb(r)-'payload_hash' order by r.created_at desc,r.id desc)
-      from public.portfolio_objectives o cross join lateral
-        (select * from public.portfolio_work_reports r0 where r0.objective_id=o.id
-         order by r0.created_at desc,r0.id desc limit 3) r
+      from public.portfolio_recent_reports r join public.portfolio_objectives o on o.id=r.objective_id
       where p_project is null or p_project='portfolio'
         or public.portfolio_project_key(o.project)=public.portfolio_project_key(p_project)),'[]'),
     'history',jsonb_build_object('rpc','portfolio_history','default_limit',20,'max_limit',100,'reports_per_objective',3));

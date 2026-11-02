@@ -139,6 +139,8 @@ class PortfolioDatabaseTests(unittest.TestCase):
         self.assertIn("permission denied", self.run_sql("set role anon; select * from portfolio_objectives;", fail=True))
         self.assertIn("permission denied", self.run_sql("set role anon; select * from portfolio_latest_metrics;", fail=True))
         self.assertIn("permission denied", self.run_sql("set role authenticated; select * from portfolio_latest_metrics;", fail=True))
+        self.assertIn("permission denied", self.run_sql("set role anon; select * from portfolio_recent_reports;", fail=True))
+        self.assertIn("permission denied", self.run_sql("set role authenticated; select * from portfolio_recent_reports;", fail=True))
         self.assertIn("invalid agent token", self.run_sql("select portfolio_history('wrong','metrics');", fail=True))
         with patch.object(swd, "rpc", side_effect=swd.LoopError("network unavailable")):
             with self.assertRaisesRegex(swd.LoopError, "unavailable"):
@@ -164,6 +166,8 @@ class PortfolioDatabaseTests(unittest.TestCase):
         self.assertEqual([m["value"] for m in focus["metrics"] if m["objective_id"] == "compact-a"], [25])
         for key in ("compact-a", "compact-b"):
             self.assertEqual(len([r for r in focus["reports"] if r["objective_id"] == key]), 3)
+        self.assertEqual(self.run_sql("set role service_role; select count(*) from portfolio_recent_reports where objective_id='compact-a';"), "3")
+        self.assertEqual(self.run_sql("select count(*) from information_schema.columns where table_schema='public' and table_name='portfolio_recent_reports' and column_name='payload_hash';"), "0")
         self.assertEqual({l["issue_id"] for l in focus["leases"]} & {"STR-91011", "STR-91012", "STR-91013"}, {"STR-91011", "STR-91012"})
         default = self.rpc("portfolio_history", "compact-a", "metrics")
         self.assertEqual(len(default["items"]), 20)
@@ -224,6 +228,51 @@ class PortfolioDatabaseTests(unittest.TestCase):
 
 
 class PortfolioCliTests(unittest.TestCase):
+    def test_human_focus_is_compact_but_json_and_history_retain_full_evidence(self):
+        long = "receipt-detail " * 1000
+        value = {"status": "stale", "source_observed_at": "2026-11-01T12:00:00Z",
+                 "summary": {"scheduled": 19, "drafts": 15}, "issues": [{"detail": long}], "raw": long}
+        snapshot = {"checked_at": "2026-11-02T12:00:00Z", "objectives": [], "metrics": [], "leases": [], "reports": []}
+        for key, owner in (("one", "Jonathan"), ("two", "Educator lane")):
+            snapshot["objectives"].append({"id": key, "project": key, "status": "active", "title": key,
+                "outcome": long, "accountable_owner": owner, "target_at": "2026-11-04T05:00:00Z",
+                "review_at": "2026-11-03T22:00:00Z", "metric_definitions": [{"id": "health"}]})
+            snapshot["metrics"].append({"id": 1, "objective_id": key, "metric_id": "health", "value": value,
+                "observed_at": "2026-11-01T12:00:00Z", "created_at": "2026-11-02T12:00:00Z"})
+            for n in range(4):
+                snapshot["reports"].append({"id": n, "objective_id": key, "issue_id": "STR-91001",
+                    "created_at": "2026-11-02T12:00:00Z", "result": long, "next_action": long})
+        rendered = swd.focus_text(snapshot)
+        self.assertLessEqual(len(swd.metric_preview(value)), 180)
+        self.assertIn("status=stale", rendered)
+        self.assertIn("scheduled=19", rendered)
+        self.assertIn("drafts=15", rendered)
+        self.assertIn("source_observed_at=2026-11-01T12:00:00Z", rendered)
+        self.assertIn("owner: Jonathan", rendered)
+        self.assertIn("owner: Educator lane", rendered)
+        self.assertIn("target: 2026-11-04T05:00:00Z", rendered)
+        self.assertIn("next review: 2026-11-03T22:00:00Z", rendered)
+        self.assertEqual(rendered.count("- report "), 6)
+        self.assertLess(len(rendered), 5000)
+        self.assertNotIn(long, rendered)
+        with patch.object(swd, "rpc", return_value=snapshot), patch("builtins.print") as printed:
+            swd.cmd_focus(argparse.Namespace(project="portfolio", json=True))
+        self.assertEqual(json.loads(printed.call_args.args[0]), snapshot)
+        snapshot["owner_loop"] = [{"ref": "D-9999", "status": "ruled", "project": "portfolio",
+            "kind": "decision", "origin_agent": "codex", "created_at": "2026-11-02T12:00:00Z",
+            "title": "Keep the owner ruling", "body": long, "ruling": "A", "ruling_note": "Approved scope",
+            "ruled_at": "2026-11-02T12:00:00Z", "ruled_via": "chat:codex", "options": []}]
+        with patch.object(swd, "rpc", return_value=snapshot), patch("builtins.print") as printed:
+            swd.cmd_focus(argparse.Namespace(project="portfolio", json=False))
+        human = "\n".join(call.args[0] for call in printed.call_args_list)
+        self.assertNotIn(long, human)
+        self.assertIn("RULING: A — Approved scope", human)
+        self.assertIn("Full owner context: swd show REF", human)
+        page = {"items": [snapshot["reports"][0]], "next_before_id": 12}
+        with patch.object(swd, "rpc", return_value=page), patch("builtins.print") as printed:
+            swd.cmd_history(argparse.Namespace(objective="one", kind="reports", limit=20, before_id=None))
+        self.assertEqual(json.loads(printed.call_args.args[0]), page)
+
     def test_history_cli_preserves_page_cursor_and_propagates_unavailable(self):
         args = argparse.Namespace(objective="ranking", kind="metrics", limit=20, before_id=42)
         with patch.object(swd, "rpc", return_value={"items": [], "next_before_id": None}) as rpc, patch("builtins.print"):
