@@ -1,8 +1,7 @@
 import { Navigation } from "./Navigation";
-import { TextSize } from "./TextSize";
+import { AppHeader } from "./AppHeader";
 
-// Shared frame for every page except Operate, styled to match it: the
-// STRANDWORKS // PAGE bar, the section rail, then the page.
+// The shared page frame. Operate uses AppHeader with its three-column content.
 export function Chrome({
   title,
   sub,
@@ -14,28 +13,12 @@ export function Chrome({
   active: string;
   children: React.ReactNode;
 }) {
-  const today = new Date().toISOString().slice(0, 10);
   return (
     <div className="sw-root">
-      <header className="topbar">
-        <div className="sw-brand">
-          <div className="sw-wordmark">
-            STRANDWORKS <span>// </span>
-            <h1>{title}</h1>
-          </div>
-          {sub ? <div className="sub">{sub}</div> : null}
-        </div>
-        <div className="topbar-right">
-          <span className="today">{today}</span>
-          <TextSize />
-          <form action="/api/auth/logout" method="post">
-            <button className="lock-btn">Lock</button>
-          </form>
-        </div>
-      </header>
+      <AppHeader title={title} sub={sub} active={active} />
       <div className="sw-shell">
         <Navigation active={active} />
-        <main className="shell">{children}</main>
+        <main className="shell" id="main-content" tabIndex={-1}>{children}</main>
       </div>
     </div>
   );

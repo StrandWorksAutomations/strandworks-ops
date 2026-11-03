@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-// Whole-page zoom steps; 1.12 is the default reading size.
+// Enlarge text without scaling the page width or shrinking the phone viewport.
 const STEPS = [1, 1.12, 1.25, 1.4, 1.6];
-const DEFAULT = 1; // index of 1.12
+const DEFAULT = 0;
 const KEY = "cockpit-text-zoom";
 
 function apply(i: number) {

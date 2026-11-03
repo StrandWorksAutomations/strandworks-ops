@@ -4,8 +4,8 @@
 // /api/operate/feed for fresh data, animates newly-arrived river rows, and
 // posts answers to /api/operate/answer. All colour comes from event severity.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { TABS } from "../components/tabs";
+import { AppHeader } from "../components/AppHeader";
+import { Navigation } from "../components/Navigation";
 import {
   groupIntoBands,
   type OperateSnapshot,
@@ -106,42 +106,19 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
 
   return (
     <div className="op-root">
-      <header className="op-topbar">
-        <div className="op-brand">
-          <span className="op-wordmark">
-            STRANDWORKS <span>// OPERATE</span>
-          </span>
-          <span className="op-wordmark-sub">dashboard.strandautomationworks.com</span>
-        </div>
-        <div className="op-topbar-right">
-          <span className={`op-status-pill${allSystemsNominal && snap.feedOk ? "" : " op-degraded"}`}>
-            <span className={`op-led${allSystemsNominal && snap.feedOk ? "" : " op-amber"}`} />
-            {snap.feedOk ? (allSystemsNominal ? "ALL SYSTEMS NOMINAL" : "ATTENTION") : "FEED OFFLINE"}
-          </span>
-          <span className="op-clock" suppressHydrationWarning>
-            {clock || "--:--:--"}
-          </span>
-          <form action="/api/auth/logout" method="post">
-            <button className="op-lock-btn" type="submit">
-              LOCK
-            </button>
-          </form>
-        </div>
-      </header>
+      <AppHeader title="Operate" active="/operate" />
+      <div className="op-status-line">
+        <span className={`op-status-pill${allSystemsNominal && snap.feedOk ? "" : " op-degraded"}`}>
+          <span className={`op-led${allSystemsNominal && snap.feedOk ? "" : " op-amber"}`} />
+          {snap.feedOk ? (allSystemsNominal ? "All systems nominal" : "Attention") : "Feed offline"}
+        </span>
+        <span className="op-clock" suppressHydrationWarning>{clock || "--:--:--"}</span>
+      </div>
 
-      <div className="op-shell">
+      <main className="op-shell" id="main-content" tabIndex={-1}>
         {/* LEFT RAIL */}
         <div className="op-rail-left">
-          <nav className="op-card op-nav-card" aria-label="Sections">
-            <ul className="op-nav-list">
-              {TABS.map((n) => {
-                const current = n.href === "/operate";
-                const props = { href: n.href, className: current ? "op-active" : "", "aria-current": current ? "page" as const : undefined };
-                const label = <><span className="op-n-dot" />{n.label}</>;
-                return <li key={n.href}>{n.boundary ? <a {...props}>{label}</a> : <Link {...props}>{label}</Link>}</li>;
-              })}
-            </ul>
-          </nav>
+          <Navigation active="/operate" />
 
           <section className="op-card">
             <p className="op-card-title">
@@ -286,7 +263,7 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
             </div>
           </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
