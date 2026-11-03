@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "../components/AppHeader";
 import { Navigation } from "../components/Navigation";
 import {
+  formatOperateTime,
   groupIntoBands,
   type OperateSnapshot,
   type RiverEvent,
@@ -27,17 +28,6 @@ function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function fmtClock(d: Date): string {
-  const p = (n: number) => (n < 10 ? "0" + n : "" + n);
-  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-}
-
-function fmtEventTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "--:--:--";
-  return fmtClock(d);
-}
-
 export function OperateClient({ initial }: { initial: OperateSnapshot }) {
   const [snap, setSnap] = useState<OperateSnapshot>(initial);
   const [filter, setFilter] = useState<"all" | RiverCategory>("all");
@@ -54,7 +44,7 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
 
   // Clock tick.
   useEffect(() => {
-    const tick = () => setClock(fmtClock(new Date()));
+    const tick = () => setClock(formatOperateTime(new Date().toISOString()));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
@@ -99,7 +89,7 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
     () => (filter === "all" ? snap.events : snap.events.filter((e) => e.category === filter)),
     [snap.events, filter]
   );
-  const bands = useMemo(() => groupIntoBands(filteredEvents, Date.now()), [filteredEvents]);
+  const bands = useMemo(() => groupIntoBands(filteredEvents, Date.parse(snap.now)), [filteredEvents, snap.now]);
 
   const pendingCount = snap.pending.filter((p) => !resolved[p.questionId]).length;
   const allSystemsNominal = snap.systems.every((s) => s.severity !== "warn" && s.severity !== "crit");
@@ -112,7 +102,7 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
           <span className={`op-led${allSystemsNominal && snap.feedOk ? "" : " op-amber"}`} />
           {snap.feedOk ? (allSystemsNominal ? "All systems nominal" : "Attention") : "Feed offline"}
         </span>
-        <span className="op-clock" suppressHydrationWarning>{clock || "--:--:--"}</span>
+        <span className="op-clock">{clock || "--:--:--"} ET</span>
       </div>
 
       <main className="op-shell" id="main-content" tabIndex={-1}>
@@ -285,7 +275,7 @@ function EventRow({ ev, entering }: { ev: RiverEvent; entering: boolean }) {
     <>
       <div className={`op-event-row op-sev-${ev.severity}${entering ? " op-entering" : ""}`}>
         <span className={`op-ev-bar op-sev-${ev.severity}`} />
-        <span className="op-ev-time">{fmtEventTime(ev.ts)}</span>
+        <span className="op-ev-time">{formatOperateTime(ev.ts)}</span>
         <span className="op-ev-chip">{ev.agent.toUpperCase()}</span>
         <span className="op-ev-proj">{ev.proj}</span>
         <span className="op-ev-msg">{ev.msg}</span>
