@@ -13,6 +13,8 @@
 //   crit  — red           (errors / failures only)
 //   quiet — muted ink      (idle / no-op)
 
+import { OWNER_TIME_ZONE, ownerDay } from "./owner-loop";
+
 export type Severity = "ok" | "info" | "warn" | "crit" | "quiet";
 export type RiverCategory = "agent" | "deploy" | "decision" | "scout" | "system";
 export type Tier = "urgent" | "normal" | "fyi";
@@ -264,8 +266,23 @@ export function bandOf(tsIso: string, nowMs: number): BandKey {
   const diffMin = (nowMs - t) / 60000;
   if (diffMin < 5) return "now";
   if (diffMin < 60) return "hour";
-  if (new Date(t).toDateString() === new Date(nowMs).toDateString()) return "today";
+  if (Number.isFinite(t) && ownerDay(tsIso) === ownerDay(new Date(nowMs).toISOString())) return "today";
   return "earlier";
+}
+
+// The server and the owner's phone can use different system time zones.
+// Render both the river and the live clock in the owner's Eastern time zone.
+const OPERATE_CLOCK = new Intl.DateTimeFormat("en-GB", {
+  timeZone: OWNER_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+});
+
+export function formatOperateTime(iso: string): string {
+  const date = new Date(iso);
+  return Number.isFinite(date.getTime()) ? OPERATE_CLOCK.format(date) : "--:--:--";
 }
 
 // Groups newest-first events into ordered time bands. The "Now" band is always
