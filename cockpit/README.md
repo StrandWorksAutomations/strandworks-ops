@@ -89,6 +89,19 @@ dates use Supabase through server-only REST calls.
   Production never runs dry-run: a ruling without `GITHUB_TOKEN` refuses
   with a clear error.
 
+## Phone navigation and appearance
+
+Every cockpit page, including Operate and sign-in, has the same sticky header:
+**Menu** at the top left and **Light mode / Dark mode** at the top right.
+The menu opens a vertical list with large targets, highlights the current section,
+closes on selection or Escape, and keeps Close visible while scrolling. Wide
+screens also retain the section rail. Text size and Lock dashboard are in Menu.
+
+The theme follows the device on first visit and remembers an explicit choice in
+`cockpit-theme` storage and a same-origin preference cookie shared with Orchard.
+Text-size controls scale typography without applying page-wide CSS zoom. The
+separate Orchard application maintains its matching header in `tenetrix-orchard`.
+
 ## Env vars (all optional in local dev)
 
 | var | purpose |

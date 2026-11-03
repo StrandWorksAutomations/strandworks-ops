@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { AppHeader } from "../components/AppHeader";
 import { startAuthentication } from "@simplewebauthn/browser";
 import { useRouter } from "next/navigation";
 
@@ -41,7 +42,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="gate">
+    <>
+    <AppHeader title="Sign in" locked />
+    <main className="gate" id="main-content" tabIndex={-1}>
       <div className="center-screen">
         <div>
           <h1 className="sw-wordmark gate-title">STRANDWORKS <span>// COCKPIT</span></h1>
@@ -52,6 +55,7 @@ export default function LoginPage() {
         </button>
         {error ? <p className="error-text">{error}</p> : null}
       </div>
-    </div>
+    </main>
+    </>
   );
 }

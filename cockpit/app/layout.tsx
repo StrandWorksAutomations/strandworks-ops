@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{var z=localStorage.getItem("cockpit-text-zoom");if(z)document.documentElement.style.setProperty("--text-zoom",z)}catch(e){}',
+              'try{var z=localStorage.getItem("cockpit-text-zoom");if(["1","1.12","1.25","1.4","1.6"].includes(z))document.documentElement.style.setProperty("--text-zoom",z)}catch(e){};try{var c=document.cookie.match(/(?:^|; )cockpit-theme=(light|dark)(?:;|$)/);var t=c?c[1]:localStorage.getItem("cockpit-theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch(e){document.documentElement.dataset.theme="dark"}',
           }}
         />
       </head>

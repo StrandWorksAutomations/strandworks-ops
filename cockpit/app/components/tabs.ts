@@ -1,10 +1,10 @@
-// The one list of cockpit sections. The shared rail (Navigation) and the
-// Operate page both render it, so a new page only needs adding here.
+// The shared rail and top menu use one ordered list on every cockpit page.
 // `boundary` marks a path served by another app through a rewrite
 // (next.config.ts), which needs a full page load instead of a client Link.
 export type Tab = { href: string; label: string; boundary?: true };
 
 export const TABS: Tab[] = [
+  { href: "/operate", label: "Operate" },
   { href: "/focus", label: "Focus" },
   { href: "/", label: "Today" },
   { href: "/inbox", label: "Inbox" },

@@ -2,6 +2,7 @@
 // Owner enrollment — first run only. The server refuses registration once a
 // credential exists, so this page is inert after setup.
 import { useState } from "react";
+import { AppHeader } from "../components/AppHeader";
 import { startRegistration } from "@simplewebauthn/browser";
 
 export default function SetupPage() {
@@ -47,7 +48,9 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="gate">
+    <>
+    <AppHeader title="Owner setup" locked />
+    <main className="gate" id="main-content" tabIndex={-1}>
       <div className="center-screen">
         <div>
           <h1 style={{ fontSize: 24, margin: 0 }}>Owner setup</h1>
@@ -87,6 +90,7 @@ export default function SetupPage() {
         )}
         {error ? <p className="error-text">{error}</p> : null}
       </div>
-    </div>
+    </main>
+    </>
   );
 }
