@@ -46,6 +46,23 @@ export function latestMetric(metrics: Observation[], objective: string, metric: 
   const effectiveTime = (m: Observation) => (m.value !== null && typeof m.value === "object" && "source_observed_at" in m.value ? timestamp(m.created_at) ?? timestamp(m.observed_at) : timestamp(m.observed_at)) ?? -Infinity;
   return candidates.sort((a, b) => effectiveTime(b) - effectiveTime(a) || b.id - a.id)[0];
 }
+const PROVIDER_USAGE_FRESH_MS = 2 * 60 * 60 * 1000;
+
+export function providerUsageReading(value: unknown, now: Date) {
+  const record = value && typeof value === "object" ? value as Record<string, unknown> : null;
+  const observedAt = timestamp(record?.observed_at);
+  const resetAt = timestamp(record?.reset_at);
+  const used = record?.used_percent;
+  const currentTime = now.getTime();
+  if (observedAt === null || resetAt === null || observedAt > currentTime || observedAt >= resetAt
+    || typeof used !== "number" || !Number.isFinite(used) || used < 0 || used > 100) {
+    return { state: "unknown" } as const;
+  }
+  if (currentTime >= resetAt) return { state: "previous", observedAt, resetAt } as const;
+  if (currentTime - observedAt > PROVIDER_USAGE_FRESH_MS) return { state: "stale", observedAt, resetAt } as const;
+  return { state: "current", observedAt, resetAt, used } as const;
+}
+
 export function leaseState(lease: WorkLease, now: Date): "released" | "active" | "needs recovery" {
   if (lease.released_at) return "released";
   return Date.parse(lease.expires_at) > now.getTime() ? "active" : "needs recovery";
