@@ -49,6 +49,10 @@ dates use Supabase through server-only REST calls.
   checks, current attention items, local results, deployment and owner
   acceptance remain separately labeled. Missing sources produce partial or
   unknown counts. Free-text reports never establish structured delivery status.
+- **Provider usage** — the Focus and project scorecards show source-dated
+  Codex and Claude usage, including each additional reported limit window.
+  Readings expire at the provider reset and are labeled stale after two hours.
+  Stale and previous-period percentages remain in the recorded receipt.
 - **Marketing** — an authenticated visual week board and gallery of actual
   Metricool post media, captions and source-reported states. Account strips
   cover the connected brands; only checked queues show post counts. A draft
