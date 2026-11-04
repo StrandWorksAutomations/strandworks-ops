@@ -3,6 +3,9 @@
 // database is the source of truth for these rows (registered in
 // registers/calendar.csv); this module only reads and shapes them.
 import { sbSelect, supabaseConfigured } from "./supabase-rest";
+import { ownerDay } from "./owner-loop";
+
+const DAY_MS = 86_400_000;
 
 export type DueItem = {
   entity: string;
@@ -22,21 +25,22 @@ type Row = {
   item: string | null;
   jurisdiction: string | null;
   due_on: string | null;
-  days_left: number | null;
   status: string | null;
   fee_usd: string | number | null;
   alert_days_before: number | null;
 };
 
-export function shapeDueItem(r: Row): DueItem {
+export function shapeDueItem(r: Row, today = ownerDay(new Date().toISOString())): DueItem {
   const fee = r.fee_usd === null || r.fee_usd === undefined ? null : Number(r.fee_usd);
+  // Both values are calendar dates, so compare them without a local DST offset.
+  const due = r.due_on && /^\d{4}-\d{2}-\d{2}$/.test(r.due_on) ? Date.parse(r.due_on) : NaN;
   return {
     entity: r.entity ?? "",
     kind: r.kind ?? "",
     item: r.item ?? "",
     jurisdiction: r.jurisdiction,
     dueOn: r.due_on,
-    daysLeft: r.days_left,
+    daysLeft: Number.isFinite(due) ? (due - Date.parse(today)) / DAY_MS : null,
     status: r.status ?? "",
     feeUsd: Number.isFinite(fee as number) ? (fee as number) : null,
     alertDaysBefore: r.alert_days_before,
@@ -45,14 +49,15 @@ export function shapeDueItem(r: Row): DueItem {
 
 // null ⇒ the backend isn't configured or unreachable; the UI says so rather
 // than rendering an empty list as if nothing were due.
-export async function fetchDueItems(): Promise<DueItem[] | null> {
+export async function fetchDueItems(now = new Date()): Promise<DueItem[] | null> {
   if (!supabaseConfigured()) return null;
   try {
     const rows = await sbSelect<Row>(
       "v_admin_due_items",
-      "select=entity,kind,item,jurisdiction,due_on,days_left,status,fee_usd,alert_days_before&order=due_on.asc.nullslast&limit=200",
+      "select=entity,kind,item,jurisdiction,due_on,status,fee_usd,alert_days_before&order=due_on.asc.nullslast&limit=200",
     );
-    return rows.map(shapeDueItem);
+    const today = ownerDay(now.toISOString());
+    return rows.map((row) => shapeDueItem(row, today));
   } catch {
     return null;
   }
