@@ -12,7 +12,10 @@ export default async function Focus({ searchParams }: { searchParams: Promise<{ 
   const attention = data ? portfolioAttention(data, new Date()) : [];
   return <Chrome title="Focus" sub="shared goals · active work · evidence · recovery" active="/focus">
     <nav className="chips" aria-label="Project focus"><Link className={`chip${params.project ? "" : " on"}`} href="/focus">All projects</Link>{Array.from(new Set(all?.objectives.map((o) => o.project) ?? [])).map((project) => <Link className={`chip${params.project === project ? " on" : ""}`} key={project} href={`/focus?project=${encodeURIComponent(project)}`}>{project}</Link>)}</nav>
-    {attention.length ? <section aria-label="Work needing attention"><div className="section-head"><h2>Needs attention</h2><span className="meta">{attention.length}</span></div>{attention.map((a) => <div className="card" key={a.id}><b>{a.title}</b><div className="meta">{a.project} · {a.detail}</div></div>)}</section> : null}
+    {attention.length ? <section aria-label="Work needing attention"><div className="section-head"><h2>Needs attention</h2><span className="meta">{attention.length}</span></div>{attention.map((a) => <div className="card" key={a.id}>
+      <a href={a.href} className="card-link" {...(a.external ? { target: "_blank", rel: "noreferrer" } : {})}><b>{a.title}</b><span className="meta swipe-excerpt">{a.project} · {a.detail}</span></a>
+      <div className="card-actions"><a href={a.href} {...(a.external ? { target: "_blank", rel: "noreferrer" } : {})}>Open</a><Link href={a.respond}>Respond</Link></div>
+    </div>)}</section> : null}
     <div className="section-head"><h2>Committed outcomes</h2><Link href="/timeline" className="meta">Timeline →</Link></div>
     <PortfolioObjectives data={data} />
   </Chrome>;

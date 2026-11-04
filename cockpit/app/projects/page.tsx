@@ -102,7 +102,7 @@ export default async function ProjectsIndex() {
       ) : (
         <div className="ledger">
           {scouts.rows.map((r) => (
-            <div key={r.repo} className="l-row">
+            <Link key={r.repo} href={`/projects/${encodeURIComponent(r.repo)}`} className="l-row">
               <span className="l-name">{r.repo}</span>
               <span className={`l-amount ${r.latestAudit === "never" ? "dim" : ""}`}>
                 audit {r.latestAudit.replace(/^audit-|\.md$/g, "")}
@@ -110,7 +110,7 @@ export default async function ProjectsIndex() {
               <span className={`l-amount ${r.latestDrift === "never" ? "dim" : ""}`}>
                 drift {r.latestDrift.replace(/^drift-|\.md$/g, "")}
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       )}

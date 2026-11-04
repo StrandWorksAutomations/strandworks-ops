@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Chrome } from "../components/Chrome";
 import { listBriefings, groupByDate } from "@/lib/briefings";
 import { renderMarkdown } from "@/lib/markdown";
+import { formatDay } from "@/lib/when";
 
 export const revalidate = 60;
 
@@ -19,7 +20,7 @@ export default async function BriefingsPage() {
         groups.map((g) => (
           <section key={g.date}>
             <div className="section-head">
-              <h2>{g.date}</h2>
+              <h2>{formatDay(g.date)}</h2>
               <span className="meta">{g.items.length}</span>
             </div>
             {g.items.map((b) => (

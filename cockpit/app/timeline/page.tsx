@@ -7,20 +7,22 @@ import Link from "next/link";
 import { Chrome } from "../components/Chrome";
 import { fetchDueItems } from "@/lib/due-items";
 import { fetchOwnerLoopItems, fetchOwnerLoopEvents } from "@/lib/owner-loop-data";
-import { buildTimelineUpcoming, groupTimelineEvents, groupOwnerLoopItems, eventSummary } from "@/lib/owner-loop";
+import { buildTimelineUpcoming, groupTimelineEvents, eventSummary, itemHref } from "@/lib/owner-loop";
+import { LoopItemCard } from "../components/LoopItemCard";
+import { formatDay, formatWhen, humanizeDates } from "@/lib/when";
 
 export const dynamic = "force-dynamic";
 
-function dayLabel(day: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: OWNER_TIME_ZONE,
-  }).format(new Date(`${day}T12:00:00Z`));
+function timeLabel(iso: string): string {
+  return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: OWNER_TIME_ZONE }).format(new Date(iso));
 }
 
-function timeLabel(iso: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: OWNER_TIME_ZONE,
-  }).format(new Date(iso));
+function timelineHref({ business, project, days }: { business: string; project: string; days: 14 | 30 }) {
+  const search = new URLSearchParams();
+  if (business) search.set("business", business);
+  if (project) search.set("project", project);
+  if (days === 14) search.set("days", "14");
+  return search.size ? `/timeline?${search}` : "/timeline";
 }
 
 export default async function TimelinePage({
@@ -45,17 +47,27 @@ export default async function TimelinePage({
   const allUpcoming = [...buildTimelineUpcoming(items ?? [], dueItems ?? [], now), ...portfolioDates(portfolio?.objectives ?? [], now)]
     .sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt) || a.id.localeCompare(b.id));
   const allHistory = groupTimelineEvents(events ?? [], now);
-  const projects = Array.from(new Set([
-    ...allUpcoming.map((entry) => entry.project),
-    ...allHistory.flatMap((group) => group.events.map((event) => event.item?.project ?? "")),
-  ].filter(Boolean))).sort();
+  const projectScopes = [
+    ...allUpcoming.map((entry) => ({ project: entry.project,
+      business: (entry.source === "business" ? businessForEntity(entry.project) : businessForProject(entry.project))?.key })),
+    ...allHistory.flatMap((group) => group.events.flatMap(({ item }) => item
+      ? [{ project: item.project, business: businessForProject(item.project)?.key }]
+      : [])),
+  ];
+  const projects = [...new Set(projectScopes
+    .filter((scope) => scope.project && (!business || scope.business === business))
+    .map((scope) => scope.project))].sort();
+  const projectHref = (nextProject: string) => timelineHref({ business, project: nextProject, days });
+  const businessHref = (nextBusiness: string) => {
+    const compatible = !nextBusiness || nextBusiness === business
+      || projectScopes.some((scope) => scope.project === project && scope.business === nextBusiness);
+    return timelineHref({ business: nextBusiness, project: compatible ? project : "", days });
+  };
   const upcoming = allUpcoming.filter((entry) => (!project || entry.project === project)
     && (!business || (entry.source === "business" ? businessForEntity(entry.project) : businessForProject(entry.project))?.key === business)
     && (entry.source === "business" ? entry.dueAt.slice(0, 10) : ownerDay(entry.dueAt)) <= endDay
     && !(days === 14 && entry.source === "owner-loop" && entry.kind === "decision"));
-  const upcomingRefs = new Set(upcoming.map((entry) => entry.ref).filter(Boolean));
-  const board = groupOwnerLoopItems(items ?? [], now);
-  const boardRefs = new Set([...board.needsYou, ...board.waiting, ...board.closed, ...board.alerts].map((item) => item.ref));
+  const itemsByEntry = new Map((items ?? []).map((item) => [`owner-loop:${item.id}`, item]));
   const history = groupTimelineEvents(
     (events ?? []).filter((event) => (!project || event.item?.project === project)
       && (!business || businessForProject(event.item?.project ?? "")?.key === business)),
@@ -66,16 +78,16 @@ export default async function TimelinePage({
 
   return (
     <Chrome title="Timeline" sub="dates ahead · rulings and agent outcomes" active="/timeline">
-      <BusinessFilters path="/timeline" selected={business} />
-      {days === 14 ? <p className="meta">Showing deadlines and milestones within 14 days, plus overdue. <Link href={`/timeline${business ? `?business=${business}` : ""}`}>Show 30 days</Link></p> : null}
+      <BusinessFilters path="/timeline" selected={business} businessHref={businessHref} />
+      {days === 14 ? <p className="meta">Showing deadlines and milestones within 14 days, plus overdue. <Link href={timelineHref({ business, project, days: 30 })}>Show 30 days</Link></p> : null}
       <nav className="chips timeline-filters" aria-label="Filter timeline by project">
-        <Link href="/timeline" className={`chip${project ? "" : " on"}`} aria-current={project ? undefined : "page"}>
+        <Link href={projectHref("")} className={`chip${project ? "" : " on"}`} aria-current={project ? undefined : "page"}>
           All projects
         </Link>
         {projects.map((name) => (
           <Link
             key={name}
-            href={`/timeline?project=${encodeURIComponent(name)}`}
+            href={projectHref(name)}
             className={`chip${project === name ? " on" : ""}`}
             aria-current={project === name ? "page" : undefined}
           >
@@ -85,7 +97,7 @@ export default async function TimelinePage({
       </nav>
       {project && !projects.includes(project) ? (
         <div className="card">
-          <div className="meta">No timeline entries for {project}. <Link href="/timeline">Clear project filter →</Link></div>
+          <div className="meta">No timeline entries for {project}. <Link href={projectHref("")}>Clear project filter →</Link></div>
         </div>
       ) : null}
 
@@ -109,26 +121,32 @@ export default async function TimelinePage({
             <div className="meta">No overdue or upcoming dates in the next {days} days{project || business ? " for this selection" : ""}.</div>
           </div>
         ) : null}
-        <ol className="timeline-list">
-          {upcoming.map((entry) => (
-            <li key={entry.id} id={entry.ref ?? undefined} className={`card timeline-entry${entry.overdue ? " overdue" : ""}`}>
-              <div className="timeline-entry-head">
-                <time dateTime={entry.dueAt} className="timeline-date">
-                  {dayLabel(entry.source === "business" ? entry.dueAt.slice(0, 10) : ownerDay(entry.dueAt))}
-                  {entry.source !== "business" ? ` · ${timeLabel(entry.dueAt)} ET` : ""}
-                </time>
-                {entry.overdue ? <span className="badge bad">OVERDUE</span> : null}
+        <p className="meta">Tap a date to open it. Swipe right to respond, swipe left to archive or delete.</p>
+        <div className="timeline-list">
+          {upcoming.map((entry) => {
+            const item = itemsByEntry.get(entry.id);
+            if (item) return <LoopItemCard key={entry.id} item={item} now={now} />;
+            const when = entry.source === "business" ? formatDay(entry.dueAt, now) : formatWhen(entry.dueAt, now);
+            return <div key={entry.id} className={`card timeline-entry${entry.overdue ? " overdue" : ""}`}>
+              <Link href={entry.href} className="card-link">
+                <span className="timeline-entry-head">
+                  <time dateTime={entry.dueAt} className="timeline-date">{when}</time>
+                  {entry.overdue ? <span className="badge bad">Overdue</span> : null}
+                </span>
+                <span className="chips">
+                  <span className="badge timeline-project">{entry.project}</span>
+                  <span className="timeline-kind meta">{entry.source === "business" ? "Business date" : entry.kind}</span>
+                </span>
+                <span className="swipe-title">{entry.title}</span>
+                {entry.detail ? <span className="meta swipe-excerpt">{humanizeDates(entry.detail)}</span> : null}
+              </Link>
+              <div className="card-actions">
+                <Link href={entry.href}>{entry.source === "business" ? "Open and edit" : "Open and edit dates"}</Link>
+                <Link href={`/respond?${new URLSearchParams({ project: entry.project, title: entry.title, detail: `${when}. ${entry.detail}` })}`}>Respond</Link>
               </div>
-              <div className="chips">
-                <span className="badge timeline-project">{entry.project}</span>
-                <span className="timeline-kind meta">{entry.source === "business" ? "Business" : entry.kind}</span>
-                {entry.ref ? <span className="mono meta">{entry.ref}</span> : null}
-              </div>
-              <h3>{entry.source === "owner-loop" && entry.ref && !boardRefs.has(entry.ref) ? entry.title : <Link href={entry.href} className="timeline-title">{entry.title}</Link>}</h3>
-              {entry.detail ? <div className="meta">{entry.detail}</div> : null}
-            </li>
-          ))}
-        </ol>
+            </div>;
+          })}
+        </div>
       </section>
 
       <section aria-labelledby="timeline-history">
@@ -146,20 +164,18 @@ export default async function TimelinePage({
           </div>
         ) : history.map((group) => (
           <div key={group.day}>
-            <h3 className="timeline-day"><time dateTime={group.day}>{dayLabel(group.day)}</time></h3>
+            <h3 className="timeline-day"><time dateTime={group.day}>{formatDay(group.day, now)}</time></h3>
             <ol className="timeline-list">
               {group.events.map((event) => {
-                const itemHref = event.item && upcomingRefs.has(event.item.ref) ? `#${event.item.ref}`
-                  : event.item && boardRefs.has(event.item.ref) ? `/decisions#${event.item.ref}` : null;
+                const href = event.item ? itemHref(event.item.ref) : null;
                 return (
                   <li key={event.id} className="card timeline-event">
                     <div className="timeline-entry-head">
                       <time dateTime={event.at} className="timeline-event-time">{timeLabel(event.at)}</time>
                       {event.item?.project ? <span className="badge timeline-project">{event.item.project}</span> : null}
                     </div>
-                    <div className="timeline-event-summary">{eventSummary(event)}</div>
-                    {event.item ? itemHref ? <Link href={itemHref} className="meta timeline-title">{event.item.title}</Link>
-                      : <div className="meta">{event.item.title}</div> : null}
+                    <div className="timeline-event-summary">{humanizeDates(eventSummary(event))}</div>
+                    {event.item && href ? <Link href={href} className="meta timeline-title">{event.item.title}</Link> : null}
                   </li>
                 );
               })}

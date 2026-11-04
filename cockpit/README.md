@@ -22,6 +22,12 @@ dates use Supabase through server-only REST calls.
   are flagged as stalled. Option, free-text and DROP rulings require an
   explicit confirm and call `owner_loop_rule` through `/api/loop/rule`.
   Alerts have a separate strip; closed outcomes remain visible for 14 days.
+- **Operate** — the sign-in landing page shows recent shared portfolio reports,
+  owner-loop activity, and open owner decisions. Decision links open the
+  matching card in Decide, where the existing confirmation flow records the
+  ruling. The activity view refreshes every 30 seconds while visible and labels
+  unavailable sources separately from empty queues. Systems and Treasury use
+  their existing registers.
 - **Timeline** — owner-loop deadlines, milestones and open decisions merge
   with business due dates for the next 30 days, with overdue items first.
   The last 30 days of owner-loop events show rulings, pickups and outcomes,
@@ -49,6 +55,10 @@ dates use Supabase through server-only REST calls.
   checks, current attention items, local results, deployment and owner
   acceptance remain separately labeled. Missing sources produce partial or
   unknown counts. Free-text reports never establish structured delivery status.
+- **Provider usage** — the Focus and project scorecards show source-dated
+  Codex and Claude usage, including each additional reported limit window.
+  Readings expire at the provider reset and are labeled stale after two hours.
+  Stale and previous-period percentages remain in the recorded receipt.
 - **Marketing** — an authenticated visual week board and gallery of actual
   Metricool post media, captions and source-reported states. Account strips
   cover the connected brands; only checked queues show post counts. A draft

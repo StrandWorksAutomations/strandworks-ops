@@ -64,10 +64,10 @@ describe("business-filtered destination pages", () => {
   });
   it("matches the board's 14-day window, mapped repos and loosely named business entities", async () => {
     vi.mocked(fetchOwnerLoopItems).mockResolvedValue([
-      loopItem({ kind: "deadline", title: "Company deadline", due_at: "2026-10-25T12:00:00Z" }),
-      loopItem({ project: "contracting-startup", kind: "milestone", title: "Medical milestone", due_at: "2026-11-07T12:00:00Z" }),
-      loopItem({ project: "wildfire", kind: "deadline", title: "Later medical deadline", due_at: "2026-11-08T12:00:00Z" }),
-      loopItem({ project: "wildfire", title: "Medical decision", due_at: "2026-10-25T12:00:00Z" }),
+      loopItem({ id: "a", ref: "D-0201", kind: "deadline", title: "Company deadline", due_at: "2026-10-25T12:00:00Z" }),
+      loopItem({ id: "b", ref: "D-0202", project: "contracting-startup", kind: "milestone", title: "Medical milestone", due_at: "2026-11-07T12:00:00Z" }),
+      loopItem({ id: "c", ref: "D-0203", project: "wildfire", kind: "deadline", title: "Later medical deadline", due_at: "2026-11-08T12:00:00Z" }),
+      loopItem({ id: "d", ref: "D-0204", project: "wildfire", title: "Medical decision", due_at: "2026-10-25T12:00:00Z" }),
     ]);
     vi.mocked(fetchDueItems).mockResolvedValue([dueItem({ entity: "Strandworks Medical Resources, LLC", item: "Medical annual report" })]);
     const html = renderToStaticMarkup(await TimelinePage({ searchParams: Promise.resolve({ business: "strandworks-medical", days: "14" }) }));
@@ -91,10 +91,10 @@ describe("business-filtered destination pages", () => {
       .find((entry) => entry.business.key === "tenetrix")!;
     expect(card.dates).toHaveLength(3);
     expect(html).toContain("3 dates");
-    expect(html).toContain('href="/focus?project=BadgeMedia#pilot">Review: Educator pilot</a>');
-    expect(html).toContain('href="/focus?project=BadgeMedia#pilot">Deliver: Educator pilot</a>');
-    expect(html).toContain('href="/focus?project=tenetrix-insight#parked">Review: Educator pilot</a>');
-    expect(html).not.toContain('href="/focus?project=tenetrix-insight#parked">Deliver:');
+    expect(html).toContain('href="/focus?project=BadgeMedia#pilot"');
+    expect(html).toContain("Deliver: Educator pilot");
+    expect(html).toContain('href="/focus?project=tenetrix-insight#parked"');
+    expect(html).not.toMatch(/#parked"[^>]*>(?:(?!<\/a>).)*Deliver:/);
     expect(html).not.toContain("#done");
     expect(html).not.toContain("#medical");
   });

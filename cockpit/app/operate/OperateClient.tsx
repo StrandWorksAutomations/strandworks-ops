@@ -1,9 +1,7 @@
 "use client";
-// The Operate page's interactive island: renders the three-rail cockpit
-// (left rail, live event river, decision dock) from a snapshot, polls
-// /api/operate/feed for fresh data, animates newly-arrived river rows, and
-// posts answers to /api/operate/answer. All colour comes from event severity.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// The activity river and decision dock refresh from the current shared sources.
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "../components/AppHeader";
 import { Navigation } from "../components/Navigation";
 import {
@@ -12,16 +10,13 @@ import {
   type OperateSnapshot,
   type RiverEvent,
   type RiverCategory,
-  type PendingDecision,
 } from "@/lib/operate";
 
-const POLL_MS = 7000;
+const POLL_MS = 30_000;
 const FILTERS: { key: "all" | RiverCategory; label: string }[] = [
   { key: "all", label: "ALL" },
-  { key: "agent", label: "AGENTS" },
-  { key: "deploy", label: "DEPLOYS" },
-  { key: "decision", label: "DECISIONS" },
-  { key: "scout", label: "SCOUTS" },
+  { key: "report", label: "REPORTS" },
+  { key: "owner-loop", label: "OWNER LOOP" },
 ];
 
 function prefersReducedMotion(): boolean {
@@ -32,9 +27,8 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
   const [snap, setSnap] = useState<OperateSnapshot>(initial);
   const [filter, setFilter] = useState<"all" | RiverCategory>("all");
   const [clock, setClock] = useState<string>("");
+  const [refreshFailed, setRefreshFailed] = useState(false);
   const [entering, setEntering] = useState<Set<string>>(new Set());
-  // Locally resolved decisions (optimistic): questionId -> chosen label.
-  const [resolved, setResolved] = useState<Record<string, string>>({});
   const seenIds = useRef<Set<string>>(new Set(initial.events.map((e) => e.id)));
   const reduce = useRef<boolean>(false);
 
@@ -53,35 +47,38 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
   // Poll for fresh snapshots.
   useEffect(() => {
     let alive = true;
+    let inFlight = false;
+    let arrivalTimer: ReturnType<typeof setTimeout> | undefined;
     const poll = async () => {
+      if (inFlight || document.hidden) return;
+      inFlight = true;
       try {
-        const res = await fetch("/api/operate/feed", { cache: "no-store" });
-        if (!res.ok || !alive) return;
+        const res = await fetch("/api/operate/activity", { cache: "no-store" });
+        if (!res.ok) throw new Error("activity request failed");
+        if (!alive) return;
         const next = (await res.json()) as OperateSnapshot;
         if (!alive) return;
         // Flag genuinely new river rows for the arrival animation.
         const fresh = next.events.filter((e) => !seenIds.current.has(e.id)).map((e) => e.id);
         for (const e of next.events) seenIds.current.add(e.id);
         setSnap(next);
-        // Drop optimistic resolutions the server now confirms as gone.
-        setResolved((prev) => {
-          const stillPending = new Set(next.pending.map((p) => p.questionId));
-          const out: Record<string, string> = {};
-          for (const [qid, label] of Object.entries(prev)) if (stillPending.has(qid)) out[qid] = label;
-          return out;
-        });
+        setRefreshFailed(false);
         if (fresh.length && !reduce.current) {
           setEntering(new Set(fresh));
-          setTimeout(() => setEntering(new Set()), 700);
+          clearTimeout(arrivalTimer);
+          arrivalTimer = setTimeout(() => setEntering(new Set()), 700);
         }
       } catch {
-        /* transient; next poll retries */
+        if (alive) setRefreshFailed(true);
+      } finally {
+        inFlight = false;
       }
     };
     const id = setInterval(poll, POLL_MS);
     return () => {
       alive = false;
       clearInterval(id);
+      clearTimeout(arrivalTimer);
     };
   }, []);
 
@@ -91,16 +88,20 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
   );
   const bands = useMemo(() => groupIntoBands(filteredEvents, Date.parse(snap.now)), [filteredEvents, snap.now]);
 
-  const pendingCount = snap.pending.filter((p) => !resolved[p.questionId]).length;
-  const allSystemsNominal = snap.systems.every((s) => s.severity !== "warn" && s.severity !== "crit");
+  const pendingCount = snap.pending?.length;
+  const activityAvailable = snap.reportsAvailable || snap.ownerActivityAvailable;
+  const activityComplete = snap.reportsAvailable && snap.ownerActivityAvailable;
+  const sourcesUnavailable = !activityComplete || snap.pending === null || snap.systems === null || snap.treasury === null;
+  const filteredSourceAvailable = filter === "report" ? snap.reportsAvailable : filter === "owner-loop" ? snap.ownerActivityAvailable : activityComplete;
+  const systemsNeedAttention = snap.systems?.some((s) => s.severity === "warn" || s.severity === "crit");
 
   return (
     <div className="op-root">
       <AppHeader title="Operate" active="/operate" />
       <div className="op-status-line">
-        <span className={`op-status-pill${allSystemsNominal && snap.feedOk ? "" : " op-degraded"}`}>
-          <span className={`op-led${allSystemsNominal && snap.feedOk ? "" : " op-amber"}`} />
-          {snap.feedOk ? (allSystemsNominal ? "All systems nominal" : "Attention") : "Feed offline"}
+        <span className={`op-status-pill${refreshFailed || sourcesUnavailable || systemsNeedAttention ? " op-degraded" : ""}`}>
+          <span className={`op-led${refreshFailed || sourcesUnavailable || systemsNeedAttention ? " op-amber" : ""}`} />
+          {refreshFailed ? "Refresh failed · showing last check" : sourcesUnavailable ? "Some sources unavailable" : systemsNeedAttention ? "System attention" : "Sources available"}
         </span>
         <span className="op-clock">{clock || "--:--:--"} ET</span>
       </div>
@@ -113,17 +114,20 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
           <section className="op-card">
             <p className="op-card-title">
               <span className="op-led" />
-              Agent Presence
+              Agent Activity
             </p>
+            {!activityAvailable ? <div className="op-dock-empty">Agent activity unavailable.</div> : null}
+            {activityAvailable && snap.agents.length === 0 ? (
+              <div className="op-dock-empty">{activityComplete ? "No recent agent activity recorded." : "No agent activity in the available source."}</div>
+            ) : null}
             {snap.agents.map((a) => (
-              <div key={a.agent} className={`op-agent-row${a.active ? " op-active" : ""}`}>
+              <Link key={a.agent} href="/focus" prefetch={false} className="op-agent-row" style={{ display: "block", color: "inherit" }}>
                 <div className="op-agent-head">
-                  <span className="op-agent-heartbeat" />
                   <span className="op-agent-name">{a.agent.toUpperCase()}</span>
-                  <span className="op-agent-status">{a.status}</span>
+                  <span className="op-agent-status">{a.lastSeen}</span>
                 </div>
                 <div className="op-agent-task">{a.detail}</div>
-              </div>
+              </Link>
             ))}
           </section>
 
@@ -132,18 +136,23 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
               <span className="op-led" />
               Systems
             </p>
-            {snap.systems.length === 0 ? (
+            {snap.systems === null ? (
+              <div className="op-dock-empty">Services register unavailable.</div>
+            ) : snap.systems.length === 0 ? (
               <div className="op-dock-empty">No services registered.</div>
             ) : (
               snap.systems.map((s) => (
-                <div
+                <Link
                   key={s.name}
+                  href="/registers/services"
+                  prefetch={false}
+                  style={{ color: "inherit" }}
                   className={`op-sys-row${s.severity === "warn" || s.severity === "crit" ? " op-warn" : ""}`}
                 >
                   <span className={`op-led${ledMod(s.severity)}`} />
                   <span className="op-sys-name">{s.name}</span>
                   <span className="op-sys-note">{s.note}</span>
-                </div>
+                </Link>
               ))
             )}
           </section>
@@ -153,28 +162,33 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
               <span className="op-led" />
               Treasury
             </p>
-            <div className="op-treasury-figure">
-              <span className="op-label">Known burn</span>
-              <span className="op-value">${snap.treasury.burnUsd.toFixed(0)}/mo</span>
-            </div>
-            <div className="op-treasury-figure">
-              <span className="op-label">Runway</span>
-              <span className="op-value">
-                {snap.treasury.runwayMonths !== null ? `${snap.treasury.runwayMonths} mo` : "—"}
-              </span>
-            </div>
-            <div className="op-runway-bar">
-              <div
-                className="op-runway-bar-fill"
-                style={{ width: `${runwayPct(snap.treasury.runwayMonths)}%` }}
-              />
-            </div>
-            {snap.treasury.pendingNote ? (
-              <div className="op-treasury-pending">
-                <span className="op-led op-amber" />
-                {snap.treasury.pendingNote}
+            {snap.treasury === null ? (
+              <div className="op-dock-empty">Subscriptions register unavailable.</div>
+            ) : <>
+              <Link className="op-dock-link" href="/money" prefetch={false}>Open Money →</Link>
+              <div className="op-treasury-figure">
+                <span className="op-label">Known burn</span>
+                <span className="op-value">${snap.treasury.burnUsd.toFixed(0)}/mo</span>
               </div>
-            ) : null}
+              <div className="op-treasury-figure">
+                <span className="op-label">Runway</span>
+                <span className="op-value">
+                  {snap.treasury.runwayMonths !== null ? `${snap.treasury.runwayMonths} mo` : "—"}
+                </span>
+              </div>
+              <div className="op-runway-bar">
+                <div
+                  className="op-runway-bar-fill"
+                  style={{ width: `${runwayPct(snap.treasury.runwayMonths)}%` }}
+                />
+              </div>
+              {snap.treasury.pendingNote ? (
+                <div className="op-treasury-pending">
+                  <span className="op-led op-amber" />
+                  {snap.treasury.pendingNote}
+                </div>
+              ) : null}
+            </>}
           </section>
         </div>
 
@@ -185,41 +199,40 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
               <button
                 key={f.key}
                 className={`op-filter-chip${filter === f.key ? " op-active" : ""}`}
+                aria-pressed={filter === f.key}
                 onClick={() => setFilter(f.key)}
                 type="button"
               >
                 {f.label}
               </button>
             ))}
-            <span className={`op-live-indicator${snap.feedOk ? "" : " op-paused"}`}>
-              <span className="op-led" />
-              {snap.feedOk ? "LIVE" : "OFFLINE"}
+            <span className="op-live-indicator">
+              Checked {formatOperateTime(snap.now)} ET
             </span>
           </div>
 
           <div className="op-river-bezel">
             <div className="op-river-screen">
               <div className="op-river-frame">
-                {filteredEvents.length === 0 ? (
-                  <div className="op-river-empty">
-                    {snap.feedOk ? "No events in this view." : "Event feed unavailable."}
-                  </div>
-                ) : (
-                  bands.map((band) => (
-                    <div key={band.key}>
-                      <div className={`op-band-divider${band.key === "now" ? " op-now-band" : ""}`}>
-                        {band.label}
-                      </div>
-                      {band.events.length === 0 && band.key === "now" ? (
-                        <div className="op-river-empty" style={{ padding: "8px 20px" }}>
-                          quiet
-                        </div>
-                      ) : (
-                        band.events.map((ev) => <EventRow key={ev.id} ev={ev} entering={entering.has(ev.id)} />)
-                      )}
+                {!snap.reportsAvailable && filter !== "owner-loop" ? <div className="op-river-empty">Portfolio reports unavailable.</div> : null}
+                {!snap.ownerActivityAvailable && filter !== "report" ? <div className="op-river-empty">Owner-loop activity unavailable.</div> : null}
+                {filteredEvents.length === 0 && filteredSourceAvailable ? (
+                  <div className="op-river-empty">No recent activity in this view.</div>
+                ) : null}
+                {filteredEvents.length > 0 && bands.map((band) => (
+                  <div key={band.key}>
+                    <div className={`op-band-divider${band.key === "now" ? " op-now-band" : ""}`}>
+                      {band.label}
                     </div>
-                  ))
-                )}
+                    {band.events.length === 0 && band.key === "now" ? (
+                      <div className="op-river-empty" style={{ padding: "8px 20px" }}>
+                        quiet
+                      </div>
+                    ) : (
+                      band.events.map((ev) => <EventRow key={ev.id} ev={ev} entering={entering.has(ev.id)} />)
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -233,23 +246,18 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
                 <span className={`op-led${pendingCount ? " op-amber" : ""}`} />
                 Pending Decisions
               </p>
-              <span className={`op-decisions-count${pendingCount ? "" : " op-zero"}`}>{pendingCount}</span>
+              {pendingCount !== undefined ? <span className={`op-decisions-count${pendingCount ? "" : " op-zero"}`}>{pendingCount}</span> : null}
             </div>
+            <Link className="op-dock-link" href="/decisions">Open Decide →</Link>
             <div className="op-decisions-scroll">
-              {snap.pending.length === 0 ? (
-                <div className="op-dock-empty">Nothing waiting on you.</div>
-              ) : (
-                snap.pending.map((d) => (
-                  <DecisionCard
-                    key={d.questionId}
-                    d={d}
-                    resolvedLabel={resolved[d.questionId]}
-                    onResolved={(label) =>
-                      setResolved((prev) => ({ ...prev, [d.questionId]: label }))
-                    }
-                  />
-                ))
-              )}
+              {snap.pending === null ? <div className="op-dock-empty">Owner-loop decisions unavailable.</div> : null}
+              {pendingCount === 0 ? <div className="op-dock-empty">No open decisions waiting on you.</div> : null}
+              {snap.pending?.map((decision) => (
+                <Link key={decision.ref} className="op-decision-card" prefetch={false} href={`/item/${encodeURIComponent(decision.ref)}`}>
+                  <span className="op-decision-q">{decision.title}</span>
+                  <span className="op-decision-meta">{decision.ref} · {decision.project} · {decision.ageLabel}</span>
+                </Link>
+              ))}
             </div>
           </section>
         </div>
@@ -278,130 +286,13 @@ function EventRow({ ev, entering }: { ev: RiverEvent; entering: boolean }) {
         <span className="op-ev-time">{formatOperateTime(ev.ts)}</span>
         <span className="op-ev-chip">{ev.agent.toUpperCase()}</span>
         <span className="op-ev-proj">{ev.proj}</span>
-        <span className="op-ev-msg">{ev.msg}</span>
+        <span className="op-ev-msg">{ev.href ? <Link href={ev.href} prefetch={false}>{ev.msg}</Link> : ev.msg}</span>
       </div>
       {ev.detail ? (
         <div className={`op-event-card${entering ? " op-entering" : ""}`}>
-          <div className="op-event-card-head">
-            <b>{ev.detail.head}</b>
-          </div>
-          <div className="op-event-card-body">{ev.detail.body}</div>
+          <div className="op-event-card-body">{ev.category === "report" ? "Next: " : ""}{ev.detail}</div>
         </div>
       ) : null}
     </>
-  );
-}
-
-function DecisionCard({
-  d,
-  resolvedLabel,
-  onResolved,
-}: {
-  d: PendingDecision;
-  resolvedLabel?: string;
-  onResolved: (label: string) => void;
-}) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [freeText, setFreeText] = useState("");
-
-  const send = useCallback(
-    async (opts: { answerValue?: string; freeText?: string; label: string }) => {
-      setBusy(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/operate/answer", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            questionId: d.questionId,
-            answerValue: opts.answerValue,
-            freeText: opts.freeText,
-          }),
-        });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(body.error || `failed (${res.status})`);
-        }
-        onResolved(opts.label);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "failed");
-      } finally {
-        setBusy(false);
-      }
-    },
-    [d.questionId, onResolved]
-  );
-
-  const resolved = resolvedLabel !== undefined;
-
-  return (
-    <div className={`op-decision-card op-tier-${d.tier}${resolved ? " op-resolved" : ""}`}>
-      <span className="op-decision-tier">{d.tier.toUpperCase()}</span>
-      <div className="op-decision-q">{d.title}</div>
-      <div className="op-decision-meta">
-        <span className="op-source-chip">{d.agent.toUpperCase()}</span>
-        {d.source !== "—" ? (
-          <>
-            <span className="op-dot-sep">·</span>
-            <span>{d.source}</span>
-          </>
-        ) : null}
-        <span className="op-dot-sep">·</span>
-        <span>{d.ageLabel}</span>
-      </div>
-
-      {resolved ? (
-        <div className="op-decision-resolved-note">✓ Sent — {resolvedLabel}</div>
-      ) : (
-        <>
-          <div className="op-decision-actions">
-            {d.options.length > 0 ? (
-              d.options.map((o, i) => (
-                <button
-                  key={o.value + i}
-                  className={`op-btn${i === 0 ? " op-primary" : ""}`}
-                  disabled={busy}
-                  type="button"
-                  onClick={() => send({ answerValue: o.value, label: o.label })}
-                >
-                  {o.label}
-                </button>
-              ))
-            ) : (
-              <button
-                className="op-btn op-primary"
-                disabled={busy}
-                type="button"
-                onClick={() => send({ answerValue: "ack", label: "Acknowledged" })}
-              >
-                Acknowledge
-              </button>
-            )}
-          </div>
-          <div className="op-free-row">
-            <input
-              className="op-free-input"
-              placeholder="Reply…"
-              value={freeText}
-              disabled={busy}
-              onChange={(e) => setFreeText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && freeText.trim()) send({ freeText, label: "Reply" });
-              }}
-            />
-            <button
-              className="op-btn"
-              disabled={busy || !freeText.trim()}
-              type="button"
-              onClick={() => send({ freeText, label: "Reply" })}
-            >
-              Send
-            </button>
-          </div>
-          {error ? <div className="op-decision-error">{error}</div> : null}
-        </>
-      )}
-    </div>
   );
 }

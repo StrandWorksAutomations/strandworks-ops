@@ -24,6 +24,7 @@ import { ProjectEvidenceSummary } from "./components/ProjectEvidenceSummary";
 import { parseScouts } from "@/lib/scouts";
 import { redactForDisplay } from "@/lib/redact";
 import { listBriefings } from "@/lib/briefings";
+import { formatDay, formatShortDay, humanizeDates } from "@/lib/when";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ const KIND_TAG: Record<AttentionItem["kind"], string> = {
 };
 
 function shortDate(iso: string | null): string | null {
-  return iso ? iso.slice(5) : null; // MM-DD
+  return iso ? formatShortDay(iso) : null;
 }
 
 export default async function Today() {
@@ -76,7 +77,7 @@ export default async function Today() {
   }
 
   const [dueItems, ownerLoopItems, intake, events, loadedProjects, jobsPending, repliesPending, portfolio] = await Promise.all([
-    fetchDueItems(), fetchOwnerLoopItems(), fetchIntakeOverview(), fetchBusinessLatestEvents(), loadProjectInventory().catch(() => null),
+    fetchDueItems(now), fetchOwnerLoopItems(), fetchIntakeOverview(), fetchBusinessLatestEvents(), loadProjectInventory().catch(() => null),
     countPendingJobSubmissions(),
     countRepliesToReview(),
     fetchPortfolio(),
@@ -132,10 +133,10 @@ export default async function Today() {
       <BusinessBoard cards={businesses} available={{ intake: intake !== null, loop: !loopUnavailable,
         events: events !== null, dates: dueItems !== null, portfolio: portfolio !== null, projects: loadedProjects !== null }} now={now} jobsPending={jobsPending} repliesPending={repliesPending} />
       <div className="grid">
-        <div className={`tile ${nowCount > 0 ? "hot" : attentionUnavailable ? "warm" : "calm"}`}>
+        <a href="#needs-you" className={`tile ${nowCount > 0 ? "hot" : attentionUnavailable ? "warm" : "calm"}`}>
           <div className="big">{actionCount(nowCount)}</div>
           <div className="label">need you now{attentionUnavailable ? " · incomplete" : ""}</div>
-        </div>
+        </a>
         <Link href="/decisions" className={`tile ${pendingTotal > 0 ? "hot" : loopUnavailable ? "warm" : "calm"}`}>
           <div className="big">{actionCount(pendingTotal, loopUnavailable)}</div>
           <div className="label">decisions &amp; follow-up{loopUnavailable ? " · loop offline" : ""}</div>
@@ -160,7 +161,7 @@ export default async function Today() {
 
       <div className="cols">
         <div>
-          <div className="section-head">
+          <div className="section-head" id="needs-you">
             <h2>Needs you</h2>
             <span className="meta">{queue.length} {attentionUnavailable ? "shown · incomplete" : "open"}</span>
           </div>
@@ -184,9 +185,9 @@ export default async function Today() {
                     {q.dateIso && q.dateIso < todayIso ? "\nOVERDUE" : ""}
                   </span>
                   <span className="q-body">
-                    <span className="q-title">{redactForDisplay(q.title)}</span>
+                    <span className="q-title">{humanizeDates(redactForDisplay(q.title))}</span>
                     <span className="q-detail" style={{ display: "block" }}>
-                      {redactForDisplay(q.detail)}
+                      {humanizeDates(redactForDisplay(q.detail))}
                     </span>
                   </span>
                 </Link>
@@ -260,7 +261,7 @@ export default async function Today() {
                   <span className="l-name">
                     {b.title} <span className="l-sub">{b.source}</span>
                   </span>
-                  <span className="l-amount dim mono">{b.date.slice(5)} {b.time}</span>
+                  <span className="l-amount dim">{formatDay(b.date).replace(/^\w+, /, "")}</span>
                 </Link>
               ))}
             </div>
@@ -268,7 +269,7 @@ export default async function Today() {
 
           <div className="section-head">
             <h2>Governance scouts</h2>
-            <span className="meta">{scouts.generated ? `swept ${scouts.generated}` : ""}</span>
+            <span className="meta">{scouts.generated ? `swept ${humanizeDates(scouts.generated)}` : ""}</span>
           </div>
           {scouts.rows.length === 0 ? (
             <div className="card">
@@ -277,12 +278,12 @@ export default async function Today() {
           ) : (
             <div className="ledger">
               {scouts.rows.map((r) => (
-                <div key={r.repo} className="l-row">
+                <Link key={r.repo} href="/reports" className="l-row">
                   <span className="l-name">{r.repo}</span>
                   <span className={`l-amount ${r.latestAudit === "never" ? "dim" : ""}`}>
-                    {r.latestAudit === "never" ? "never" : r.latestAudit.replace(/^audit-|\.md$/g, "")}
+                    {r.latestAudit === "never" ? "never" : humanizeDates(r.latestAudit.replace(/^audit-|\.md$/g, ""))}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           )}

@@ -27,6 +27,27 @@ export type OwnerLoopItem = {
   repeat_count: number;
   created_at: string;
   updated_at: string;
+  saved_at?: string | null;
+  archived_at?: string | null;
+  deleted_at?: string | null;
+  brief_slug?: string | null;
+  origin_cwd?: string | null;
+};
+
+export type OwnerLoopResponse = {
+  id: string;
+  option_key: string | null;
+  body: string | null;
+  urgent: boolean;
+  created_at: string;
+  linear_issue_key: string | null;
+  linear_issue_url: string | null;
+  linear_synced_at: string | null;
+  linear_error: string | null;
+  dispatch_state: "none" | "queued" | "delivering" | "delivered" | "spawned" | "failed";
+  dispatch_target: string | null;
+  dispatch_note: string | null;
+  dispatch_at: string | null;
 };
 
 export type OwnerLoopEvent = {
@@ -38,6 +59,31 @@ export type OwnerLoopEvent = {
   note: string | null;
   item?: { ref: string; title: string; project: string } | null;
 };
+
+export const OWNER_ACTIONS = ["save", "unsave", "archive", "unarchive", "delete", "restore", "done", "edit", "urgent"] as const;
+export type OwnerAction = (typeof OWNER_ACTIONS)[number];
+
+export function itemHref(ref: string): string {
+  return `/item/${encodeURIComponent(ref)}`;
+}
+
+export function projectFolder(item: Pick<OwnerLoopItem, "project" | "origin_cwd">): string {
+  if (item.origin_cwd) return item.origin_cwd;
+  const root = "/Users/jonathanbouren/PROJECTS";
+  return item.project && item.project !== "portfolio" ? `${root}/${item.project}` : root;
+}
+
+// What the response did, in the words the owner reads on the card.
+export function dispatchLabel(response: OwnerLoopResponse): string | null {
+  switch (response.dispatch_state) {
+    case "none": return null;
+    case "queued": return "Urgent · waiting for the agent computer";
+    case "delivering": return `Urgent · sent to the running agent${response.dispatch_target ? ` (${response.dispatch_target})` : ""}, waiting for it to read`;
+    case "delivered": return `Urgent · the running agent read it${response.dispatch_target ? ` (${response.dispatch_target})` : ""}`;
+    case "spawned": return `Urgent · started a new agent${response.dispatch_target ? ` (${response.dispatch_target})` : ""}`;
+    case "failed": return `Urgent · could not dispatch${response.dispatch_note ? `: ${response.dispatch_note}` : ""}`;
+  }
+}
 
 export type OwnerLoopRuleInput = { ref: string; ruling: string; note?: string };
 export type OwnerLoopRuleValidation =
@@ -90,6 +136,7 @@ function compareDueThenCreated(a: OwnerLoopItem, b: OwnerLoopItem): number {
 }
 
 export type OwnerLoopGroups = {
+  saved: OwnerLoopItem[];
   needsYou: OwnerLoopItem[];
   waiting: OwnerLoopItem[];
   closed: OwnerLoopItem[];
@@ -97,10 +144,11 @@ export type OwnerLoopGroups = {
 };
 
 export function groupOwnerLoopItems(items: OwnerLoopItem[], now: Date): OwnerLoopGroups {
-  const result: OwnerLoopGroups = { needsYou: [], waiting: [], closed: [], alerts: [] };
+  const result: OwnerLoopGroups = { saved: [], needsYou: [], waiting: [], closed: [], alerts: [] };
   const cutoff = now.getTime() - 14 * DAY_MS;
   for (const item of items) {
     const closed = item.status === "done" || item.status === "dropped";
+    if (item.saved_at && !closed) result.saved.push(item);
     if (item.kind === "alert") {
       if (!closed) result.alerts.push(item);
       continue;
@@ -112,6 +160,7 @@ export function groupOwnerLoopItems(items: OwnerLoopItem[], now: Date): OwnerLoo
       if (closedAt >= cutoff && closedAt <= now.getTime()) result.closed.push(item);
     }
   }
+  result.saved.sort((a, b) => timestamp(b.saved_at ?? null) - timestamp(a.saved_at ?? null));
   result.needsYou.sort(compareDueThenCreated);
   result.waiting.sort((a, b) => {
     const stalled = Number(isStalled(b, now)) - Number(isStalled(a, now));
@@ -138,6 +187,7 @@ export type TimelineEntry = {
   overdue: boolean;
   href: string;
   detail: string;
+  filedDetails?: string;
 };
 
 function businessClosed(status: string): boolean {
@@ -164,8 +214,9 @@ export function buildTimelineUpcoming(items: OwnerLoopItem[], dueItems: DueItem[
       kind: item.kind,
       dueAt: item.due_at,
       overdue: due < nowMs,
-      href: `/decisions#${item.ref}`,
+      href: itemHref(item.ref),
       detail: [item.ref, item.origin_agent, item.status.replace("_", " ")].filter(Boolean).join(" · "),
+      filedDetails: item.kind === "decision" ? undefined : item.body?.trim() || undefined,
     });
   }
   for (const [index, item] of dueItems.entries()) {
@@ -181,7 +232,7 @@ export function buildTimelineUpcoming(items: OwnerLoopItem[], dueItems: DueItem[
       kind: item.kind || "business",
       dueAt: item.dueOn,
       overdue: item.dueOn < today,
-      href: "/business",
+      href: /licen|regist|permit/i.test(item.kind) ? "/business/licenses" : "/business/obligations",
       detail: [item.entity, item.jurisdiction, item.status, item.feeUsd !== null ? `$${item.feeUsd.toFixed(2)}` : null]
         .filter(Boolean).join(" · "),
     });
@@ -218,6 +269,15 @@ export function eventSummary(event: OwnerLoopEvent): string {
     case "repeated": return `${actor} asked again ${ref}${note ? `: ${note}` : ""}`;
     case "drop": return `${actor} dropped ${ref}${note ? `: ${note}` : ""}`;
     case "resolve": return `${actor} resolved ${ref}${note ? `: ${note}` : ""}`;
+    case "save": return `${actor} saved ${ref}`;
+    case "unsave": return `${actor} unsaved ${ref}`;
+    case "archive": return `${actor} archived ${ref}`;
+    case "unarchive": return `${actor} moved ${ref} out of the archive`;
+    case "delete": return `${actor} deleted ${ref}`;
+    case "restore": return `${actor} restored ${ref}`;
+    case "edit": return `${actor} edited ${ref}`;
+    case "urgent": return `${actor} marked ${ref} urgent`;
+    case "dispatch": return `Dispatch ${ref}${note ? `: ${note}` : ""}`;
     default: return `${actor} ${event.type} ${ref}${note ? `: ${note}` : ""}`;
   }
 }

@@ -11,6 +11,7 @@ export default defineConfig({
     },
   },
   test: {
+    setupFiles: ["tests/setup-next-navigation.ts"],
     include: ["tests/**/*.test.ts"],
     environment: "node",
   },

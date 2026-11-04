@@ -56,7 +56,7 @@ describe("shared portfolio behavior", () => {
     expect(signals).toHaveLength(1);
     expect(signals[0].id).toBe("metric-one-scan");
     expect(signals[0].detail).toContain("failed");
-    expect(signals[0].detail).toContain("2026-11-04T13:00:00Z exceeds 2 hours");
+    expect(signals[0].detail).toContain("Wed, Nov 4, 8:00 AM ET exceeds 2 hours");
     expect(new Set(signals.map((item) => item.id)).size).toBe(signals.length);
     data.metrics.push(observation("scan", { status: "ok", source_observed_at: "2026-11-04T16:59:00Z" }, { id: 10, created_at: now.toISOString() }));
     expect(portfolioAttention(data, now)).toEqual([]);
