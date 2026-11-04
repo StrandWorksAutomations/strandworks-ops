@@ -76,7 +76,7 @@ export default async function Today() {
   }
 
   const [dueItems, ownerLoopItems, intake, events, loadedProjects, jobsPending, repliesPending, portfolio] = await Promise.all([
-    fetchDueItems(), fetchOwnerLoopItems(), fetchIntakeOverview(), fetchBusinessLatestEvents(), loadProjectInventory().catch(() => null),
+    fetchDueItems(now), fetchOwnerLoopItems(), fetchIntakeOverview(), fetchBusinessLatestEvents(), loadProjectInventory().catch(() => null),
     countPendingJobSubmissions(),
     countRepliesToReview(),
     fetchPortfolio(),
