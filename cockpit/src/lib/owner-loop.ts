@@ -138,6 +138,7 @@ export type TimelineEntry = {
   overdue: boolean;
   href: string;
   detail: string;
+  filedDetails?: string;
 };
 
 function businessClosed(status: string): boolean {
@@ -166,6 +167,7 @@ export function buildTimelineUpcoming(items: OwnerLoopItem[], dueItems: DueItem[
       overdue: due < nowMs,
       href: `/decisions#${item.ref}`,
       detail: [item.ref, item.origin_agent, item.status.replace("_", " ")].filter(Boolean).join(" · "),
+      filedDetails: item.kind === "decision" ? undefined : item.body?.trim() || undefined,
     });
   }
   for (const [index, item] of dueItems.entries()) {

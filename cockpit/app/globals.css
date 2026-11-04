@@ -435,6 +435,7 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 .timeline-kind { font-family: var(--font-mono); font-size: 0.875rem; color: var(--muted); }
 .timeline-project { margin-left: 0; }
 .timeline-title { color: var(--ink); overflow-wrap: anywhere; }
+.timeline-filed-details { white-space: pre-wrap; }
 .timeline-day { font-size: 0.9375rem; color: var(--muted); margin: 20px 0 8px; }
 .timeline-event { padding: 12px 0 12px 14px; border-left: 2px solid var(--border-strong); overflow-wrap: anywhere; }
 .timeline-event + .timeline-event { border-top: 1px solid var(--border); }

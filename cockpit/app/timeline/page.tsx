@@ -126,6 +126,10 @@ export default async function TimelinePage({
               </div>
               <h3>{entry.source === "owner-loop" && entry.ref && !boardRefs.has(entry.ref) ? entry.title : <Link href={entry.href} className="timeline-title">{entry.title}</Link>}</h3>
               {entry.detail ? <div className="meta">{entry.detail}</div> : null}
+              {entry.filedDetails ? <details>
+                <summary>Filed details</summary>
+                <p className="timeline-filed-details">{entry.filedDetails}</p>
+              </details> : null}
             </li>
           ))}
         </ol>
