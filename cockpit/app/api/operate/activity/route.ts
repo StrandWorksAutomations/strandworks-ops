@@ -16,9 +16,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(snapshot, {
       headers: { "Cache-Control": "no-store" },
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "snapshot failed" },
+      { error: "snapshot unavailable" },
       { status: 502 }
     );
   }

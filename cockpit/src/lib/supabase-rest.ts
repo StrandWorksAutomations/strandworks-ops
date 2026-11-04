@@ -1,4 +1,4 @@
-// Minimal server-only PostgREST client for the shared QA/feed Supabase project
+// Minimal server-only PostgREST client for the shared operations Supabase project
 // (bniuiwbwumpymxiesyyt). The codebase carries no @supabase/supabase-js dep and
 // reaches other backends with plain fetch (see repo.ts), so this follows suit:
 // two tiny helpers, zero new dependencies.

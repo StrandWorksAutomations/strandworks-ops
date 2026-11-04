@@ -51,9 +51,9 @@ describe("Operate server/phone time consistency", () => {
     const snapshot: OperateSnapshot = {
       now: "2026-11-03T13:00:00Z",
       events: [{ id: "near-cutoff", ts: "2026-11-03T12:55:01Z", agent: "codex",
-        category: "agent", severity: "info", proj: "ops", msg: "A recent event" }],
-      pending: [], agents: [], systems: [], feedOk: true,
-      treasury: { burnUsd: 0, uncostedCount: 0, runwayMonths: null, reserveUsd: null, pendingNote: null },
+        category: "report", severity: "info", proj: "ops", msg: "A recent event" }],
+      pending: [], agents: [], systems: [], reportsAvailable: true, ownerActivityAvailable: true,
+      treasury: { burnUsd: 0, runwayMonths: null, pendingNote: null },
     };
     vi.setSystemTime(new Date(snapshot.now));
     const server = renderToStaticMarkup(React.createElement(OperateClient, { initial: snapshot }));

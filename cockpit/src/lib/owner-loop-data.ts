@@ -40,9 +40,9 @@ export async function fetchOwnerLoopItems(): Promise<OwnerLoopItem[] | null> {
   }
 }
 
-export async function fetchOwnerLoopEvents(): Promise<OwnerLoopEvent[] | null> {
+export async function fetchOwnerLoopEvents(days = 30): Promise<OwnerLoopEvent[] | null> {
   if (!supabaseConfigured()) return null;
-  const since = encodeURIComponent(new Date(Date.now() - 30 * 86400_000).toISOString());
+  const since = encodeURIComponent(new Date(Date.now() - days * 86400_000).toISOString());
   try {
     return await readAll<OwnerLoopEvent>(
       "owner_loop_events",
