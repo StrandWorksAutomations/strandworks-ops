@@ -22,6 +22,12 @@ dates use Supabase through server-only REST calls.
   are flagged as stalled. Option, free-text and DROP rulings require an
   explicit confirm and call `owner_loop_rule` through `/api/loop/rule`.
   Alerts have a separate strip; closed outcomes remain visible for 14 days.
+- **Operate** — the sign-in landing page shows recent shared portfolio reports,
+  owner-loop activity, and open owner decisions. Decision links open the
+  matching card in Decide, where the existing confirmation flow records the
+  ruling. The activity view refreshes every 30 seconds while visible and labels
+  unavailable sources separately from empty queues. Systems and Treasury use
+  their existing registers.
 - **Timeline** — owner-loop deadlines, milestones and open decisions merge
   with business due dates for the next 30 days, with overdue items first.
   The last 30 days of owner-loop events show rulings, pickups and outcomes,
