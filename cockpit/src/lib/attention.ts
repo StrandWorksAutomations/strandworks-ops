@@ -9,7 +9,7 @@
 import { parseCsv } from "./csv";
 import { buildMoneyView, type MoneyView } from "./money";
 import { inAlertWindow, type DueItem } from "./due-items";
-import { isStalled, type OwnerLoopItem } from "./owner-loop";
+import { isStalled, ownerDay, type OwnerLoopItem } from "./owner-loop";
 import { reviewEmails, type IntakeReview } from "./intake";
 import { businessName } from "./businesses";
 
@@ -37,6 +37,12 @@ function addDaysIso(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
+}
+
+function ownerLoopDueDay(value: string | null): string | null {
+  if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  return Number.isFinite(Date.parse(value)) ? ownerDay(value) : null;
 }
 
 export type AttentionInputs = {
@@ -85,7 +91,7 @@ export function buildAttentionQueue(inputs: AttentionInputs): AttentionItem[] {
     if (!(item.kind === "decision" && item.status === "open") && !stalled) continue;
     items.push({
       severity: "now",
-      dateIso: item.due_at?.slice(0, 10) ?? null,
+      dateIso: ownerLoopDueDay(item.due_at),
       title: item.title,
       detail: [
         item.ref,

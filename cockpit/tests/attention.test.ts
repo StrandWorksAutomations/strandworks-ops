@@ -134,6 +134,25 @@ describe("buildAttentionQueue", () => {
     expect(buildAttentionQueue({ todayIso: TODAY, ownerLoopItems, now: new Date("2026-07-13T00:00:01Z") })).toHaveLength(1);
   });
 
+  it("uses Eastern calendar days for owner-loop due times and preserves date-only values", () => {
+    const q = buildAttentionQueue({
+      todayIso: "2026-11-04",
+      now: new Date("2026-11-04T05:05:00Z"),
+      ownerLoopItems: [
+        loopItem({ title: "Just before Eastern midnight", due_at: "2026-11-04T04:59:00+00:00" }),
+        loopItem({ title: "Eastern midnight", due_at: "2026-11-04T05:00:00Z" }),
+        loopItem({ title: "Date only", due_at: "2026-11-05" }),
+        loopItem({ title: "Invalid date", due_at: "unknown" }),
+      ],
+    });
+    expect(q.map(({ title, dateIso }) => [title, dateIso])).toEqual([
+      ["Just before Eastern midnight", "2026-11-03"],
+      ["Eastern midnight", "2026-11-04"],
+      ["Date only", "2026-11-05"],
+      ["Invalid date", null],
+    ]);
+  });
+
   it("keeps known actions when owner-loop data is unavailable", () => {
     const q = buildAttentionQueue({
       todayIso: TODAY,
