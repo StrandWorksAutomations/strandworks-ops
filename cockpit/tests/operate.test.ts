@@ -29,8 +29,8 @@ describe("Operate activity", () => {
       report(), report({ id: 2, created_at: ago(8 * 1440) }), report({ id: 3, created_at: ago(-1) }),
     ], [loopEvent()], NOW);
     expect(events.map((event) => event.id)).toEqual(["loop:loop1", "report:1"]);
-    expect(events[0]).toMatchObject({ category: "owner-loop", msg: "Owner ruled D-0100", href: "/timeline" });
-    expect(events[1]).toMatchObject({ category: "report", proj: "STR-1069", href: "/focus#portfolio-control", detail: "Verify on a phone" });
+    expect(events[0]).toMatchObject({ category: "owner-loop", msg: "Owner ruled D-0100", href: "/item/D-0100" });
+    expect(events[1]).toMatchObject({ category: "report", proj: "STR-1069", href: "/work/1", detail: "Verify on a phone" });
     expect(buildOperateRiver(Array.from({ length: 125 }, (_, id) => report({ id })), [], NOW)).toHaveLength(120);
   });
 

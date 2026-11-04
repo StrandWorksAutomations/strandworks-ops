@@ -54,9 +54,9 @@ describe("owner-loop server data", () => {
       "id", "ref", "kind", "project", "title", "body", "options", "recommended",
       "origin_agent", "due_at", "status", "ruling", "ruling_note", "ruled_via",
       "ruled_at", "picked_up_at", "picked_up_by", "outcome_note", "done_at",
-      "repeat_count", "created_at", "updated_at",
+      "repeat_count", "created_at", "updated_at", "saved_at", "archived_at", "deleted_at", "brief_slug", "origin_cwd",
     ]);
-    expect(query.get("select")).not.toMatch(/\*|dedupe_key|origin_host|origin_session|origin_cwd/);
+    expect(query.get("select")).not.toMatch(/\*|dedupe_key|origin_host|origin_session/);
     expect(query.get("or")).toBe("(status.in.(open,ruled,picked_up),updated_at.gte.2026-10-10T12:00:00.000Z)");
     expect(query.get("order")).toBe("created_at.asc,id.asc");
     expect(query.get("limit")).toBe("200");
@@ -92,7 +92,7 @@ describe("owner-loop server data", () => {
     expect(select.mock.calls[0][0]).toBe("owner_loop_events");
     const query = queryForCall();
     expect(query.get("select")).toBe("id,item_id,at,actor,type,note,item:owner_loop_items(ref,title,project)");
-    expect(query.get("select")).not.toMatch(/\*|dedupe_key|origin_host|origin_session|origin_cwd/);
+    expect(query.get("select")).not.toMatch(/\*|dedupe_key|origin_host|origin_session/);
     expect(query.get("at")).toBe("gte.2026-09-24T12:00:00.000Z");
     expect(query.get("order")).toBe("at.desc,id.desc");
   });

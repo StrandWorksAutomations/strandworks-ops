@@ -29,13 +29,13 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("Timeline owner dates", () => {
-  it("reveals only nonempty open deadline and milestone bodies, as escaped text, and retains Decide links", async () => {
+  it("shows each open date as a card that opens, escapes bodies, and hides closed dates", async () => {
     const html = renderToStaticMarkup(await Timeline({ searchParams: Promise.resolve({}) }));
-    expect(html.match(/<summary>Filed details<\/summary>/g)).toHaveLength(2);
-    expect(html).toContain('<details><summary>Filed details</summary><p class="timeline-filed-details">Review collector evidence.\n&lt;script&gt;unsafe()&lt;/script&gt;</p></details>');
+    expect(html).toContain("Review collector evidence.");
     expect(html).toContain("Check the current educator packet.");
-    expect(html).toContain('href="/decisions#D-0103"');
-    expect(html).not.toContain("Decision context belongs on Decide.");
+    expect(html).toContain('href="/item/D-0100"');
+    expect(html).toContain('href="/item/D-0103"');
+    expect(html).not.toContain('href="/item/D-0104"');
     expect(html).not.toContain("Closed milestone details.");
     expect(html).not.toContain("<script>unsafe()</script>");
   });

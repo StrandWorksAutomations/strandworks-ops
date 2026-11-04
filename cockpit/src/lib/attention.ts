@@ -9,7 +9,7 @@
 import { parseCsv } from "./csv";
 import { buildMoneyView, type MoneyView } from "./money";
 import { inAlertWindow, type DueItem } from "./due-items";
-import { isStalled, ownerDay, type OwnerLoopItem } from "./owner-loop";
+import { isStalled, itemHref, ownerDay, type OwnerLoopItem } from "./owner-loop";
 import { reviewEmails, type IntakeReview } from "./intake";
 import { businessName } from "./businesses";
 
@@ -97,9 +97,9 @@ export function buildAttentionQueue(inputs: AttentionInputs): AttentionItem[] {
         item.ref,
         item.project,
         item.origin_agent ?? "agent",
-        stalled ? "STALLED — no agent picked it up" : "waiting for your ruling",
+        stalled ? "STALLED — no agent picked it up" : "waiting for your response",
       ].join(" · "),
-      href: "/decisions",
+      href: itemHref(item.ref),
       kind: "decision",
     });
   }

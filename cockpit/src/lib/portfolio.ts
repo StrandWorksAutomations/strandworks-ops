@@ -1,4 +1,5 @@
 import type { TimelineEntry } from "./owner-loop";
+import { formatWhen, humanizeDates } from "./when";
 
 export type Objective = {
   id: string; project: string; title: string; outcome: string; priority: number;
@@ -78,16 +79,22 @@ export function safeEvidence(value: unknown): { label: string; url: string } | n
   try { const parsed = new URL(url); return parsed.protocol === "https:" && !parsed.username && !parsed.password ? { label: typeof value === "object" && value && "label" in value ? String(value.label) : parsed.hostname, url } : null; } catch { return null; }
 }
 export function portfolioAttention(data: Portfolio, now: Date) {
-  const items: { id: string; project: string; title: string; detail: string }[] = [];
+  const items: { id: string; project: string; title: string; detail: string; href: string; external?: boolean; respond: string }[] = [];
+  const objectiveHref = (o: Objective) => `/focus?project=${encodeURIComponent(o.project)}#${o.id}`;
+  const add = (id: string, project: string, title: string, detail: string, href: string, external?: boolean) => {
+    const text = humanizeDates(detail);
+    items.push({ id, project, title, detail: text, href, external,
+      respond: `/respond?${new URLSearchParams({ project, title, detail: text })}` });
+  };
   for (const o of data.objectives.filter((o) => o.status !== "complete")) {
-    if (Date.parse(o.review_at) < now.getTime()) items.push({ id: `review-${o.id}`, project: o.project, title: `Review overdue: ${o.title}`, detail: o.review_at });
-    if (o.status === "active" && Date.parse(o.target_at) < now.getTime()) items.push({ id: `target-${o.id}`, project: o.project, title: `Delivery overdue: ${o.title}`, detail: o.target_at });
+    if (Date.parse(o.review_at) < now.getTime()) add(`review-${o.id}`, o.project, `Review overdue: ${o.title}`, `Was due ${formatWhen(o.review_at, now)}`, objectiveHref(o));
+    if (o.status === "active" && Date.parse(o.target_at) < now.getTime()) add(`target-${o.id}`, o.project, `Delivery overdue: ${o.title}`, `Was due ${formatWhen(o.target_at, now)}`, objectiveHref(o));
     const activity = [timestamp(o.created_at) ?? timestamp(o.updated_at),
       ...data.reports.filter((r) => r.objective_id === o.id).map((r) => timestamp(r.created_at)),
       ...data.leases.filter((l) => l.objective_id === o.id && l.checkpoint).map((l) => timestamp(l.renewed_at))]
       .filter((time): time is number => time !== null);
     const latest = activity.length ? Math.max(...activity) : now.getTime();
-    if (o.status === "active" && latest < now.getTime() - 86400000) items.push({ id: `report-${o.id}`, project: o.project, title: `Checkpoint missing: ${o.title}`, detail: `Last evidence ${new Date(latest).toISOString()}` });
+    if (o.status === "active" && latest < now.getTime() - 86400000) add(`report-${o.id}`, o.project, `Checkpoint missing: ${o.title}`, `Last evidence ${formatWhen(latest, now)}`, objectiveHref(o));
     if (o.status !== "active") continue;
     const definitions = new Map((o.metric_definitions ?? []).map((definition) => [definition.id, definition]));
     const metricIds = new Set([...definitions.keys(), ...(data.metrics ?? []).filter((m) => m.objective_id === o.id).map((m) => m.metric_id)]);
@@ -114,9 +121,9 @@ export function portfolioAttention(data: Portfolio, now: Date) {
           else if (now.getTime() - sourceAt > maxAge * 3600000) reasons.push(`Source observation ${sourceLabel} exceeds ${maxAge} hours.`);
         }
       }
-      if (reasons.length) items.push({ id: `metric-${o.id}-${metricId}`, project: o.project, title: `${label} needs attention: ${o.title}`, detail: reasons.join(" ") });
+      if (reasons.length) add(`metric-${o.id}-${metricId}`, o.project, `${label} needs attention: ${o.title}`, reasons.join(" "), objectiveHref(o));
     }
   }
-  for (const l of data.leases.filter((l) => leaseState(l, now) === "needs recovery")) items.push({ id: `lease-${l.issue_id}`, project: l.project, title: `Recover ${l.issue_id}`, detail: l.next_action || l.checkpoint || "Inspect issue and working state before claiming." });
+  for (const l of data.leases.filter((l) => leaseState(l, now) === "needs recovery")) add(`lease-${l.issue_id}`, l.project, `Recover ${l.issue_id}`, l.next_action || l.checkpoint || "Inspect issue and working state before claiming.", `https://linear.app/strandautomationworks/issue/${encodeURIComponent(l.issue_id)}`, true);
   return items;
 }

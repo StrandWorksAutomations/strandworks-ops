@@ -3,6 +3,7 @@
 // people + credentials, insurance, documents, accounts. Source: Supabase
 // admin.* through service-role views; every table is editable at /business/<slug>.
 // Dates section = admin.v_due_items (what is due, grouped by urgency).
+import { formatShortDay } from "@/lib/when";
 import Link from "next/link";
 import { Chrome } from "../components/Chrome";
 import { fetchDueItems, inAlertWindow, sumFees, type DueItem } from "@/lib/due-items";
@@ -22,8 +23,8 @@ function band(d: DueItem): "overdue" | "window" | "later" {
 function DueRow({ d }: { d: DueItem }) {
   const cls = d.daysLeft !== null && d.daysLeft < 0 ? "bad" : d.daysLeft !== null && d.daysLeft <= 7 ? "warn" : "";
   return (
-    <div className="l-row" style={{ alignItems: "flex-start" }}>
-      <span className="l-date">{d.dueOn ? d.dueOn.slice(5) : "—"}</span>
+    <Link href={/licen|regist|permit/i.test(d.kind) ? "/business/licenses" : "/business/obligations"} className="l-row" style={{ alignItems: "flex-start" }}>
+      <span className="l-date">{d.dueOn ? formatShortDay(d.dueOn) : "—"}</span>
       <span className="l-name" style={{ whiteSpace: "normal" }}>
         {redactForDisplay(d.item)}
         <span className="l-sub" style={{ display: "block" }}>
@@ -34,7 +35,7 @@ function DueRow({ d }: { d: DueItem }) {
         {d.daysLeft !== null ? `${d.daysLeft}d` : ""}
         {d.feeUsd ? <span className="l-sub" style={{ display: "block" }}>${d.feeUsd.toFixed(0)}</span> : null}
       </span>
-    </div>
+    </Link>
   );
 }
 

@@ -1,4 +1,3 @@
-import { OWNER_TIME_ZONE } from "@/lib/owner-loop";
 import { Chrome } from "../components/Chrome";
 import { readRepoFile, listRepoDir } from "@/lib/repo";
 import { parseDecision, isPending, extractOptions, type Decision } from "@/lib/decisions";
@@ -7,28 +6,14 @@ import { DecisionCard } from "./DecisionCard";
 import { writeMode } from "@/lib/rule-writer";
 import Link from "next/link";
 import { fetchOwnerLoopItems } from "@/lib/owner-loop-data";
-import { groupOwnerLoopItems, isStalled, formatLoopAge, type OwnerLoopItem } from "@/lib/owner-loop";
-import { OwnerLoopCard } from "./OwnerLoopCard";
+import { groupOwnerLoopItems, isStalled, formatLoopAge, itemHref } from "@/lib/owner-loop";
+import { LoopItemCard } from "../components/LoopItemCard";
+import { formatWhen } from "@/lib/when";
 import { businessForProject } from "@/lib/businesses";
 import { BusinessFilters } from "../components/BusinessFilters";
 
 export const revalidate = 60;
 export const dynamic = "force-dynamic"; // rulings must disappear immediately
-
-function dateLabel(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: OWNER_TIME_ZONE,
-  }) + " ET";
-}
-
-function ItemMeta({ item }: { item: OwnerLoopItem }) {
-  return <div className="loop-meta">
-    <span className="mono">{item.ref}</span>
-    <span className="chip">{item.project === "portfolio" ? "portfolio · cross-project" : item.project}</span>
-    <span>{item.origin_agent ?? "agent"}</span>
-    {item.repeat_count > 1 ? <span className="badge warn">asked {item.repeat_count}×</span> : null}
-  </div>;
-}
 
 export default async function DecisionsPage({ searchParams }: { searchParams: Promise<{ business?: string | string[]; project?: string | string[] }> }) {
   const [allLoopItems, decisionFiles, params] = await Promise.all([
@@ -84,8 +69,8 @@ export default async function DecisionsPage({ searchParams }: { searchParams: Pr
     >
       <BusinessFilters path="/decisions" selected={business} />
       <ol className="loop-lifecycle" aria-label="Owner loop lifecycle">
-        <li><strong>Open</strong><span>Waiting on Jonathan</span></li>
-        <li><strong>Ruled</strong><span>Waiting for agent pickup</span></li>
+        <li><strong>Open</strong><span>Waiting on you</span></li>
+        <li><strong>Answered</strong><span>Waiting for agent pickup</span></li>
         <li><strong>Picked up</strong><span>Agent acknowledged and acting</span></li>
         <li><strong>Done</strong><span>Agent reported outcome</span></li>
       </ol>
@@ -93,58 +78,39 @@ export default async function DecisionsPage({ searchParams }: { searchParams: Pr
         <h3>Owner loop unavailable</h3>
         <p className="meta">Could not load the owner loop. Refresh to retry; if it persists, check the server connection.</p>
       </div> : null}
-      {stalledCount > 0 ? <a href={`#${stalled[0].ref}`} className="loop-stalled-banner" role="status">
-        <strong>STALLED — {stalledCount} {stalledCount === 1 ? "ruling has" : "rulings have"} no agent pickup</strong>
-        <span>Jonathan decided over 24 hours ago. No agent has acknowledged.</span>
-      </a> : null}
+      {stalledCount > 0 ? <Link href={itemHref(stalled[0].ref)} className="loop-stalled-banner" role="status">
+        <strong>STALLED — {stalledCount} {stalledCount === 1 ? "answer has" : "answers have"} no agent pickup</strong>
+        <span>You answered over 24 hours ago. No agent has acknowledged.</span>
+      </Link> : null}
+      <p className="meta">Tap a card to open it. Swipe right to respond, swipe left to archive or delete. <Link href="/decisions/archived">Archive →</Link></p>
 
-      {board.alerts.length > 0 ? <aside className="loop-alerts" aria-labelledby="loop-alerts-title">
-        <h2 id="loop-alerts-title">Alerts <span className="mono">{board.alerts.length}</span></h2>
-        {board.alerts.map((item) => <details key={item.id} id={item.ref} className={isStalled(item, now) ? "loop-alert-stalled" : ""}>
-          <summary><span className="mono">{item.ref}</span> {item.title} <span className="chip">{item.project}</span>{isStalled(item, now) ? <strong className="loop-stalled-label">STALLED — no agent picked it up</strong> : null}</summary>
-          <div className="meta">{item.origin_agent ?? "agent"} · {formatLoopAge(item.created_at, now)}</div>
-          {item.ruling ? <div className="meta">Jonathan ruled: {item.ruling}{item.ruled_at ? ` · ${dateLabel(item.ruled_at)}` : ""}</div> : null}
-          {item.picked_up_by ? <div className="meta">{item.picked_up_by} picked up{item.picked_up_at ? ` ${dateLabel(item.picked_up_at)}` : ""}</div> : null}
-          <div className="prose" dangerouslySetInnerHTML={{ __html: renderMarkdown(item.body ?? "") }} />
-        </details>)}
-      </aside> : null}
+      {board.saved.length > 0 ? <section aria-labelledby="loop-saved-title">
+        <div className="section-head"><h2 id="loop-saved-title">Saved</h2><span className="meta">{board.saved.length}</span></div>
+        {board.saved.map((item) => <LoopItemCard key={item.id} item={item} now={now} age={formatLoopAge(item.created_at, now)} />)}
+      </section> : null}
 
       <div className="section-head"><h2>Needs you</h2><span className="meta">{loopItems === null ? "unavailable" : `${board.needsYou.length} open`}</span></div>
       {loopItems !== null && board.needsYou.length === 0 ? <div className="card"><div className="meta">No open decisions waiting on Jonathan.</div></div> : null}
-      {board.needsYou.map((item) => <OwnerLoopCard key={item.id}
-        item={{ ref: item.ref, project: item.project, origin_agent: item.origin_agent, title: item.title, options: item.options, recommended: item.recommended, repeat_count: item.repeat_count }}
-        bodyHtml={renderMarkdown(item.body ?? "")}
-        age={formatLoopAge(item.created_at, now)}
-        due={item.due_at ? { iso: item.due_at, label: dateLabel(item.due_at), overdue: new Date(item.due_at).getTime() < now.getTime() } : null}
-      />)}
+      {board.needsYou.map((item) => <LoopItemCard key={item.id} item={item} now={now} age={formatLoopAge(item.created_at, now)} />)}
+
+      {board.alerts.length > 0 ? <section aria-labelledby="loop-alerts-title">
+        <div className="section-head"><h2 id="loop-alerts-title">Alerts</h2><span className="meta">{board.alerts.length}</span></div>
+        {board.alerts.map((item) => <LoopItemCard key={item.id} item={item} now={now} age={formatLoopAge(item.created_at, now)}
+          badge={isStalled(item, now) ? <span className="badge bad">Stalled</span> : null} />)}
+      </section> : null}
 
       <section id="waiting-on-agents" aria-labelledby="waiting-on-agents-title">
         <div className="section-head"><h2 id="waiting-on-agents-title">Waiting on agents</h2><span className="meta">{loopItems === null ? "unavailable" : board.waiting.length}</span></div>
-        {loopItems !== null && board.waiting.length === 0 ? <div className="card"><div className="meta">No rulings awaiting agent action.</div></div> : null}
-        {board.waiting.map((item) => <article key={item.id} id={item.ref} className={`card loop-card ${isStalled(item, now) ? "loop-stalled" : ""}`}>
-          <ItemMeta item={item} />
-          {isStalled(item, now) ? <p className="loop-stalled-label">STALLED — no agent picked it up</p> : null}
-          <h3>{item.title}</h3>
-          <span className={`badge ${item.status === "picked_up" ? "good" : "warn"}`}>{item.status === "picked_up" ? "Agent acting" : "Awaiting pickup"}</span>
-          <p className="loop-ruling">Jonathan ruled: <strong>{item.ruling ?? "Ruling recorded"}</strong></p>
-          <div className="meta">{item.ruled_at ? `Ruled ${dateLabel(item.ruled_at)} · ${formatLoopAge(item.ruled_at, now)}` : "Ruling time not recorded"}</div>
-          {item.status === "picked_up" ? <p className="ok-text">{item.picked_up_by ?? "Agent"} picked up{item.picked_up_at ? ` ${dateLabel(item.picked_up_at)}` : " · time not recorded"}</p> : <p className="meta">No agent has acknowledged this ruling yet.</p>}
-          {item.ruling_note ? <p className="loop-ruling">Note: {item.ruling_note}</p> : null}
-          {item.body ? <details className="loop-request"><summary>Original request</summary><div className="prose" dangerouslySetInnerHTML={{ __html: renderMarkdown(item.body) }} /></details> : null}
-        </article>)}
+        {loopItems !== null && board.waiting.length === 0 ? <div className="card"><div className="meta">No answers awaiting agent action.</div></div> : null}
+        {board.waiting.map((item) => <LoopItemCard key={item.id} item={item} now={now} age={item.ruled_at ? `answered ${formatLoopAge(item.ruled_at, now)}` : undefined}
+          badge={<span className={`badge ${isStalled(item, now) ? "bad" : item.status === "picked_up" ? "good" : "warn"}`}>{isStalled(item, now) ? "Stalled" : item.status === "picked_up" ? "Agent acting" : "Awaiting pickup"}</span>} />)}
       </section>
 
-      <div className="section-head"><h2>Closed</h2><span className="meta">last 14 days</span></div>
+      <details className="loop-closed"><summary className="section-head"><h2>Closed</h2><span className="meta">{board.closed.length} · last 14 days</span></summary>
       {loopItems !== null && board.closed.length === 0 ? <div className="card"><div className="meta">No outcomes or dropped items in the last 14 days.</div></div> : null}
-      {board.closed.map((item) => <article key={item.id} id={item.ref} className="card loop-card">
-        <ItemMeta item={item} />
-        <h3>{item.title}</h3>
-        <span className={`badge ${item.status === "done" ? "good" : ""}`}>{item.status === "done" ? "Done · outcome reported" : "Dropped"}</span>
-        <div className="meta">{dateLabel(item.done_at ?? item.updated_at)}</div>
-        {item.outcome_note ? <div className="prose" dangerouslySetInnerHTML={{ __html: renderMarkdown(item.outcome_note) }} /> : <p className="meta">{item.status === "dropped" ? "Closed without further action." : "No outcome note recorded."}</p>}
-        {item.ruling ? <p className="loop-ruling">Ruling: {item.ruling}</p> : null}
-        {item.ruling_note ? <p className="loop-ruling">Note: {item.ruling_note}</p> : null}
-      </article>)}
+      {board.closed.map((item) => <LoopItemCard key={item.id} item={item} now={now} age={formatWhen(item.done_at ?? item.updated_at, now)}
+        badge={<span className={`badge ${item.status === "done" ? "good" : ""}`}>{item.status === "done" ? "Done" : "Dropped"}</span>} />)}
+      </details>
       <p className="meta"><Link href="/timeline">View deadlines and activity on Timeline</Link></p>
 
       <details className="loop-governance">

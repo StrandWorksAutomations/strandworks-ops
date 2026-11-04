@@ -121,13 +121,13 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
               <div className="op-dock-empty">{activityComplete ? "No recent agent activity recorded." : "No agent activity in the available source."}</div>
             ) : null}
             {snap.agents.map((a) => (
-              <div key={a.agent} className="op-agent-row">
+              <Link key={a.agent} href="/focus" prefetch={false} className="op-agent-row" style={{ display: "block", color: "inherit" }}>
                 <div className="op-agent-head">
                   <span className="op-agent-name">{a.agent.toUpperCase()}</span>
                   <span className="op-agent-status">{a.lastSeen}</span>
                 </div>
                 <div className="op-agent-task">{a.detail}</div>
-              </div>
+              </Link>
             ))}
           </section>
 
@@ -142,14 +142,17 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
               <div className="op-dock-empty">No services registered.</div>
             ) : (
               snap.systems.map((s) => (
-                <div
+                <Link
                   key={s.name}
+                  href="/registers/services"
+                  prefetch={false}
+                  style={{ color: "inherit" }}
                   className={`op-sys-row${s.severity === "warn" || s.severity === "crit" ? " op-warn" : ""}`}
                 >
                   <span className={`op-led${ledMod(s.severity)}`} />
                   <span className="op-sys-name">{s.name}</span>
                   <span className="op-sys-note">{s.note}</span>
-                </div>
+                </Link>
               ))
             )}
           </section>
@@ -162,6 +165,7 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
             {snap.treasury === null ? (
               <div className="op-dock-empty">Subscriptions register unavailable.</div>
             ) : <>
+              <Link className="op-dock-link" href="/money" prefetch={false}>Open Money →</Link>
               <div className="op-treasury-figure">
                 <span className="op-label">Known burn</span>
                 <span className="op-value">${snap.treasury.burnUsd.toFixed(0)}/mo</span>
@@ -249,7 +253,7 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
               {snap.pending === null ? <div className="op-dock-empty">Owner-loop decisions unavailable.</div> : null}
               {pendingCount === 0 ? <div className="op-dock-empty">No open decisions waiting on you.</div> : null}
               {snap.pending?.map((decision) => (
-                <Link key={decision.ref} className="op-decision-card" prefetch={false} href={`/decisions#${encodeURIComponent(decision.ref)}`}>
+                <Link key={decision.ref} className="op-decision-card" prefetch={false} href={`/item/${encodeURIComponent(decision.ref)}`}>
                   <span className="op-decision-q">{decision.title}</span>
                   <span className="op-decision-meta">{decision.ref} · {decision.project} · {decision.ageLabel}</span>
                 </Link>

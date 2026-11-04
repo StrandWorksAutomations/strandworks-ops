@@ -161,8 +161,8 @@ describe("buildTimelineUpcoming", () => {
     ]);
     expect(result.map((entry) => entry.overdue)).toEqual([true, true, false, false, false]);
     expect(result[0].id).toBe("owner-loop:very-old");
-    expect(result[0].href).toBe("/decisions#D-0001");
-    expect(result[3]).toMatchObject({ source: "business", project: "Medical Resources", ref: null, href: "/business" });
+    expect(result[0].href).toBe("/item/D-0001");
+    expect(result[3]).toMatchObject({ source: "business", project: "Medical Resources", ref: null, href: "/business/obligations" });
     expect(result[3].detail).toContain("$15.00");
   });
 

@@ -173,3 +173,14 @@ Run `python3 -m unittest discover -s loop -p 'test_*.py' -v`. Tests create and
 stop a disposable local PostgreSQL cluster, apply the actual migrations, and
 exercise concurrency, expiry/recovery, append-only evidence, retry semantics,
 authorization and unavailable-source behavior. They never use live credentials.
+
+## Dashboard responses and the relay (STR-1133)
+
+Every item opens at `/item/D-0001`. A response there (or a swipe right on its card) calls `owner_loop_respond`, which records the ruling as before and adds a row to `owner_loop_responses`. Agents still see it through the normal hook. `swd relay` does the rest:
+
+- `swd relay --linear` posts each response to Linear with the owner's text, the decision, the project and the folder. A second response on the same item becomes a comment. It also treats any `owner-decision` issue set to Urgent in Linear as an urgent response. Needs `LINEAR_API_KEY`; any computer can run it.
+- `swd relay --dispatch` runs where the repositories are. If the asking session wrote to its transcript within 3 minutes, the response waits in `~/.cache/strandworks/urgent/` and the `PostToolUse` hook (`swd hook --event tool`) delivers it on that session's next tool call. Unread after 5 minutes, or if the session is not working, it starts `claude -p` or `codex exec` in the agent's folder, or the project folder if that folder is gone. At most 3 at a time. Logs are in `~/.cache/strandworks/dispatch/`.
+
+Both are one-shot commands. Neither runs on a schedule until a scheduler is approved and installed. Unposted responses stay queued for 14 days.
+
+File a brief with its item: `swd ask ... --brief <slug>`. A `/briefings/<slug>` link in the body also connects it; a strong filename match shows as "possibly related".

@@ -2,6 +2,7 @@
 // tier), but we still escape raw HTML: marked is configured to treat inline
 // HTML as text, so nothing in a report can inject markup or scripts.
 import { marked } from "marked";
+import { humanizeDates } from "./when";
 
 marked.use({
   renderer: {
@@ -12,5 +13,5 @@ marked.use({
 });
 
 export function renderMarkdown(md: string): string {
-  return marked.parse(md, { async: false }) as string;
+  return marked.parse(humanizeDates(md), { async: false }) as string;
 }

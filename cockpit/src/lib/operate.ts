@@ -1,5 +1,5 @@
 // View models for the authenticated Operate activity, decision dock and register tiles.
-import { eventSummary, formatLoopAge, groupOwnerLoopItems, OWNER_TIME_ZONE, ownerDay, type OwnerLoopEvent, type OwnerLoopItem } from "./owner-loop";
+import { eventSummary, formatLoopAge, groupOwnerLoopItems, itemHref, OWNER_TIME_ZONE, ownerDay, type OwnerLoopEvent, type OwnerLoopItem } from "./owner-loop";
 import type { WorkReport } from "./portfolio";
 
 export type Severity = "ok" | "info" | "warn" | "crit" | "quiet";
@@ -68,7 +68,7 @@ export function buildOperateRiver(reports: RecentReport[], events: OwnerLoopEven
     severity: "info",
     proj: report.issue_id ?? report.objective_id ?? "Portfolio",
     msg: excerpt(report.result, 220),
-    href: report.objective_id ? `/focus#${encodeURIComponent(report.objective_id)}` : "/focus",
+    href: `/work/${report.id}`,
     detail: report.next_action ? excerpt(report.next_action, 220) : undefined,
   }));
   const loopRows: RiverEvent[] = events.map((event) => ({
@@ -79,7 +79,7 @@ export function buildOperateRiver(reports: RecentReport[], events: OwnerLoopEven
     severity: event.type === "filed" ? "info" : "ok",
     proj: event.item?.project ?? "Owner loop",
     msg: excerpt(eventSummary({ ...event, note: null }), 120),
-    href: "/timeline",
+    href: event.item ? itemHref(event.item.ref) : "/timeline",
     detail: event.item ? excerpt(event.item.title, 220) : undefined,
   }));
   const cutoff = now.getTime() - RIVER_WINDOW_DAYS * 86400_000;

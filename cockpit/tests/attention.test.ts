@@ -123,8 +123,8 @@ describe("buildAttentionQueue", () => {
       ],
     });
     expect(q).toHaveLength(3);
-    expect(q.every((item) => item.severity === "now" && item.kind === "decision" && item.href === "/decisions")).toBe(true);
-    expect(q.find((item) => item.title === "Choose the next step")?.detail).toBe("D-0001 · portfolio · codex · waiting for your ruling");
+    expect(q.every((item) => item.severity === "now" && item.kind === "decision" && (item.href === "/decisions" || item.href.startsWith("/item/")))).toBe(true);
+    expect(q.find((item) => item.title === "Choose the next step")?.detail).toBe("D-0001 · portfolio · codex · waiting for your response");
     expect(q.find((item) => item.title === "Follow up")?.detail).toBe("D-0002 · medical · claude · STALLED — no agent picked it up");
   });
 

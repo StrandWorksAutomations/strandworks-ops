@@ -53,10 +53,10 @@ describe("provider usage scorecard", () => {
     };
     const html = renderToStaticMarkup(React.createElement(PortfolioObjectives, { data }));
     expect(html).toContain("Weekly window · 78% used");
-    expect(html).toContain("provider reset Nov 4, 2026, 1:35 AM ET");
+    expect(html).toContain("provider reset Wed, Nov 4, 1:35 AM ET");
     expect(html).toContain("All models · Current usage unknown");
     expect(html).toContain("fable · Current usage unknown");
-    expect(html).toContain("Previous period ended Nov 3, 2026, 5:00 AM ET");
+    expect(html).toContain("Previous period ended Tue, Nov 3, 5:00 AM ET");
     expect(html).toContain("View recorded provider receipt");
     expect(html).toContain("&quot;used_percent&quot;: 65");
     expect(html).toContain("&quot;used_percent&quot;: 43");
