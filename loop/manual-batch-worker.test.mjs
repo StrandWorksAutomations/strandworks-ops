@@ -67,6 +67,8 @@ test('fresh bounded exec records spawn intent first, exact packet, actual thread
   assert.equal(h.data.spawns.length,1);assert.equal(h.data.transitions.length,0);
   const call=h.data.spawns[0];assert.deepEqual(call.args,cliArguments(job.cwd,path.dirname(h.worker.jobPath(BATCH))));
   assert.equal(call.args.includes('resume'),false);assert.equal(call.args.includes('queue'),false);assert.equal(call.options.windowsHide,true);assert.equal(call.options.shell,false);
+  for (const feature of ['apps','plugins','hooks','multi_agent']) assert.ok(call.args.some((arg,index)=>arg==='--disable'&&call.args[index+1]===feature));
+  assert.ok(call.args.includes('--ignore-user-config'));assert.ok(call.args.includes('model_reasoning_effort="low"'));
   assert.equal(call.args[call.args.indexOf('--add-dir')+1],path.dirname(h.worker.jobPath(BATCH)));
   const packet=await h.worker.validate(h.request);assert.ok(packet.packet.includes(JSON.stringify(h.source.body)));assert.ok(packet.packet.includes('Original question?'));assert.ok(packet.packet.includes('--job'));assert.ok(!packet.packet.includes('--config'));
   assert.ok(job.packetBytes<=12*1024);

@@ -73,7 +73,7 @@ export function manualSettings(config) {
 }
 
 export function cliArguments(cwd, jobDir) {
-  return ['--ask-for-approval', 'never', 'exec', '--ignore-user-config', '--model', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="low"', '-c', 'windows.sandbox="elevated"', '--sandbox', 'workspace-write', '--json', '--skip-git-repo-check', '--cd', cwd, '--add-dir', jobDir, '-c', 'sandbox_workspace_write.network_access=true', '-'];
+  return ['--disable', 'apps', '--disable', 'plugins', '--disable', 'hooks', '--disable', 'multi_agent', '--ask-for-approval', 'never', 'exec', '--ignore-user-config', '--model', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="low"', '-c', 'windows.sandbox="elevated"', '--sandbox', 'workspace-write', '--json', '--skip-git-repo-check', '--cd', cwd, '--add-dir', jobDir, '-c', 'sandbox_workspace_write.network_access=true', '-'];
 }
 
 export function buildBatchPacket({ request, rows, handoff = '', config }) {
