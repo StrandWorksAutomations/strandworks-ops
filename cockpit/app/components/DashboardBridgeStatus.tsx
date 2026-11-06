@@ -25,7 +25,8 @@ export async function fetchBridgeStatus(signal: AbortSignal, fetchImpl: typeof f
     || typeof status.label !== "string" || !status.label.trim() || status.label.length > 120
     || typeof status.detail !== "string" || !status.detail.trim() || status.detail.length > 2000
     || !(status.lastSeenAt === null || validDate(status.lastSeenAt)) || !(status.checkedAt === null || validDate(status.checkedAt))
-    || !(status.pending === null || (Number.isSafeInteger(status.pending) && Number(status.pending) >= 0))) throw new Error("Invalid bot status.");
+    || !(status.pending === null || (Number.isSafeInteger(status.pending) && Number(status.pending) >= 0))
+    || (status.deliveryMode !== undefined && status.deliveryMode !== "manual" && status.deliveryMode !== "automatic")) throw new Error("Invalid bot status.");
   return status as BridgeStatusResponse;
 }
 
@@ -122,7 +123,7 @@ export function DashboardBridgeStatus() {
       <p>{status.detail}</p>
       <dl>
         <div><dt>Last contact</dt><dd>{contactTime(status.lastSeenAt)}</dd></div>
-        {typeof status.pending === "number" ? <div><dt>Pending replies</dt><dd>{status.pending}</dd></div> : null}
+        {typeof status.pending === "number" ? <div><dt>{status.deliveryMode === "manual" ? "Saved answers" : "Pending replies"}</dt><dd>{status.pending}</dd></div> : null}
       </dl>
       <p>Green confirms the connection; project progress is tracked separately.</p>
       <ul className="bridge-status-legend" aria-label="Connection status colors">
@@ -130,7 +131,8 @@ export function DashboardBridgeStatus() {
         <li><span className="bridge-status-dot bridge-status-yellow" aria-hidden="true" />Yellow — needs attention</li>
         <li><span className="bridge-status-dot bridge-status-red" aria-hidden="true" />Red — offline</li>
       </ul>
-      <p className="bridge-status-help">Starts after Windows sign-in. Keep this PC awake, online, and Codex open. Locking the screen and closing the dashboard are fine.</p>
+      <p><a href="/agent-inbox">Review answers and launch a batch →</a></p>
+      <p className="bridge-status-help">{status.deliveryMode === "manual" ? "Starts after Windows sign-in. Keep this PC awake and online. Answers wait until you choose Launch in Agent inbox." : "Starts after Windows sign-in. Keep this PC awake, online, and Codex open. Locking the screen and closing the dashboard are fine."}</p>
     </div>
   </details>;
 }

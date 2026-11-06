@@ -269,3 +269,35 @@ turns it red. Delivery and project completion remain separate. The status menu
 explains the colors and operating requirements. The relay and packaged Codex
 startup task run after Windows sign-in; keep the Windows PC awake and online.
 Locking its screen or closing the dashboard browser does not stop the relay.
+
+#### Explicit project batches
+
+The Windows installation now uses `deliveryMode: "manual"`. Answers are saved
+as `awaiting_launch`; reading the dashboard never enqueues them into old chats
+or starts a model. `/agent-inbox` lets the owner select up to three answers from
+one project and explicitly launch that batch. The owner-only batch POST is the
+launch authorization. GET requests and the local agent's polling only read
+saved requests and perform bookkeeping; they never create a launch request.
+
+`manualLaunches.enabled` turns on the local request consumer. Its configured
+`allowedRoots` constrain the resolved project directory. The consumer requires
+current, unchanged PC-origin rulings, one project/folder, a matching answer
+digest, a durable one-time claim and a saved spawn intent. Repeated clicks,
+uncertain spawn results and process restarts do not retry model execution.
+Private immutable reservations prevent overlapping requests. Terminal jobs
+archive out of the active queue while retaining those reservations.
+
+`manual-batch-worker.mjs` starts a fresh bounded `codex exec` process, with
+`--ignore-user-config` and low reasoning, instead of resuming old chats. The
+packet is at most 12 KiB and the project handoff at most 2 KiB. The default
+deadline is two minutes with one worker at a time; recorded usage is returned
+to the dashboard. This is a packet/runtime bound, not a guaranteed total token
+cap. Project instructions and necessary files still contribute context.
+Subagents, old chat transcripts and automatic continuations are excluded.
+
+Fresh-thread acknowledgment/completion callbacks are bound to the selected
+batch and actual CLI session. A successful process exit alone never marks an
+answer complete. Unfinished, interrupted or ambiguous work requires review.
+Local project state lives under the installed bridge state directory, outside
+project files. The recurring cloud AI watchdog has been deleted; model use
+requires an explicit owner launch.

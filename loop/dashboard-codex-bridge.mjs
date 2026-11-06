@@ -13,7 +13,7 @@ export const DEFAULT_SUPABASE_URL = 'https://bniuiwbwumpymxiesyyt.supabase.co';
 export const DEFAULT_DASHBOARD_URL = 'https://dashboard.strandautomationworks.com';
 const UUID = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i;
 const REF = /^D-\d{4,}$/;
-const STATES = new Set(['preparing', 'queued', 'ambiguous', 'started', 'delivered', 'blocked', 'ignored']);
+const STATES = new Set(['awaiting_launch', 'preparing', 'queued', 'ambiguous', 'started', 'delivered', 'blocked', 'ignored']);
 const TERMINAL_ITEMS = new Set(['done', 'dropped']);
 const ROUTE_BLOCK_REASONS = new Set(['origin_session_not_routed', 'project_not_routed', 'target_outside_allowlist']);
 const execFileAsync = promisify(execFile);
@@ -27,7 +27,7 @@ function requireUuid(value, name) {
   return value;
 }
 function hash(value) { return createHash('sha256').update(value).digest('hex'); }
-function timestampKey(value) {
+export function timestampKey(value) {
   const match = typeof value === 'string' && value.match(/^(.*T\d\d:\d\d:\d\d)(?:\.(\d{1,9}))?(Z|[+-]\d\d:\d\d)$/);
   if (!match) return null;
   const seconds = Date.parse(match[1] + match[3]);
@@ -42,12 +42,14 @@ export function eventMarker(eventId) { return `[[dashboard-response:${requireUui
 export function validateConfig(raw, configPath) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new BridgeError('Config must be an object.', 'INVALID_CONFIG');
   if (raw.version !== 1) throw new BridgeError('Config version must be 1.', 'INVALID_CONFIG');
+  const deliveryMode = raw.deliveryMode ?? 'automatic';
+  if (!['automatic', 'manual'].includes(deliveryMode)) throw new BridgeError('deliveryMode must be automatic or manual.', 'INVALID_CONFIG');
   if (!['canary', 'routed'].includes(raw.mode)) throw new BridgeError('Select canary or explicitly allowlisted routed mode.', 'INVALID_CONFIG');
-  const canaryThreadId = raw.mode === 'canary' ? requireUuid(raw.canaryThreadId, 'canaryThreadId') : null;
-  const allowedThreadIds = raw.mode === 'canary' ? [canaryThreadId] : raw.allowedThreadIds;
-  if (!Array.isArray(allowedThreadIds) || !allowedThreadIds.length) throw new BridgeError('Routed mode requires an explicit allowedThreadIds UUID list.', 'INVALID_CONFIG');
+  const canaryThreadId = raw.mode === 'canary' && (deliveryMode !== 'manual' || raw.canaryThreadId) ? requireUuid(raw.canaryThreadId, 'canaryThreadId') : null;
+  const allowedThreadIds = raw.mode === 'canary' ? (canaryThreadId ? [canaryThreadId] : []) : raw.allowedThreadIds ?? (deliveryMode === 'manual' ? [] : undefined);
+  if (!Array.isArray(allowedThreadIds) || (!allowedThreadIds.length && deliveryMode !== 'manual')) throw new BridgeError('Routed mode requires an explicit allowedThreadIds UUID list.', 'INVALID_CONFIG');
   for (const id of allowedThreadIds) requireUuid(id, 'Allowed thread');
-  if (typeof raw.startAt !== 'string' || !/(?:Z|[+-]\d\d:\d\d)$/.test(raw.startAt) || !Number.isFinite(Date.parse(raw.startAt))) {
+  if (timestampKey(raw.startAt)===null) {
     throw new BridgeError('startAt must be an explicit timestamp with timezone; historical work is never implied.', 'INVALID_CONFIG');
   }
   const sessionRoutes = raw.sessionRoutes ?? {};
@@ -59,7 +61,7 @@ export function validateConfig(raw, configPath) {
       requireUuid(routeTarget(route), 'Route target');
     }
   }
-  if (!Object.keys(sessionRoutes).length && !Object.keys(projectRoutes).length) throw new BridgeError('At least one explicit route is required.', 'INVALID_CONFIG');
+  if (deliveryMode !== 'manual' && !Object.keys(sessionRoutes).length && !Object.keys(projectRoutes).length) throw new BridgeError('At least one explicit route is required.', 'INVALID_CONFIG');
   const intervalSeconds = raw.intervalSeconds ?? 15;
   if (!Number.isInteger(intervalSeconds) || intervalSeconds < 5 || intervalSeconds > 3600) throw new BridgeError('intervalSeconds must be 5–3600.', 'INVALID_CONFIG');
   if (raw.includeUrgent === true && raw.legacyDispatcherDisabled !== true) throw new BridgeError('Urgent delivery requires explicit legacyDispatcherDisabled: true ownership confirmation.', 'INVALID_CONFIG');
@@ -82,11 +84,11 @@ export function validateConfig(raw, configPath) {
   if (dashboardUrl.protocol !== 'https:' || dashboardUrl.username || dashboardUrl.password || dashboardUrl.search || dashboardUrl.hash) throw new BridgeError('Dashboard must use an HTTPS origin without embedded credentials.', 'INVALID_CONFIG');
   if (raw.rpcTransport && !['proxy', 'supabase'].includes(raw.rpcTransport)) throw new BridgeError('Unsupported owner-loop transport.', 'INVALID_CONFIG');
   return {
-    ...raw, version: 1, mode: raw.mode, canaryThreadId, allowedThreadIds: [...new Set(allowedThreadIds)], sessionRoutes, projectRoutes, intervalSeconds,
+    ...raw, version: 1, mode: raw.mode, deliveryMode, canaryThreadId, allowedThreadIds: [...new Set(allowedThreadIds)], sessionRoutes, projectRoutes, intervalSeconds,
     includeUrgent: raw.includeUrgent === true, legacyDispatcherDisabled: raw.legacyDispatcherDisabled === true,
     publishHeartbeat: raw.publishHeartbeat === true,
     ignoredResponseIds: [...new Set(ignoredResponseIds)], originHostAllowlist: originHostAllowlist ? [...new Set(originHostAllowlist)] : undefined,
-    startAt: new Date(raw.startAt).toISOString(), supabaseUrl: url.origin, dashboardUrl: dashboardUrl.origin, rpcTransport: raw.rpcTransport ?? 'proxy',
+    startAt: raw.startAt, supabaseUrl: url.origin, dashboardUrl: dashboardUrl.origin, rpcTransport: raw.rpcTransport ?? 'proxy',
     stateDir: path.resolve(raw.stateDir ?? path.join(homedir(), '.cache', 'strandworks', 'dashboard-codex-bridge')),
     configPath: configPath ? path.resolve(configPath) : raw.configPath,
     agentCommandBase: raw.agentCommandBase ?? [process.execPath, fileURLToPath(import.meta.url)],
@@ -156,6 +158,11 @@ export function createHeartbeatPublisher({ env = process.env, home = homedir(), 
       },
       oldestQueuedAt: oldestQueuedAt(receipts),
     };
+    if(health.deliveryMode==='manual'){
+      payload.deliveryMode='manual';
+      payload.counts.awaiting_launch=validCount(counts.awaiting_launch);
+      payload.manualLaunchError=Boolean(health.manualLaunches?.errorCode);
+    }
     let token;
     try { token = (env.OWNER_LOOP_TOKEN || await readFile(path.join(home, '.config', 'strandworks', 'owner-loop.token'), 'utf8')).trim(); }
     catch { throw new BridgeError('Scoped heartbeat credentials are not installed.', 'HEARTBEAT_CREDENTIALS_UNAVAILABLE'); }
@@ -250,8 +257,9 @@ function skipReason(row, config) {
   if (config.ignoredResponseIds.includes(row.id)) return 'owner_excluded_response';
   if (config.originHostAllowlist && !config.originHostAllowlist.includes(item.origin_host)) return 'origin_host_not_allowed';
   if (!Number.isFinite(Date.parse(row.created_at))) return 'invalid_response_timestamp';
-  if (Date.parse(row.created_at) < Date.parse(config.startAt)) return 'before_watermark';
+  if (timestampKey(row.created_at) < timestampKey(config.startAt)) return 'before_watermark';
   if (TERMINAL_ITEMS.has(item.status) || item.deleted_at || item.archived_at) return 'inactive_item';
+  if(config.deliveryMode==='manual'&&item.status!=='ruled')return 'item_not_available_for_manual_launch';
   if (['DROP', 'PARK'].includes(text(row.option_key).toUpperCase()) || ['DROP', 'PARK'].includes(text(item.ruling).toUpperCase())) return 'parked_or_dropped';
   if (!sameTimestamp(row.created_at, item.ruled_at)) return 'superseded_or_unverified_ruling';
   if (row.urgent === true) {
@@ -295,6 +303,19 @@ export function formatDashboardMessage(row, threadId, config) {
     eventMarker(row.id),
   ].join('\n\n');
 }
+/** Local source evidence only; collecting this packet never launches an AI worker. */
+export function collectedResponseFor(row) {
+  const item = row.item;
+  return {
+    id: row.id, created_at: row.created_at, option_key: row.option_key ?? null, body: row.body ?? null, urgent: row.urgent === true,
+    item: {
+      id: item.id ?? null, ref: item.ref, project: item.project, status: item.status, ruling: item.ruling ?? null,
+      ruled_at: item.ruled_at ?? null, origin_session: item.origin_session ?? null, origin_host: item.origin_host ?? null,
+      origin_cwd: item.origin_cwd ?? null, title: item.title ?? null, body: item.body ?? null,
+      options: Array.isArray(item.options) ? item.options.map(option => ({ key: option.key, label: option.label ?? null })) : [],
+    },
+  };
+}
 function pendingText(entry) { return Array.isArray(entry.input) ? entry.input.filter(x => x.type === 'text').map(x => text(x.text)).join('\n') : text(entry.text); }
 function historyUsers(turns) {
   if (!Array.isArray(turns)) return [];
@@ -308,7 +329,7 @@ function historyUsers(turns) {
 }
 
 export class DashboardCodexBridge {
-  constructor({ config, queueClient, queueClientFactory, rpc, now = () => new Date(), heartbeatPublisher, desktopReadyProbe }) {
+  constructor({ config, queueClient, queueClientFactory, rpc, now = () => new Date(), heartbeatPublisher, desktopReadyProbe, manualWorker }) {
     this.config = validateConfig(config, config.configPath);
     this.queue = queueClient;
     this.queueClientFactory = queueClientFactory;
@@ -320,6 +341,9 @@ export class DashboardCodexBridge {
     this.readiness = null;
     this.receiptsDir = path.join(this.config.stateDir, 'receipts');
     this.healthFile = path.join(this.config.stateDir, 'health.json');
+    this.manualWorker = manualWorker;
+    this.manualPoll = null;
+    this.manualErrorCode = null;
   }
   isoNow() { return new Date(this.now()).toISOString(); }
   async desktopReady() {
@@ -365,14 +389,19 @@ export class DashboardCodexBridge {
   async submit(row, { reconsiderRoute = false } = {}) {
     const existing = await readJson(this.receiptPath(row.id));
     if (existing && !(reconsiderRoute && untouchedRouteBlock(existing))) return existing;
-    const route = routeFor(row, this.config);
+    const route = this.config.deliveryMode==='manual' ? {ok:true} : routeFor(row, this.config);
     if (existing && !route.ok) return existing;
     const routingEvidence = existing ? {
       routeRecoveredAt: this.isoNow(),
       routeBlockedHistory: [...(existing.routeBlockedHistory ?? []), { state: existing.state, reason: existing.reason, recordedAt: existing.updatedAt ?? null }],
     } : {};
-    const base = { version: 1, eventId: row.id, ref: row.item.ref, project: row.item.project, eventCreatedAt: row.created_at, itemRuledAt: row.item.ruled_at ?? null, originSession: row.item.origin_session ?? null, marker: eventMarker(row.id), ...routingEvidence };
+    const base = { version: 1, eventId: row.id, ref: row.item.ref, project: row.item.project, eventCreatedAt: row.created_at, itemRuledAt: row.item.ruled_at ?? null, originSession: row.item.origin_session ?? null, originHost: row.item.origin_host ?? null, marker: eventMarker(row.id), ...routingEvidence };
     if (!route.ok) return this.save({ ...base, state: 'blocked', reason: route.reason });
+    if (this.config.deliveryMode === 'manual') {
+      const collectedResponse = collectedResponseFor(row);
+      return this.save({ ...base, deliveryMode: 'manual', state: 'awaiting_launch', collectedAt: this.isoNow(),
+        collectedResponse, responseSha256: hash(JSON.stringify(collectedResponse)) });
+    }
     const message = formatDashboardMessage(row, route.threadId, this.config);
     const receipt = await this.save({ ...base, targetThreadId: route.threadId, clientUserMessageId: clientUserMessageIdFor({ threadId: route.threadId, eventId: row.id }), messageSha256: hash(message), state: 'preparing', preparingAt: this.isoNow() });
     try {
@@ -385,6 +414,12 @@ export class DashboardCodexBridge {
   }
   async reconcile(receipt) {
     if (receipt.state === 'ignored') return { ok: true, receipt };
+    // These receipts never belonged to an existing chat. A config change or
+    // runner restart must not reinterpret them as permission to enqueue.
+    if (receipt.state === 'awaiting_launch') return { ok: true, receipt };
+    // Switching to manual mode suspends legacy delivery reconciliation as well:
+    // collection must not open old chats or mark an uncertain prior submission.
+    if (this.config.deliveryMode === 'manual') return { ok: receipt.state === 'delivered', receipt };
     if (this.config.ignoredResponseIds.includes(receipt.eventId) && untouchedRouteBlock(receipt)) {
       return { ok: true, receipt: await this.save({
         ...receipt, state: 'ignored', reason: 'owner_excluded_response', ignoredAt: this.isoNow(),
@@ -430,7 +465,7 @@ export class DashboardCodexBridge {
   }
   async tick() {
     if (this.config.diagnostics) console.error(JSON.stringify({ bridgeStage: 'tick', pid: process.pid, at: this.isoNow() }));
-    if (!this.queueClientFactory) return this.tickWithQueue();
+    if (this.config.deliveryMode === 'manual' || !this.queueClientFactory) return this.tickWithQueue();
     this.queue = this.queueClientFactory();
     try { return await this.tickWithQueue(); }
     finally { await this.queue.close?.(); }
@@ -457,7 +492,7 @@ export class DashboardCodexBridge {
       if (tiedItems.has(itemKey) || newestByItem.get(itemKey)?.id !== row.id) { const reason = tiedItems.has(itemKey) ? 'ambiguous_response_order' : 'superseded_response'; skipped[reason] = (skipped[reason] ?? 0) + 1; continue; }
       const reason = skipReason(row, this.config);
       if (reason) { skipped[reason] = (skipped[reason] ?? 0) + 1; continue; }
-      if (existing && !routeFor(row, this.config).ok) continue;
+      if (existing && this.config.deliveryMode!=='manual' && !routeFor(row, this.config).ok) continue;
       // Only a fresh complete outbox read, latest current ruling and newly
       // explicit route can recover a block that never attempted submission.
       await this.submit(row, { reconsiderRoute: Boolean(existing) });
@@ -470,11 +505,18 @@ export class DashboardCodexBridge {
     }
     const receipts = await this.receipts();
     const counts = Object.fromEntries([...STATES].map(state => [state, receipts.filter(receipt => receipt.state === state).length]));
+    if(this.config.deliveryMode==='manual')counts.awaiting_launch=sourceError?0:receipts.filter(receipt=>{
+      if(receipt.state!=='awaiting_launch')return false;
+      const row=rows.find(row=>row.id===receipt.eventId);if(!row)return false;
+      const itemKey=row.item.id??row.item.ref;
+      return !tiedItems.has(itemKey)&&newestByItem.get(itemKey)?.id===row.id&&!skipReason(row,this.config);
+    }).length;
     const prior = await readJson(this.healthFile, {});
-    const health = { version: 1, ok: !sourceError && reconciliationOk, pid: process.pid, mode: this.config.mode, canaryThreadId: this.config.canaryThreadId, allowedThreadIds: this.config.allowedThreadIds, startAt: this.config.startAt, intervalSeconds: this.config.intervalSeconds, checkedAt: this.isoNow(), lastSuccessfulReadAt: !sourceError ? this.isoNow() : prior.lastSuccessfulReadAt ?? null, source: sourceError ? { available: false, errorCode: sourceError } : { available: true, responseCount: rows.length }, counts, skipped };
+    const health = { version: 1, ok: !sourceError && reconciliationOk, pid: process.pid, mode: this.config.mode, deliveryMode: this.config.deliveryMode, canaryThreadId: this.config.canaryThreadId, allowedThreadIds: this.config.allowedThreadIds, startAt: this.config.startAt, intervalSeconds: this.config.intervalSeconds, checkedAt: this.isoNow(), lastSuccessfulReadAt: !sourceError ? this.isoNow() : prior.lastSuccessfulReadAt ?? null, source: sourceError ? { available: false, errorCode: sourceError } : { available: true, responseCount: rows.length }, counts, skipped };
+    if(this.config.deliveryMode==='manual')health.manualLaunches={enabled:this.config.manualLaunches?.enabled===true,running:this.manualPoll!==null,errorCode:this.manualErrorCode};
     if (this.config.publishHeartbeat) {
       health.deliveryOk = health.ok;
-      health.desktopReady = await this.desktopReady();
+      health.desktopReady = this.config.deliveryMode === 'manual' ? null : await this.desktopReady();
       health.heartbeatPublishedAt = prior.heartbeatPublishedAt ?? null;
       try {
         await this.heartbeatPublisher({ health, receipts, desktopReady: health.desktopReady });
@@ -491,6 +533,10 @@ export class DashboardCodexBridge {
     return health;
   }
   async runOnce() { const release = await acquireProcessLock(this.config.stateDir); try { return await this.tick(); } finally { await release(); } }
+  pollManual(signal){
+    if(this.config.deliveryMode!=='manual'||this.config.manualLaunches?.enabled!==true||!this.manualWorker||this.manualPoll||signal?.aborted)return;
+    this.manualPoll=Promise.resolve().then(()=>this.manualWorker.pollOnce({signal})).then(()=>{this.manualErrorCode=null;},error=>{this.manualErrorCode=errorCode(error);}).finally(()=>{this.manualPoll=null;});
+  }
   async runForever({ signal } = {}) {
     if (this.config.diagnostics) console.error(JSON.stringify({ bridgeStage: 'acquiring_lock', pid: process.pid, at: this.isoNow() }));
     const release = await acquireProcessLock(this.config.stateDir);
@@ -499,17 +545,18 @@ export class DashboardCodexBridge {
       while (!signal?.aborted) {
         try { await this.tick(); }
         catch (error) { await atomicJson(this.healthFile, { version: 1, ok: false, pid: process.pid, checkedAt: this.isoNow(), source: { available: false, errorCode: errorCode(error) }, errorCode: errorCode(error) }); }
+        this.pollManual(signal);
         try { await delay(this.config.intervalSeconds * 1000, undefined, { signal }); }
         catch (error) { if (error.name !== 'AbortError') throw error; }
       }
-    } finally { await release(); }
+    } finally { await this.manualPoll; await release(); }
   }
   async status() {
     const health = await readJson(this.healthFile, { ok: false, source: { available: false, errorCode: 'NOT_STARTED' } });
     let processAlive = false;
     if (health.pid) { try { process.kill(health.pid, 0); processAlive = true; } catch {} }
     const ageSeconds = health.checkedAt ? Math.max(0, (new Date(this.now()).getTime() - Date.parse(health.checkedAt)) / 1000) : null;
-    return { ...health, processAlive, stale: ageSeconds === null || ageSeconds > this.config.intervalSeconds * 3, receipts: (await this.receipts()).map(({ eventId, ref, project, targetThreadId, state, reason, observedAt, backendDeliveredAt, lastErrorCode, ignoredAt, ignoredFrom }) => ({ eventId, ref, project, targetThreadId, state, reason, observedAt, backendDeliveredAt, lastErrorCode, ignoredAt, ignoredFrom })) };
+    return { ...health, processAlive, stale: ageSeconds === null || ageSeconds > this.config.intervalSeconds * 3, receipts: (await this.receipts()).map(({ eventId, ref, project, targetThreadId, deliveryMode, state, reason, originHost, collectedAt, responseSha256, observedAt, backendDeliveredAt, lastErrorCode, ignoredAt, ignoredFrom }) => ({ eventId, ref, project, targetThreadId, deliveryMode, state, reason, originHost, collectedAt, responseSha256, observedAt, backendDeliveredAt, lastErrorCode, ignoredAt, ignoredFrom })) };
   }
   async transition({ action, ref, session, responseId, note, env = process.env }) {
     if (!['pickup', 'done'].includes(action) || !REF.test(ref)) throw new BridgeError('Invalid response acknowledgment.', 'INVALID_CALLBACK');
@@ -555,8 +602,14 @@ export async function main(args = process.argv.slice(2)) {
   const options = parseArgs([...args]);
   const config = await loadConfig(options.config);
   const makeQueue = () => new CodexQueueClient({ command: config.codexCommand ?? process.env.CODEX_APP_RUNTIME_CLI_PATH ?? 'codex', cwd: config.codexCwd ?? path.dirname(config.configPath) });
-  const queue = makeQueue();
-  const bridge = new DashboardCodexBridge({ config, queueClient: queue, queueClientFactory: options.command === 'run' ? makeQueue : undefined, rpc: createOwnerLoopRpc({ baseUrl: config.supabaseUrl, dashboardUrl: config.dashboardUrl, transport: config.rpcTransport }) });
+  const queue = config.deliveryMode === 'manual' ? null : makeQueue();
+  const rpc=createOwnerLoopRpc({ baseUrl: config.supabaseUrl, dashboardUrl: config.dashboardUrl, transport: config.rpcTransport });
+  let manualWorker;
+  if(config.deliveryMode==='manual'&&config.manualLaunches?.enabled===true){
+    const {ManualBatchWorker,createManualLaunchApi}=await import('./manual-batch-worker.mjs');
+    manualWorker=new ManualBatchWorker({config,rpc,launchApi:createManualLaunchApi({dashboardUrl:config.dashboardUrl})});
+  }
+  const bridge = new DashboardCodexBridge({ config, queueClient: queue, queueClientFactory: options.command === 'run' ? makeQueue : undefined, rpc,manualWorker });
   try {
     if (options.status) { console.log(JSON.stringify(await bridge.status(), null, 2)); return; }
     if (options.command === 'acknowledge' || options.command === 'complete') {
@@ -570,7 +623,7 @@ export async function main(args = process.argv.slice(2)) {
     process.once('SIGINT', stop); process.once('SIGTERM', stop);
     try { await bridge.runForever({ signal: controller.signal }); }
     finally { process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop); }
-  } finally { await queue.close(); }
+  } finally { await queue?.close(); }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

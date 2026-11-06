@@ -8,6 +8,7 @@ export const TABS: Tab[] = [
   { href: "/focus", label: "Focus" },
   { href: "/", label: "Today" },
   { href: "/inbox", label: "Inbox" },
+  { href: "/agent-inbox", label: "Agent inbox" },
   { href: "/decisions", label: "Decide" },
   { href: "/timeline", label: "Timeline" },
   { href: "/marketing", label: "Marketing" },

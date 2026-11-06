@@ -10,9 +10,11 @@ export const MAX_HEARTBEAT_BYTES = 32 * 1024;
 const REQUEST_TIMEOUT_MS = 4000;
 const COUNT_KEYS = ["queued", "ambiguous", "blocked", "started", "delivered"] as const;
 
-export type BridgeCounts = Record<(typeof COUNT_KEYS)[number], number>;
+export type BridgeCounts = Record<(typeof COUNT_KEYS)[number], number> & { awaiting_launch?: number };
 export type BridgeHeartbeatInput = {
   version: 1;
+  deliveryMode?: "automatic" | "manual";
+  manualLaunchError?: boolean;
   host: typeof BRIDGE_HOST;
   checkedAt: string;
   sourceAvailable: boolean;
@@ -23,6 +25,7 @@ export type BridgeHeartbeatInput = {
 };
 export type BridgeHeartbeatRecord = BridgeHeartbeatInput & { receivedAt: string };
 export type BridgeConnectionStatus = {
+  deliveryMode?: "automatic" | "manual";
   state: "green" | "yellow" | "red";
   label: string;
   detail: string;
@@ -41,21 +44,24 @@ function isoTimestamp(value: unknown): value is string {
 }
 
 export function validateBridgeHeartbeat(value: unknown): { ok: true; value: BridgeHeartbeatInput } | { ok: false } {
-  if (!record(value) || Object.keys(value).some((key) => !["version", "host", "checkedAt", "sourceAvailable", "desktopReady", "counts", "oldestQueuedAt", "intervalSeconds"].includes(key))) return { ok: false };
+  if (!record(value) || Object.keys(value).some((key) => !["version", "deliveryMode", "manualLaunchError", "host", "checkedAt", "sourceAvailable", "desktopReady", "counts", "oldestQueuedAt", "intervalSeconds"].includes(key))) return { ok: false };
   if (value.version !== 1 || value.host !== BRIDGE_HOST || !isoTimestamp(value.checkedAt)
     || typeof value.sourceAvailable !== "boolean"
     || (value.desktopReady !== null && typeof value.desktopReady !== "boolean")
-    || !record(value.counts) || Object.keys(value.counts).length !== COUNT_KEYS.length
-    || Object.keys(value.counts).some((key) => !(COUNT_KEYS as readonly string[]).includes(key))
+    || (value.deliveryMode !== undefined && value.deliveryMode !== "automatic" && value.deliveryMode !== "manual")
+    || (value.manualLaunchError !== undefined && (value.deliveryMode !== "manual" || typeof value.manualLaunchError !== "boolean"))
+    || !record(value.counts) || Object.keys(value.counts).length !== COUNT_KEYS.length + (Object.hasOwn(value.counts, "awaiting_launch") ? 1 : 0)
+    || Object.keys(value.counts).some((key) => key !== "awaiting_launch" && !(COUNT_KEYS as readonly string[]).includes(key))
+    || (value.counts.awaiting_launch !== undefined && (value.deliveryMode !== "manual" || !Number.isSafeInteger(value.counts.awaiting_launch) || Number(value.counts.awaiting_launch) < 0 || Number(value.counts.awaiting_launch) > 1_000_000))
     || COUNT_KEYS.some((key) => !Number.isSafeInteger(value.counts && (value.counts as Record<string, unknown>)[key])
       || Number((value.counts as Record<string, unknown>)[key]) < 0 || Number((value.counts as Record<string, unknown>)[key]) > 1_000_000)
     || (value.oldestQueuedAt !== null && !isoTimestamp(value.oldestQueuedAt))
     || !Number.isInteger(value.intervalSeconds) || Number(value.intervalSeconds) < 5 || Number(value.intervalSeconds) > 3600) return { ok: false };
   // Reconstruct the fixed shape; never persist free-form payload fields.
   return { ok: true, value: {
-    version: 1, host: BRIDGE_HOST, checkedAt: value.checkedAt,
+    version: 1, ...(value.deliveryMode !== undefined ? { deliveryMode: value.deliveryMode as "automatic" | "manual" } : {}), ...(value.manualLaunchError !== undefined ? { manualLaunchError: value.manualLaunchError as boolean } : {}), host: BRIDGE_HOST, checkedAt: value.checkedAt,
     sourceAvailable: value.sourceAvailable, desktopReady: value.desktopReady as boolean | null,
-    counts: Object.fromEntries(COUNT_KEYS.map((key) => [key, Number((value.counts as Record<string, unknown>)[key])])) as BridgeCounts,
+    counts: { ...Object.fromEntries(COUNT_KEYS.map((key) => [key, Number((value.counts as Record<string, unknown>)[key])])), ...(value.counts.awaiting_launch !== undefined ? { awaiting_launch: Number(value.counts.awaiting_launch) } : {}) } as BridgeCounts,
     oldestQueuedAt: value.oldestQueuedAt as string | null, intervalSeconds: Number(value.intervalSeconds),
   } };
 }
@@ -128,8 +134,8 @@ export function unavailableBridgeStatus(): BridgeConnectionStatus {
 
 export function classifyBridgeStatus(snapshot: BridgeHeartbeatRecord | null, now = new Date()): BridgeConnectionStatus {
   if (!snapshot) return { state: "red", label: "No connection yet", detail: "No background connection check has been received from the PC.", lastSeenAt: null, checkedAt: null, pending: null };
-  const pending = snapshot.counts.queued + snapshot.counts.started;
-  const base = { lastSeenAt: snapshot.receivedAt, checkedAt: snapshot.checkedAt, pending };
+  const pending = snapshot.counts.queued + snapshot.counts.started + (snapshot.counts.awaiting_launch ?? 0);
+  const base = { lastSeenAt: snapshot.receivedAt, checkedAt: snapshot.checkedAt, pending, ...(snapshot.deliveryMode ? { deliveryMode: snapshot.deliveryMode } : {}) };
   const age = now.getTime() - Date.parse(snapshot.receivedAt);
   const reportAge = now.getTime() - Date.parse(snapshot.checkedAt);
   const oldestAge = snapshot.oldestQueuedAt ? now.getTime() - Date.parse(snapshot.oldestQueuedAt) : null;
@@ -139,11 +145,13 @@ export function classifyBridgeStatus(snapshot: BridgeHeartbeatRecord | null, now
   if (age > 120_000) return { ...base, state: "red", label: "PC connection offline", detail: "The PC has stopped reporting. It may be asleep, turned off, signed out, or the background service may have stopped." };
   if (age > 60_000 || reportAge > 60_000) return { ...base, state: "yellow", label: "Connection check delayed", detail: "The last connection check is getting old. Current readiness is not confirmed." };
   if (!snapshot.sourceAvailable) return { ...base, state: "yellow", label: "Dashboard connection needs attention", detail: "The background service is running but could not read new dashboard answers." };
-  if (snapshot.desktopReady === false) return { ...base, state: "yellow", label: "Open Codex on the PC", detail: "The background service is online. Open Codex and keep it running so project chats can receive queued answers." };
-  if (snapshot.desktopReady === null) return { ...base, state: "yellow", label: "Checking Codex availability", detail: "The background service is online, but Codex availability has not been verified." };
+  if (snapshot.deliveryMode === "manual" && snapshot.manualLaunchError) return { ...base, state: "yellow", label: "Launch service needs attention", detail: "Answers remain saved, but the PC could not check launch requests. Try again after the connection recovers." };
+  if (snapshot.deliveryMode !== "manual" && snapshot.desktopReady === false) return { ...base, state: "yellow", label: "Open Codex on the PC", detail: "The background service is online. Open Codex and keep it running so project chats can receive queued answers." };
+  if (snapshot.deliveryMode !== "manual" && snapshot.desktopReady === null) return { ...base, state: "yellow", label: "Checking Codex availability", detail: "The background service is online, but Codex availability has not been verified." };
   if (snapshot.counts.ambiguous) return { ...base, state: "yellow", label: "Delivery needs review", detail: "An answer has an uncertain delivery result. It will not be resent automatically." };
   if (snapshot.counts.blocked) return { ...base, state: "yellow", label: "Some answers need a destination", detail: "The connection is online, but one or more answers need a confirmed project chat before delivery." };
   if (snapshot.counts.started) return { ...base, state: "yellow", label: "Confirming delivery", detail: "An answer reached Codex, but its dashboard delivery confirmation is still pending." };
   if (snapshot.counts.queued && (oldestAge === null || oldestAge > 90_000)) return { ...base, state: "yellow", label: "Waiting for Codex", detail: "Answers are queued but have not appeared in their project chat yet. Codex may still be busy." };
+  if (snapshot.deliveryMode === "manual") return { ...base, state: "green", label: "Manual launch", detail: "The PC is collecting answers. Codex runs only when you launch a selected project batch from Agent inbox." };
   return { ...base, state: "green", label: "Connected", detail: "The PC background connection is online and Codex is available. Project work and completion are tracked separately." };
 }

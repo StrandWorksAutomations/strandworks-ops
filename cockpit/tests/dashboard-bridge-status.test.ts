@@ -25,6 +25,16 @@ const payload = (): BridgeHeartbeatInput => ({
   oldestQueuedAt: null, intervalSeconds: 15,
 });
 const stored = (changes: Partial<BridgeHeartbeatRecord> = {}): BridgeHeartbeatRecord => ({ ...payload(), receivedAt: NOW, ...changes });
+it("manual collection is ready without a loaded desktop and waiting answers do not launch themselves", () => {
+  const snapshot = stored({ deliveryMode: "manual", desktopReady: null, counts: { ...payload().counts, awaiting_launch: 2 } });
+  const { receivedAt: _receivedAt, ...input } = snapshot;
+  expect(validateBridgeHeartbeat(input).ok).toBe(true);
+  expect(classifyBridgeStatus(snapshot, new Date(NOW))).toMatchObject({ state: "green", label: "Manual launch", pending: 2, deliveryMode: "manual" });
+  expect(classifyBridgeStatus({ ...snapshot, manualLaunchError: true }, new Date(NOW))).toMatchObject({ state: "yellow", label: "Launch service needs attention" });
+  expect(classifyBridgeStatus(snapshot, new Date(Date.parse(NOW) + 121000)).state).toBe("red");
+  expect(validateBridgeHeartbeat({ ...input, deliveryMode: ["manual"] }).ok).toBe(false);
+  expect(validateBridgeHeartbeat({ ...input, deliveryMode: "automatic" }).ok).toBe(false);
+});
 function response(value: unknown, status = 200) { return new Response(JSON.stringify(value), { status, headers: { "Content-Type": "application/json" } }); }
 function post(body: unknown = payload(), authorization: string | null = `Bearer ${token}`) {
   return new NextRequest("http://localhost:3111/api/loop/agent/heartbeat", { method: "POST", headers: { "Content-Type": "application/json", ...(authorization ? { Authorization: authorization } : {}) }, body: JSON.stringify(body) });

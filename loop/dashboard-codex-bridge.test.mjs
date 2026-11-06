@@ -74,6 +74,102 @@ test('ordinary response is durably prepared before add and queued exactly once a
   assert.equal(h.data.marks.length,0); assert.equal(h.data.transitions.length,0);
 });
 
+test('manual collection persists exact response evidence without opening, enqueuing or starting a chat',async t=>{
+  let probes=0,factories=0;
+  const h=await harness(t,{config:{deliveryMode:'manual',publishHeartbeat:true},heartbeatPublisher:async()=>{},desktopReadyProbe:async()=>{probes++;return true;}});
+  h.bridge.queueClientFactory=()=>{factories++;throw new Error('Manual collection must not create a queue client');};
+  h.bridge.queue=new Proxy({}, {get(){throw new Error('Manual collection must not use a queue client');}});
+  const health=await h.bridge.runOnce();
+  const receipt=await getReceipt(h);
+  assert.equal(health.ok,true);assert.equal(health.deliveryMode,'manual');assert.equal(health.counts.awaiting_launch,1);
+  assert.equal(receipt.state,'awaiting_launch');assert.equal(receipt.deliveryMode,'manual');
+  assert.equal(receipt.collectedResponse.body,h.data.rows[0].body);
+  assert.equal(receipt.collectedResponse.option_key,'A');
+  assert.equal(receipt.collectedResponse.item.options[0].label,h.data.rows[0].item.options[0].label);
+  assert.equal(receipt.originHost,'old-mac');assert.equal(receipt.itemRuledAt,NOW);
+  assert.match(receipt.responseSha256,/^[a-f\d]{64}$/);
+  assert.equal(Object.hasOwn(receipt,'targetThreadId'),false);assert.equal(Object.hasOwn(receipt,'clientUserMessageId'),false);
+  assert.equal(factories,0);assert.equal(probes,0);assert.equal(h.data.enqueues.length,0);
+  assert.equal(h.data.marks.length,0);assert.equal(h.data.transitions.length,0);
+  await h.bridge.runOnce();
+  assert.deepEqual(await getReceipt(h),receipt);
+});
+
+test('manual receipts stay inert after restart and after switching back to automatic configuration',async t=>{
+  const h=await harness(t,{config:{deliveryMode:'manual'}});
+  await h.bridge.runOnce();
+  const collected=await getReceipt(h);
+  const restarted=new DashboardCodexBridge({config:{...h.config,deliveryMode:'automatic'},queueClient:h.queue,rpc:h.rpc,now:()=>new Date(NOW)});
+  assert.equal((await restarted.runOnce()).ok,true);
+  assert.deepEqual(await getReceipt(h),collected);assert.equal(h.data.enqueues.length,0);
+  await assert.rejects(restarted.transition({action:'pickup',ref:'D-0999',session:THREAD,responseId:EVENT,env:{}}),{code:'CALLBACK_RECEIPT_MISMATCH'});
+});
+
+test('manual collection preserves uncertain legacy receipts and makes no legacy queue or dashboard writes',async t=>{
+  const h=await harness(t,{config:{deliveryMode:'manual'}});
+  const legacy={version:1,eventId:EVENT,ref:'D-0999',project:'bridge-canary',eventCreatedAt:NOW,targetThreadId:THREAD,marker:eventMarker(EVENT),messageSha256:createHash('sha256').update(eventMarker(EVENT)).digest('hex'),state:'ambiguous',reason:'submission_result_unknown'};
+  await atomicJson(h.bridge.receiptPath(EVENT),legacy);
+  h.bridge.queue=new Proxy({}, {get(){throw new Error('Manual mode must not inspect a legacy chat');}});
+  const health=await h.bridge.runOnce();
+  assert.equal(health.ok,false);assert.equal(health.counts.ambiguous,1);
+  assert.deepEqual(await getReceipt(h),legacy);assert.equal(h.data.enqueues.length,0);assert.equal(h.data.marks.length,0);
+});
+
+test('manual collection retains host, watermark, exclusion and current-revision gates',async t=>{
+  const cases=[
+    {config:{originHostAllowlist:['this-pc']},reason:'origin_host_not_allowed'},
+    {config:{startAt:'2026-11-06T15:01:00Z'},reason:'before_watermark'},
+    {config:{ignoredResponseIds:[EVENT]},reason:'owner_excluded_response'},
+    {rows:[row({item:{...row().item,ruled_at:'2026-11-06T15:01:00Z'}})],reason:'superseded_or_unverified_ruling'},
+  ];
+  for(const entry of cases){
+    const h=await harness(t,{...entry,config:{deliveryMode:'manual',...entry.config}});
+    const health=await h.bridge.runOnce();
+    assert.equal(health.skipped[entry.reason],1);assert.equal((await h.bridge.receipts()).length,0);assert.equal(h.data.enqueues.length,0);
+  }
+});
+
+test('legacy configuration keeps automatic delivery and rejects unsupported delivery modes',()=>{
+  const base={version:1,mode:'canary',canaryThreadId:THREAD,startAt:START,sessionRoutes:{[THREAD]:THREAD}};
+  assert.equal(validateConfig(base).deliveryMode,'automatic');
+  assert.throws(()=>validateConfig({...base,deliveryMode:'auto-launch'}),{code:'INVALID_CONFIG'});
+});
+
+test('manual collection uses source host instead of original-chat routes and counts only current eligible answers',async t=>{
+  const source=row({item:{...row().item,origin_session:OTHER_THREAD}});
+  const h=await harness(t,{rows:[source],config:{deliveryMode:'manual',mode:'routed',allowedThreadIds:[],sessionRoutes:{},originHostAllowlist:['old-mac']}});
+  assert.equal((await h.bridge.runOnce()).counts.awaiting_launch,1);assert.equal((await getReceipt(h)).targetThreadId,undefined);
+  h.data.rows[0].item.status='picked_up';
+  assert.equal((await h.bridge.runOnce()).counts.awaiting_launch,0);
+  assert.equal((await getReceipt(h)).state,'awaiting_launch');assert.equal(h.data.enqueues.length,0);
+});
+
+test('manual collection watermark retains microseconds',async t=>{
+  const source=row({created_at:'2026-11-06T15:00:00.000001Z',item:{...row().item,ruled_at:'2026-11-06T15:00:00.000001Z'}});
+  const h=await harness(t,{rows:[source],config:{deliveryMode:'manual',startAt:'2026-11-06T15:00:00.000002Z'}});
+  assert.equal(h.config.startAt,'2026-11-06T15:00:00.000002Z');
+  const health=await h.bridge.runOnce();assert.equal(health.skipped.before_watermark,1);assert.equal(health.counts.awaiting_launch,0);
+});
+
+test('manual polling stays single-flight while collection continues and receives the shutdown signal',async t=>{
+  const h=await harness(t,{config:{deliveryMode:'manual',manualLaunches:{enabled:true}}});
+  const controller=new AbortController();let polls=0,seenSignal,finish;
+  h.bridge.manualWorker={pollOnce:async({signal})=>{polls++;seenSignal=signal;return new Promise(resolve=>{finish=resolve;});}};
+  h.bridge.pollManual(controller.signal);await new Promise(resolve=>setImmediate(resolve));
+  h.bridge.pollManual(controller.signal);
+  const health=await h.bridge.runOnce();assert.equal(health.ok,true);assert.equal(health.manualLaunches.running,true);assert.equal(polls,1);assert.equal(seenSignal,controller.signal);
+  controller.abort();assert.equal(seenSignal.aborted,true);finish();await h.bridge.manualPoll;
+  assert.equal(h.bridge.manualPoll,null);h.bridge.pollManual(controller.signal);assert.equal(polls,1);
+});
+
+test('manual heartbeat publishes only aggregate waiting count and launch-error boolean',async()=>{
+  let payload;
+  const publish=createHeartbeatPublisher({env:{OWNER_LOOP_TOKEN:'FAKE'},fetchImpl:async(_url,options)=>{payload=JSON.parse(options.body);return{ok:true};}});
+  await publish({health:{deliveryMode:'manual',checkedAt:NOW,intervalSeconds:30,source:{available:true},counts:{awaiting_launch:2},manualLaunches:{errorCode:'PRIVATE_LOCAL_ERROR'}},receipts:[]});
+  assert.equal(payload.deliveryMode,'manual');assert.equal(payload.counts.awaiting_launch,2);assert.equal(payload.manualLaunchError,true);
+  assert.equal(JSON.stringify(payload).includes('PRIVATE_LOCAL_ERROR'),false);
+});
+
 test('handoff preserves exact owner text, option, source IDs and explicit callback commands',async t=>{
   const h=await harness(t);await h.bridge.runOnce();
   const message=h.data.enqueues[0].text;
