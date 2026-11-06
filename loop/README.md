@@ -184,3 +184,48 @@ Every item opens at `/item/D-0001`. A response there (or a swipe right on its ca
 Installed under D-0237 (2026-11-04): droplet root cron `/opt/claude-ops/owner-relay/run.sh` every minute (log `/var/log/owner-relay.log`); laptop launch agent `~/Library/LaunchAgents/com.strandworks.owner-dispatch.plist` every 60 s; `PostToolUse` hook in `~/.claude/settings.json` and `~/.codex/hooks.json`. To move dispatch to another computer, install the launch agent there and unload it here. Unposted responses stay queued for 14 days.
 
 File a brief with its item: `swd ask ... --brief <slug>`. A `/briefings/<slug>` link in the body also connects it; a strong filename match shows as "possibly related".
+
+### Local Codex queue bridge (Windows)
+
+`dashboard-codex-bridge.mjs` delivers ordinary dashboard responses to explicitly
+mapped existing Codex sessions. It uses the authenticated `/api/loop/agent`
+endpoint and the existing revocable owner-loop agent token. The dashboard keeps
+its Supabase service credential server-side. No language-model call is required
+for delivery.
+
+The bridge unions the existing outbox views, checks the latest current ruling,
+and writes a durable local receipt before submitting to Codex's shared queue.
+It never starts a replacement agent. Queued work is consumed when the existing
+loaded Codex session becomes idle. A closed/unloaded session may leave work
+queued until that session is resumed; queueing is not proof of execution.
+
+Delivery is recorded only when the exact submitted text appears as a persisted
+user message in the mapped session. The receiving agent separately records
+pickup and completion through the receipt-bound `acknowledge` and `complete`
+commands included in the handoff. Uncertain submissions are reconciled against
+queue and history evidence and are not blindly retried. Unknown routes, source
+failures, and ambiguous delivery remain visible in the local status receipt.
+
+Start with `mode: "canary"` and one `canaryThreadId`. After verifying receipt,
+`mode: "routed"` accepts an explicit `allowedThreadIds` list with exact
+`sessionRoutes` and optional owner-configured `projectRoutes`. An explicit
+`startAt` timestamp prevents replaying historical decisions. Urgent responses
+remain excluded because the older Mac dispatcher owns that path; migrate or
+fence that dispatcher before changing urgent ownership. Mac-hosted sessions
+must be handled on their owning host, not resumed blindly on Windows.
+
+```sh
+node loop/dashboard-codex-bridge.mjs --config /private/path/bridge.json --once
+node loop/dashboard-codex-bridge.mjs --config /private/path/bridge.json --status
+node --test loop/codex-queue-client.test.mjs loop/dashboard-codex-bridge.test.mjs
+```
+
+Keep the token at `~/.config/strandworks/owner-loop.token` (or in
+`OWNER_LOOP_TOKEN`), outside the repository and deliverables. Configuration and
+receipts contain no token. Use a stable installed script path in
+`agentCommandBase` so queued callbacks survive a checkout move.
+On Windows, place runtime state outside `LOCALAPPDATA` when the desktop client
+is packaged: its filesystem view may differ from Task Scheduler's. The Windows
+installation uses `C:\CreativeWork\Tools\DashboardBridge\state`, and launches
+the runner through a hidden wrapper under a per-user logon task. Verify fresh
+health receipts from the actual scheduled process, not only an interactive run.
