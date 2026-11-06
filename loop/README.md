@@ -209,10 +209,33 @@ failures, and ambiguous delivery remain visible in the local status receipt.
 Start with `mode: "canary"` and one `canaryThreadId`. After verifying receipt,
 `mode: "routed"` accepts an explicit `allowedThreadIds` list with exact
 `sessionRoutes` and optional owner-configured `projectRoutes`. An explicit
-`startAt` timestamp prevents replaying historical decisions. Urgent responses
-remain excluded because the older Mac dispatcher owns that path; migrate or
-fence that dispatcher before changing urgent ownership. Mac-hosted sessions
-must be handled on their owning host, not resumed blindly on Windows.
+`startAt` timestamp prevents replaying historical decisions. Set
+`originHostAllowlist` to a nonempty list of exact hostnames when the runner must
+handle only this computer's questions; mismatched or missing origins are
+excluded before submission. Identity session routes keep answers in their
+original local sessions. Project fallbacks are optional and must be explicitly
+configured; do not add them when sessions must remain separate. Mac-hosted
+sessions must be handled on their owning host, not resumed blindly on Windows.
+
+A previously unmapped response can be reconsidered after an explicit route is
+added, but only when a fresh complete outbox read still shows that same response
+as the latest actionable ruling and it passes every current delivery filter.
+The original route block is retained in `routeBlockedHistory`. Preparing,
+queued, ambiguous, started and delivered receipts are never resubmitted by a
+route change. `ignoredResponseIds` is an explicit UUID exclusion list: fresh
+excluded responses are skipped, and only untouched route-blocked receipts move
+to terminal `ignored` with their previous block evidence retained. This never
+forwards, mutates or closes the dashboard item, nor cancels an existing queue.
+
+Urgent responses are excluded by default. To take over urgent delivery, first
+disable or fence every legacy dispatcher that can consume the shared urgent
+queue, then explicitly set both `includeUrgent: true` and
+`legacyDispatcherDisabled: true`. The latter is an operator ownership
+confirmation, not an automatic check of other machines. Even with this opt-in,
+the runner accepts only urgent `queued` responses with explicit null
+`dispatch_at`, `dispatch_target` and `dispatch_note`, proving no prior dispatch
+claim is recorded. Other states or missing/prior claim metadata remain
+excluded; local preparing or uncertain receipts are never retried.
 
 ```sh
 node loop/dashboard-codex-bridge.mjs --config /private/path/bridge.json --once
@@ -229,3 +252,20 @@ is packaged: its filesystem view may differ from Task Scheduler's. The Windows
 installation uses `C:\CreativeWork\Tools\DashboardBridge\state`, and launches
 the runner through a hidden wrapper under a per-user logon task. Verify fresh
 health receipts from the actual scheduled process, not only an interactive run.
+
+Set `publishHeartbeat: true` in the private Windows configuration to publish
+aggregate connection health to `/api/loop/agent/heartbeat`. This uses the
+existing scoped token, bound to this PC's token label. It sends no owner text,
+project files, session IDs or credentials in the body. The dashboard stores a
+small server-timestamped snapshot in the private `owner-loop-runtime` Storage
+bucket, at `dashboard-bridge/DESKTOP-U6OA95F.json`; provision the bucket private
+with JSON uploads only and a 16 KiB limit. The owner's authenticated
+`/api/loop/agent-status` read never exposes the server credential.
+
+The header dot is green only for a recent report with a working dashboard read
+and verified Codex desktop/queue availability. Unknown readiness, delivery
+problems, or a delayed check turn it yellow. No report for over two minutes
+turns it red. Delivery and project completion remain separate. The status menu
+explains the colors and operating requirements. The relay and packaged Codex
+startup task run after Windows sign-in; keep the Windows PC awake and online.
+Locking its screen or closing the dashboard browser does not stop the relay.

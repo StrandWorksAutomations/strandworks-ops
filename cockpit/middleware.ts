@@ -9,7 +9,7 @@ const PUBLIC_PATHS = [/^\/login$/, /^\/setup$/, /^\/api\/auth\//];
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (PUBLIC_PATHS.some((re) => re.test(pathname))) return NextResponse.next();
-  if (pathname === "/api/loop/agent" && req.method === "POST") return NextResponse.next();
+  if ((pathname === "/api/loop/agent" || pathname === "/api/loop/agent/heartbeat") && req.method === "POST") return NextResponse.next();
 
   // Dev-only bridge: `?dev-session=<HMAC-signed token>` sets the session
   // cookie so the owner can open the local cockpit straight from a terminal.

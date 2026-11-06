@@ -1,7 +1,9 @@
 import { readFile, mkdir, rename, readdir, open, unlink } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
-import { homedir, tmpdir } from 'node:os';
+import { homedir, tmpdir, hostname } from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -11,8 +13,11 @@ export const DEFAULT_SUPABASE_URL = 'https://bniuiwbwumpymxiesyyt.supabase.co';
 export const DEFAULT_DASHBOARD_URL = 'https://dashboard.strandautomationworks.com';
 const UUID = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i;
 const REF = /^D-\d{4,}$/;
-const STATES = new Set(['preparing', 'queued', 'ambiguous', 'started', 'delivered', 'blocked']);
+const STATES = new Set(['preparing', 'queued', 'ambiguous', 'started', 'delivered', 'blocked', 'ignored']);
 const TERMINAL_ITEMS = new Set(['done', 'dropped']);
+const ROUTE_BLOCK_REASONS = new Set(['origin_session_not_routed', 'project_not_routed', 'target_outside_allowlist']);
+const execFileAsync = promisify(execFile);
+const READINESS_CACHE_MS = 30_000;
 
 export class BridgeError extends Error {
   constructor(message, code = 'BRIDGE_ERROR') { super(message); this.name = 'BridgeError'; this.code = code; }
@@ -57,7 +62,16 @@ export function validateConfig(raw, configPath) {
   if (!Object.keys(sessionRoutes).length && !Object.keys(projectRoutes).length) throw new BridgeError('At least one explicit route is required.', 'INVALID_CONFIG');
   const intervalSeconds = raw.intervalSeconds ?? 15;
   if (!Number.isInteger(intervalSeconds) || intervalSeconds < 5 || intervalSeconds > 3600) throw new BridgeError('intervalSeconds must be 5–3600.', 'INVALID_CONFIG');
-  if (raw.includeUrgent === true) throw new BridgeError('Urgent responses remain owned by the legacy dispatcher in this canary.', 'INVALID_CONFIG');
+  if (raw.includeUrgent === true && raw.legacyDispatcherDisabled !== true) throw new BridgeError('Urgent delivery requires explicit legacyDispatcherDisabled: true ownership confirmation.', 'INVALID_CONFIG');
+  if (raw.publishHeartbeat !== undefined && typeof raw.publishHeartbeat !== 'boolean') throw new BridgeError('publishHeartbeat must be a boolean.', 'INVALID_CONFIG');
+  const ignoredResponseIds = raw.ignoredResponseIds ?? [];
+  if (!Array.isArray(ignoredResponseIds)) throw new BridgeError('ignoredResponseIds must be an explicit UUID list.', 'INVALID_CONFIG');
+  for (const id of ignoredResponseIds) requireUuid(id, 'Ignored response');
+  const originHostAllowlist = raw.originHostAllowlist;
+  if (originHostAllowlist !== undefined && (!Array.isArray(originHostAllowlist) || !originHostAllowlist.length
+    || originHostAllowlist.some(host => typeof host !== 'string' || !host || host.length > 255 || host.trim() !== host))) {
+    throw new BridgeError('originHostAllowlist must be a nonempty exact hostname list.', 'INVALID_CONFIG');
+  }
   if (raw.agentCommandBase && (!Array.isArray(raw.agentCommandBase) || !raw.agentCommandBase.length || raw.agentCommandBase.some(x => typeof x !== 'string' || !x))) {
     throw new BridgeError('agentCommandBase must be a nonempty argument array.', 'INVALID_CONFIG');
   }
@@ -69,7 +83,10 @@ export function validateConfig(raw, configPath) {
   if (raw.rpcTransport && !['proxy', 'supabase'].includes(raw.rpcTransport)) throw new BridgeError('Unsupported owner-loop transport.', 'INVALID_CONFIG');
   return {
     ...raw, version: 1, mode: raw.mode, canaryThreadId, allowedThreadIds: [...new Set(allowedThreadIds)], sessionRoutes, projectRoutes, intervalSeconds,
-    includeUrgent: false, startAt: new Date(raw.startAt).toISOString(), supabaseUrl: url.origin, dashboardUrl: dashboardUrl.origin, rpcTransport: raw.rpcTransport ?? 'proxy',
+    includeUrgent: raw.includeUrgent === true, legacyDispatcherDisabled: raw.legacyDispatcherDisabled === true,
+    publishHeartbeat: raw.publishHeartbeat === true,
+    ignoredResponseIds: [...new Set(ignoredResponseIds)], originHostAllowlist: originHostAllowlist ? [...new Set(originHostAllowlist)] : undefined,
+    startAt: new Date(raw.startAt).toISOString(), supabaseUrl: url.origin, dashboardUrl: dashboardUrl.origin, rpcTransport: raw.rpcTransport ?? 'proxy',
     stateDir: path.resolve(raw.stateDir ?? path.join(homedir(), '.cache', 'strandworks', 'dashboard-codex-bridge')),
     configPath: configPath ? path.resolve(configPath) : raw.configPath,
     agentCommandBase: raw.agentCommandBase ?? [process.execPath, fileURLToPath(import.meta.url)],
@@ -97,6 +114,98 @@ export function createOwnerLoopRpc({ env = process.env, home = homedir(), fetchI
     if (!response.ok) throw new BridgeError(`Dashboard operation ${name} returned HTTP ${response.status}.`, 'DASHBOARD_RPC_FAILED');
     try { const body = await response.json(); if (transport === 'supabase') return body; if (!Object.hasOwn(body, 'result')) throw new Error(); return body.result; }
     catch { throw new BridgeError(`Dashboard operation ${name} returned invalid data.`, 'DASHBOARD_INVALID_DATA'); }
+  };
+}
+
+function validCount(value) { return Number.isSafeInteger(value) && value >= 0 ? value : 0; }
+function oldestQueuedAt(receipts) {
+  const timestamps = receipts.filter(receipt => ['queued', 'preparing'].includes(receipt?.state)).map(receipt => {
+    for (const field of ['submittedAt', 'preparingAt', 'eventCreatedAt']) {
+      if (typeof receipt[field] === 'string' && Number.isFinite(Date.parse(receipt[field]))) return Date.parse(receipt[field]);
+    }
+    return null;
+  }).filter(value => value !== null);
+  return timestamps.length ? new Date(timestamps.reduce((oldest, value) => Math.min(oldest, value), Infinity)).toISOString() : null;
+}
+
+/** Publish only aggregate operational data; never forward local receipt contents. */
+export function createHeartbeatPublisher({ env = process.env, home = homedir(), fetchImpl = fetch,
+  dashboardUrl = DEFAULT_DASHBOARD_URL, host = hostname(), timeoutMs = 10000 } = {}) {
+  let origin;
+  try {
+    const url = new URL(dashboardUrl);
+    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) throw new Error();
+    origin = url.origin;
+  } catch { throw new BridgeError('Heartbeat requires an HTTPS dashboard origin.', 'HEARTBEAT_INVALID_ORIGIN'); }
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30_000) throw new BridgeError('Heartbeat timeout is invalid.', 'INVALID_CONFIG');
+  if (typeof host !== 'string' || !host || host.length > 255 || /\s/.test(host)) throw new BridgeError('Heartbeat hostname is invalid.', 'INVALID_CONFIG');
+  return async function publish({ health, receipts = [], desktopReady = null }) {
+    if (!health || typeof health.checkedAt !== 'string' || !Number.isFinite(Date.parse(health.checkedAt))
+      || !Number.isInteger(health.intervalSeconds) || health.intervalSeconds < 5 || health.intervalSeconds > 3600 || !Array.isArray(receipts)) {
+      throw new BridgeError('Heartbeat snapshot is invalid.', 'HEARTBEAT_INVALID_SNAPSHOT');
+    }
+    const counts = health.counts ?? {};
+    const payload = {
+      version: 1, host, checkedAt: health.checkedAt, sourceAvailable: health.source?.available === true,
+      desktopReady: desktopReady === true ? true : desktopReady === false ? false : null,
+      intervalSeconds: health.intervalSeconds,
+      counts: {
+        queued: Math.min(Number.MAX_SAFE_INTEGER, validCount(counts.queued) + validCount(counts.preparing)),
+        ambiguous: validCount(counts.ambiguous), blocked: validCount(counts.blocked),
+        started: validCount(counts.started), delivered: validCount(counts.delivered),
+      },
+      oldestQueuedAt: oldestQueuedAt(receipts),
+    };
+    let token;
+    try { token = (env.OWNER_LOOP_TOKEN || await readFile(path.join(home, '.config', 'strandworks', 'owner-loop.token'), 'utf8')).trim(); }
+    catch { throw new BridgeError('Scoped heartbeat credentials are not installed.', 'HEARTBEAT_CREDENTIALS_UNAVAILABLE'); }
+    if (!token) throw new BridgeError('Scoped heartbeat credentials are empty.', 'HEARTBEAT_CREDENTIALS_UNAVAILABLE');
+    let response;
+    try {
+      response = await fetchImpl(`${origin}/api/loop/agent/heartbeat`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload), redirect: 'error', signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch { throw new BridgeError('Dashboard heartbeat was unavailable.', 'HEARTBEAT_UNAVAILABLE'); }
+    // Discard response bytes rather than parsing or retaining upstream details.
+    try { await response?.body?.cancel?.(); } catch {}
+    if (!response || typeof response.ok !== 'boolean') throw new BridgeError('Dashboard heartbeat returned invalid data.', 'HEARTBEAT_INVALID_RESPONSE');
+    if (!response.ok) throw new BridgeError(`Dashboard heartbeat returned HTTP ${response.status}.`, 'HEARTBEAT_HTTP_ERROR');
+  };
+}
+
+/** Distinguish the packaged Desktop root from Electron children and CLI clients. */
+export function desktopReadyFromProcesses(snapshot) {
+  if (!snapshot || !Number.isInteger(snapshot.sessionId) || !Array.isArray(snapshot.processes)) return null;
+  const processes = snapshot.processes.filter(process => process?.SessionId === snapshot.sessionId);
+  const candidates = processes.filter(process => /^ChatGPT\.exe$/i.test(process.Name ?? ''));
+  const packagePath = /^[A-Z]:\\Program Files\\WindowsApps\\OpenAI\.Codex_[^\\]+\\app\\ChatGPT\.exe$/i;
+  const mains = candidates.filter(process => packagePath.test(process.ExecutablePath ?? '')
+    && typeof process.CommandLine === 'string' && process.CommandLine.length > 0
+    && !/(?:^|\s)--type(?:=|\s|$)/i.test(process.CommandLine));
+  if (!mains.length) return candidates.some(process => !process.ExecutablePath || !process.CommandLine) ? null : false;
+  const children = processes.filter(process => /^codex\.exe$/i.test(process.Name ?? '')
+    && mains.some(main => main.ProcessId === process.ParentProcessId));
+  const ready = children.some(process => {
+    if (typeof process.CommandLine !== 'string' || !/(?:^|\s)"?app-server"?(?:\s|$)/i.test(process.CommandLine)) return false;
+    const listen = process.CommandLine.match(/(?:^|\s)--listen(?:=|\s+)(?:"([^"]+)"|(\S+))/i);
+    return !listen || (listen[1] ?? listen[2]) === 'stdio://';
+  });
+  return ready ? true : children.some(process => !process.CommandLine) ? null : false;
+}
+
+export function createDesktopReadinessProbe({ platform = process.platform, env = process.env,
+  execFileImpl = execFileAsync, timeoutMs = 3000 } = {}) {
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 3000) throw new BridgeError('Desktop probe timeout is invalid.', 'INVALID_CONFIG');
+  const script = String.raw`$ErrorActionPreference='Stop'; $session=[System.Diagnostics.Process]::GetCurrentProcess().SessionId; $processes=@(Get-CimInstance -Query "SELECT ProcessId,ParentProcessId,Name,ExecutablePath,CommandLine,SessionId FROM Win32_Process WHERE Name='ChatGPT.exe' OR Name='codex.exe'" | Select-Object ProcessId,ParentProcessId,Name,ExecutablePath,CommandLine,SessionId); [pscustomobject]@{sessionId=$session;processes=$processes} | ConvertTo-Json -Depth 4 -Compress`;
+  return async function probe() {
+    if (platform !== 'win32') return null;
+    try {
+      const { stdout } = await execFileImpl(path.win32.join(env.WINDIR || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
+        ['-NoProfile', '-NonInteractive', '-Command', script],
+        { windowsHide: true, shell: false, timeout: timeoutMs, maxBuffer: 128 * 1024, encoding: 'utf8' });
+      return desktopReadyFromProcesses(JSON.parse(stdout.replace(/^\uFEFF/, '').trim()));
+    } catch { return null; }
   };
 }
 
@@ -138,14 +247,28 @@ export function routeFor(row, config) {
 }
 function skipReason(row, config) {
   const item = row.item ?? {};
+  if (config.ignoredResponseIds.includes(row.id)) return 'owner_excluded_response';
+  if (config.originHostAllowlist && !config.originHostAllowlist.includes(item.origin_host)) return 'origin_host_not_allowed';
   if (!Number.isFinite(Date.parse(row.created_at))) return 'invalid_response_timestamp';
   if (Date.parse(row.created_at) < Date.parse(config.startAt)) return 'before_watermark';
   if (TERMINAL_ITEMS.has(item.status) || item.deleted_at || item.archived_at) return 'inactive_item';
   if (['DROP', 'PARK'].includes(text(row.option_key).toUpperCase()) || ['DROP', 'PARK'].includes(text(item.ruling).toUpperCase())) return 'parked_or_dropped';
   if (!sameTimestamp(row.created_at, item.ruled_at)) return 'superseded_or_unverified_ruling';
-  if (row.urgent === true) return 'legacy_urgent';
+  if (row.urgent === true) {
+    if (!config.includeUrgent) return 'legacy_urgent';
+    // v3 creates urgent responses as queued, with no claim metadata. Any
+    // delivering/spawned/failed state or previous dispatch evidence belongs to
+    // another delivery attempt and must not be adopted by this runner.
+    if (row.dispatch_state !== 'queued') return 'owned_or_already_dispatched';
+    if (!['dispatch_at', 'dispatch_target', 'dispatch_note'].every(key => Object.hasOwn(row, key) && row[key] === null)) return 'urgent_claim_evidence_present_or_missing';
+    return null;
+  }
   if (row.dispatch_state !== 'none') return 'owned_or_already_dispatched';
   return null;
+}
+function untouchedRouteBlock(receipt) {
+  return receipt?.state === 'blocked' && ROUTE_BLOCK_REASONS.has(receipt.reason)
+    && !['preparingAt', 'submittedAt', 'queueId', 'clientUserMessageId', 'messageSha256', 'observedAt', 'backendDeliveredAt'].some(key => Object.hasOwn(receipt, key));
 }
 function powershellCommand(args) { return '& ' + args.map(arg => `'${String(arg).replaceAll("'", "''")}'`).join(' '); }
 function callbackArgs(config, action, row, threadId) {
@@ -185,16 +308,41 @@ function historyUsers(turns) {
 }
 
 export class DashboardCodexBridge {
-  constructor({ config, queueClient, queueClientFactory, rpc, now = () => new Date() }) {
+  constructor({ config, queueClient, queueClientFactory, rpc, now = () => new Date(), heartbeatPublisher, desktopReadyProbe }) {
     this.config = validateConfig(config, config.configPath);
     this.queue = queueClient;
     this.queueClientFactory = queueClientFactory;
     this.rpc = rpc;
     this.now = now;
+    this.heartbeatPublisher = this.config.publishHeartbeat ? heartbeatPublisher ?? createHeartbeatPublisher({ dashboardUrl: this.config.dashboardUrl }) : null;
+    this.desktopReadyProbe = desktopReadyProbe ?? createDesktopReadinessProbe();
+    this.readinessCheckedAt = null;
+    this.readiness = null;
     this.receiptsDir = path.join(this.config.stateDir, 'receipts');
     this.healthFile = path.join(this.config.stateDir, 'health.json');
   }
   isoNow() { return new Date(this.now()).toISOString(); }
+  async desktopReady() {
+    const nowMs = new Date(this.now()).getTime();
+    const age = this.readinessCheckedAt === null ? Infinity : nowMs - this.readinessCheckedAt;
+    if (age >= 0 && age < READINESS_CACHE_MS) return this.readiness;
+    let ready = null;
+    try {
+      ready = await this.desktopReadyProbe();
+      if (ready === true) {
+        if (typeof this.queue?.readThread !== 'function') ready = null;
+        else {
+          const threadId = this.config.allowedThreadIds[0];
+          const metadata = await this.queue.readThread({ threadId });
+          ready = metadata?.id === threadId && typeof metadata.cwd === 'string'
+            && /^(?:[A-Z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)/i.test(metadata.cwd);
+        }
+      }
+    } catch { ready = null; }
+    this.readiness = ready === true ? true : ready === false ? false : null;
+    this.readinessCheckedAt = new Date(this.now()).getTime();
+    return this.readiness;
+  }
   receiptPath(id) { requireUuid(id, 'Response ID'); return path.join(this.receiptsDir, `${id}.json`); }
   async receipts() {
     await mkdir(this.receiptsDir, { recursive: true });
@@ -214,11 +362,16 @@ export class DashboardCodexBridge {
     }
     return [...rows.values()].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at) || a.id.localeCompare(b.id));
   }
-  async submit(row) {
+  async submit(row, { reconsiderRoute = false } = {}) {
     const existing = await readJson(this.receiptPath(row.id));
-    if (existing) return existing;
+    if (existing && !(reconsiderRoute && untouchedRouteBlock(existing))) return existing;
     const route = routeFor(row, this.config);
-    const base = { version: 1, eventId: row.id, ref: row.item.ref, project: row.item.project, eventCreatedAt: row.created_at, itemRuledAt: row.item.ruled_at ?? null, originSession: row.item.origin_session ?? null, marker: eventMarker(row.id) };
+    if (existing && !route.ok) return existing;
+    const routingEvidence = existing ? {
+      routeRecoveredAt: this.isoNow(),
+      routeBlockedHistory: [...(existing.routeBlockedHistory ?? []), { state: existing.state, reason: existing.reason, recordedAt: existing.updatedAt ?? null }],
+    } : {};
+    const base = { version: 1, eventId: row.id, ref: row.item.ref, project: row.item.project, eventCreatedAt: row.created_at, itemRuledAt: row.item.ruled_at ?? null, originSession: row.item.origin_session ?? null, marker: eventMarker(row.id), ...routingEvidence };
     if (!route.ok) return this.save({ ...base, state: 'blocked', reason: route.reason });
     const message = formatDashboardMessage(row, route.threadId, this.config);
     const receipt = await this.save({ ...base, targetThreadId: route.threadId, clientUserMessageId: clientUserMessageIdFor({ threadId: route.threadId, eventId: row.id }), messageSha256: hash(message), state: 'preparing', preparingAt: this.isoNow() });
@@ -231,28 +384,29 @@ export class DashboardCodexBridge {
     }
   }
   async reconcile(receipt) {
+    if (receipt.state === 'ignored') return { ok: true, receipt };
+    if (this.config.ignoredResponseIds.includes(receipt.eventId) && untouchedRouteBlock(receipt)) {
+      return { ok: true, receipt: await this.save({
+        ...receipt, state: 'ignored', reason: 'owner_excluded_response', ignoredAt: this.isoNow(),
+        ignoredFrom: { state: receipt.state, reason: receipt.reason, recordedAt: receipt.updatedAt ?? null },
+      }) };
+    }
     if (receipt.state === 'blocked') return { ok: false, receipt };
     if (!this.config.allowedThreadIds.includes(receipt.targetThreadId)) return { ok: false, receipt: await this.save({ ...receipt, state: 'blocked', reason: 'receipt_target_outside_allowlist' }) };
     if (typeof receipt.messageSha256 !== 'string' || !/^[a-f\d]{64}$/.test(receipt.messageSha256)) return { ok: false, receipt: await this.save({ ...receipt, state: 'blocked', reason: 'receipt_payload_hash_missing' }) };
+    if (receipt.state === 'delivered' && receipt.backendDeliveredAt && receipt.observedAt) return { ok: true, receipt };
+    // Exact persisted-history evidence is durable. A failed dashboard mark must
+    // keep retrying independently of transport availability or history windows.
+    if (receipt.observedAt) return this.markObservedDelivery(receipt);
     const [pendingResult, historyResult] = await Promise.allSettled([
       this.queue.list({ threadId: receipt.targetThreadId }), this.queue.readHistory({ threadId: receipt.targetThreadId, limit: 100 }),
     ]);
     const history = historyResult.status === 'fulfilled' ? historyUsers(historyResult.value) : [];
     const observed = history.find(message => message.text.includes(receipt.marker) && hash(message.text) === receipt.messageSha256);
     if (observed) {
-      let updated = await this.save({ ...receipt, state: receipt.backendDeliveredAt ? 'delivered' : 'started', observedAt: receipt.observedAt ?? this.isoNow(), observedUserMessageId: observed.id ?? null, observedTurnId: observed.turnId ?? null });
-      if (!updated.backendDeliveredAt) {
-        try {
-          await this.rpc('owner_loop_outbox_mark', { p_id: updated.eventId, p_patch: { dispatch_state: 'delivered', dispatch_target: `codex session ${updated.targetThreadId}`, dispatch_note: 'Local bridge observed this response in persisted user-message history; agent acknowledgment and outcome are separate.' } });
-          updated = await this.save({ ...updated, state: 'delivered', backendDeliveredAt: this.isoNow(), lastErrorCode: null });
-        } catch (error) {
-          updated = await this.save({ ...updated, lastErrorCode: errorCode(error) });
-          return { ok: false, receipt: updated };
-        }
-      }
-      return { ok: true, receipt: updated };
+      const updated = await this.save({ ...receipt, state: receipt.backendDeliveredAt ? 'delivered' : 'started', observedAt: this.isoNow(), observedUserMessageId: observed.id ?? null, observedTurnId: observed.turnId ?? null });
+      return this.markObservedDelivery(updated);
     }
-    if (receipt.observedAt) return { ok: true, receipt }; // Previously persisted evidence remains valid after history pagination advances.
     if (pendingResult.status !== 'fulfilled' || !Array.isArray(pendingResult.value) || historyResult.status !== 'fulfilled') {
       return { ok: false, receipt: await this.save({ ...receipt, lastErrorCode: 'QUEUE_RECONCILIATION_UNAVAILABLE' }) };
     }
@@ -262,6 +416,17 @@ export class DashboardCodexBridge {
     });
     if (pending.length === 1) return { ok: true, receipt: await this.save({ ...receipt, state: 'queued', queueId: pending[0].id, lastErrorCode: null }) };
     return { ok: false, receipt: await this.save({ ...receipt, state: 'ambiguous', reason: pending.length > 1 ? 'duplicate_pending_submissions' : 'queue_absent_without_persisted_user_message', lastErrorCode: null }) };
+  }
+  async markObservedDelivery(receipt) {
+    if (receipt.backendDeliveredAt) {
+      return { ok: true, receipt: receipt.state === 'delivered' ? receipt : await this.save({ ...receipt, state: 'delivered' }) };
+    }
+    try {
+      await this.rpc('owner_loop_outbox_mark', { p_id: receipt.eventId, p_patch: { dispatch_state: 'delivered', dispatch_target: `codex session ${receipt.targetThreadId}`, dispatch_note: 'Local bridge observed this response in persisted user-message history; agent acknowledgment and outcome are separate.' } });
+      return { ok: true, receipt: await this.save({ ...receipt, state: 'delivered', backendDeliveredAt: this.isoNow(), lastErrorCode: null }) };
+    } catch (error) {
+      return { ok: false, receipt: await this.save({ ...receipt, state: 'started', lastErrorCode: errorCode(error) }) };
+    }
   }
   async tick() {
     if (this.config.diagnostics) console.error(JSON.stringify({ bridgeStage: 'tick', pid: process.pid, at: this.isoNow() }));
@@ -286,12 +451,16 @@ export class DashboardCodexBridge {
       else if (currentTime && currentTime === priorTime && prior.id !== row.id) tiedItems.add(key);
     }
     if (!sourceError) for (const row of rows) {
-      if (await readJson(this.receiptPath(row.id))) continue;
+      const existing = await readJson(this.receiptPath(row.id));
+      if (existing && !untouchedRouteBlock(existing)) continue;
       const itemKey = row.item.id ?? row.item.ref;
       if (tiedItems.has(itemKey) || newestByItem.get(itemKey)?.id !== row.id) { const reason = tiedItems.has(itemKey) ? 'ambiguous_response_order' : 'superseded_response'; skipped[reason] = (skipped[reason] ?? 0) + 1; continue; }
       const reason = skipReason(row, this.config);
       if (reason) { skipped[reason] = (skipped[reason] ?? 0) + 1; continue; }
-      await this.submit(row);
+      if (existing && !routeFor(row, this.config).ok) continue;
+      // Only a fresh complete outbox read, latest current ruling and newly
+      // explicit route can recover a block that never attempted submission.
+      await this.submit(row, { reconsiderRoute: Boolean(existing) });
     }
     for (const receipt of await this.receipts()) {
       if (this.config.diagnostics) console.error(JSON.stringify({ bridgeStage: 'reconcile', pid: process.pid, at: this.isoNow() }));
@@ -303,6 +472,20 @@ export class DashboardCodexBridge {
     const counts = Object.fromEntries([...STATES].map(state => [state, receipts.filter(receipt => receipt.state === state).length]));
     const prior = await readJson(this.healthFile, {});
     const health = { version: 1, ok: !sourceError && reconciliationOk, pid: process.pid, mode: this.config.mode, canaryThreadId: this.config.canaryThreadId, allowedThreadIds: this.config.allowedThreadIds, startAt: this.config.startAt, intervalSeconds: this.config.intervalSeconds, checkedAt: this.isoNow(), lastSuccessfulReadAt: !sourceError ? this.isoNow() : prior.lastSuccessfulReadAt ?? null, source: sourceError ? { available: false, errorCode: sourceError } : { available: true, responseCount: rows.length }, counts, skipped };
+    if (this.config.publishHeartbeat) {
+      health.deliveryOk = health.ok;
+      health.desktopReady = await this.desktopReady();
+      health.heartbeatPublishedAt = prior.heartbeatPublishedAt ?? null;
+      try {
+        await this.heartbeatPublisher({ health, receipts, desktopReady: health.desktopReady });
+        health.heartbeatPublishedAt = this.isoNow();
+        health.heartbeatErrorCode = null;
+      } catch (error) {
+        health.heartbeatErrorCode = ['HEARTBEAT_CREDENTIALS_UNAVAILABLE', 'HEARTBEAT_UNAVAILABLE', 'HEARTBEAT_HTTP_ERROR', 'HEARTBEAT_INVALID_RESPONSE', 'HEARTBEAT_INVALID_SNAPSHOT'].includes(error?.code)
+          ? error.code : 'HEARTBEAT_PUBLISH_FAILED';
+        health.ok = false;
+      }
+    }
     await atomicJson(this.healthFile, health);
     if (this.config.diagnostics) console.error(JSON.stringify({ bridgeStage: 'healthy_tick_saved', pid: process.pid, at: this.isoNow() }));
     return health;
@@ -326,13 +509,13 @@ export class DashboardCodexBridge {
     let processAlive = false;
     if (health.pid) { try { process.kill(health.pid, 0); processAlive = true; } catch {} }
     const ageSeconds = health.checkedAt ? Math.max(0, (new Date(this.now()).getTime() - Date.parse(health.checkedAt)) / 1000) : null;
-    return { ...health, processAlive, stale: ageSeconds === null || ageSeconds > this.config.intervalSeconds * 3, receipts: (await this.receipts()).map(({ eventId, ref, project, targetThreadId, state, reason, observedAt, backendDeliveredAt, lastErrorCode }) => ({ eventId, ref, project, targetThreadId, state, reason, observedAt, backendDeliveredAt, lastErrorCode })) };
+    return { ...health, processAlive, stale: ageSeconds === null || ageSeconds > this.config.intervalSeconds * 3, receipts: (await this.receipts()).map(({ eventId, ref, project, targetThreadId, state, reason, observedAt, backendDeliveredAt, lastErrorCode, ignoredAt, ignoredFrom }) => ({ eventId, ref, project, targetThreadId, state, reason, observedAt, backendDeliveredAt, lastErrorCode, ignoredAt, ignoredFrom })) };
   }
   async transition({ action, ref, session, responseId, note, env = process.env }) {
     if (!['pickup', 'done'].includes(action) || !REF.test(ref)) throw new BridgeError('Invalid response acknowledgment.', 'INVALID_CALLBACK');
     requireUuid(session, 'Session');
     if (env.CODEX_THREAD_ID && env.CODEX_THREAD_ID !== session) throw new BridgeError('This callback belongs to a different Codex session.', 'CALLBACK_SESSION_MISMATCH');
-    let matches = (await this.receipts()).filter(receipt => receipt.ref === ref && receipt.targetThreadId === session && receipt.state !== 'blocked');
+    let matches = (await this.receipts()).filter(receipt => receipt.ref === ref && receipt.targetThreadId === session && !['blocked', 'ignored'].includes(receipt.state));
     if (responseId) matches = matches.filter(receipt => receipt.eventId === responseId);
     if (matches.length !== 1) throw new BridgeError('The callback must match exactly one routed response receipt.', 'CALLBACK_RECEIPT_MISMATCH');
     let receipt = matches[0];

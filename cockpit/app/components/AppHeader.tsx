@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Navigation } from "./Navigation";
 import { TextSize } from "./TextSize";
 import { ThemeToggle } from "./ThemeToggle";
+import { DashboardBridgeStatus } from "./DashboardBridgeStatus";
 
 // One header, including Operate and the sign-in screens. Native dialog keeps
 // keyboard focus inside the menu and returns focus to its opener on dismissal.
@@ -28,7 +29,7 @@ export function AppHeader({ title, sub, active = "", locked = false }: {
 
   return <>
     <a className="skip-link" href="#main-content">Skip to content</a>
-    <header className="topbar">
+    <header className={`topbar${locked ? "" : " topbar-with-bot"}`}>
       <button type="button" className="header-button menu-toggle" aria-haspopup="dialog"
         aria-expanded={open} aria-controls="cockpit-menu" onClick={() => { dialog.current?.showModal(); setOpen(true); }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
@@ -39,6 +40,7 @@ export function AppHeader({ title, sub, active = "", locked = false }: {
         <h1>{title}</h1>
         {sub ? <div className="sub">{sub}</div> : null}
       </div>
+      {!locked ? <DashboardBridgeStatus /> : null}
       <ThemeToggle />
     </header>
     <dialog ref={dialog} id="cockpit-menu" className="menu-drawer" aria-labelledby="menu-title"
