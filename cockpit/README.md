@@ -87,6 +87,16 @@ dates use Supabase through server-only REST calls.
   the Nov 1 list are synced, the group view opens on that cohort with job groups
   first. Full inventory preserves every saved group. Access filters apply within
   each scope; reported counts and earlier scans remain separate from Page proof.
+- **Engagement** — comments on Kinetic Clinician posts from Facebook, Instagram,
+  YouTube and LinkedIn in one list, newest first, with a network filter. A strip
+  shows each network as connected with its last read time, or not connected with
+  the owner's next step; TikTok has no comment API and points to the Metricool
+  inbox. Save, Approve, Dismiss and Snooze only queue a row for
+  `tools/engagement/sync.mjs` through the session-checked `/api/engagement`
+  route. The page never posts: the sync job sends an approved reply on Facebook,
+  Instagram and (with its token) LinkedIn; YouTube and TikTok replies are posted
+  by hand. Tables: `kc_engagement_items`, `kc_engagement_actions`,
+  `kc_engagement_sync`. `/replies` is unchanged.
 - **Governance files** — a collapsed section at the bottom of Decide keeps
   pending files in `_governance/decisions/` as cards with the
   six owner-token buttons (APPROVE / REVISE / PARK / BLESSED / HALT /

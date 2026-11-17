@@ -15,6 +15,7 @@ export const TABS: Tab[] = [
   { href: "/briefings", label: "Briefs" },
   { href: "/jobs-review", label: "Job review" },
   { href: "/replies", label: "Replies" },
+  { href: "/engagement", label: "Engagement" },
   { href: "/share", label: "Share" },
   { href: "/business", label: "Business" },
   { href: "/money", label: "Money" },
