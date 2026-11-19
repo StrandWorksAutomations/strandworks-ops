@@ -68,7 +68,16 @@ export async function createSessionToken(): Promise<string> {
   return signToken({ sub: "owner" }, SESSION_TTL_SECONDS);
 }
 
+// Owner-set maintenance window: while COCKPIT_OPEN_UNTIL (an ISO time) is in
+// the future, every request counts as the owner and the passkey is skipped.
+// It closes itself at that time; remove the env var to close it early.
+export function authOpenUntil(now = Date.now()): number | null {
+  const until = Date.parse(process.env.COCKPIT_OPEN_UNTIL ?? "");
+  return Number.isFinite(until) && until > now ? until : null;
+}
+
 export async function verifySessionToken(token: string | undefined): Promise<boolean> {
+  if (authOpenUntil() !== null) return true;
   const data = await verifyToken(token);
   return data?.sub === "owner";
 }
