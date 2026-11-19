@@ -338,3 +338,15 @@ a.op-dock-link:hover, a.op-decision-card:hover { border-color: var(--op-blue); }
   .op-sys-row { flex-wrap: wrap; }
   .op-event-row { grid-template-columns: 4px 58px minmax(0, 1fr); }
 }
+
+/* Needs you: one count per queue that waits on the owner. */
+.op-needs-title { margin: 0 0 8px; font-family: var(--op-sans); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--op-ink-dim); }
+.op-needs { margin-bottom: 18px; }
+.op-needs-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+.op-needs-item { display: flex; flex-direction: column; gap: 2px; min-height: 64px; padding: 10px 12px; border: 1px solid var(--op-hairline); border-radius: var(--op-radius-sm); background: var(--op-panel); color: var(--op-ink-dim); }
+.op-needs-item:hover { text-decoration: none; border-color: var(--op-bezel-hi); }
+.op-needs-count { font-family: var(--op-mono); font-size: 1.375rem; font-weight: 600; color: var(--op-ink-faint); }
+.op-needs-label { font-size: 0.875rem; }
+.op-needs-waiting { border-color: var(--op-amber-dim); color: var(--op-ink); }
+.op-needs-waiting .op-needs-count { color: var(--op-amber); }
+@media (max-width: 900px) { .op-needs-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

@@ -1,4 +1,4 @@
-import { Navigation } from "./Navigation";
+import { Navigation, SectionTabs } from "./Navigation";
 import { AppHeader } from "./AppHeader";
 
 // The shared page frame. Operate uses AppHeader with its three-column content.
@@ -18,7 +18,7 @@ export function Chrome({
       <AppHeader title={title} sub={sub} active={active} />
       <div className="sw-shell">
         <Navigation active={active} />
-        <main className="shell" id="main-content" tabIndex={-1}>{children}</main>
+        <main className="shell" id="main-content" tabIndex={-1}><SectionTabs active={active} />{children}</main>
       </div>
     </div>
   );

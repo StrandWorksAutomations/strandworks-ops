@@ -4,6 +4,7 @@ import { fetchIntake } from "@/lib/intake-data";
 import { BUSINESSES } from "@/lib/businesses";
 import { groupIntake, intakeDate, replyStatusLabel } from "@/lib/intake";
 import { InboxCard } from "./InboxCard";
+import { ClearOlder } from "./ClearOlder";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +23,14 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     </nav>
     {!data ? <div className="card" role="status"><p className="error-text">Inbox unavailable. Refresh to retry; review counts could not be loaded.</p></div> : <>
       <section aria-labelledby="inbox-needs-you">
-        <div className="section-head"><h2 id="inbox-needs-you">Needs you</h2><span className="meta">{groups.needsYou.length} to review</span></div>
+        <div className="section-head"><h2 id="inbox-needs-you">Needs you</h2><span className="meta">{groups.needsYou.length} to review · last 7 days or deadline ahead</span></div>
         {!groups.needsYou.length ? <p className="card meta">No emails need review{business ? " for this business" : ""}.</p> : null}
         {groups.needsYou.map((item) => <InboxCard key={`${item.id}:${item.reply_status}`} item={item} />)}
       </section>
+      {groups.older.length ? <details className="card inbox-filtered"><summary>Older, not yet handled <span className="meta">{groups.older.length} · more than 7 days old</span></summary>
+        <ClearOlder ids={groups.older.map((item) => item.id)} />
+        {groups.older.map((item) => <InboxCard key={`${item.id}:${item.reply_status}`} item={item} />)}
+      </details> : null}
       {groups.replies.length ? <section aria-labelledby="inbox-replies">
         <div className="section-head"><h2 id="inbox-replies">Reply activity</h2><span className="meta">recent sends + pending or failed</span></div>
         {groups.replies.map((item) => <div className="card" key={item.id}>

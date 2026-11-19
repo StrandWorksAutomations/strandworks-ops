@@ -729,3 +729,16 @@ img, video { max-width: 100%; }
 }
 .loop-closed > summary { cursor: pointer; }
 .loop-closed > summary::-webkit-details-marker { display: none; }
+
+/* Pages inside the current menu section. */
+.section-tabs { display: flex; gap: 6px; margin: 0 0 18px; padding-bottom: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; border-bottom: 1px solid var(--border); }
+.section-tabs::-webkit-scrollbar { display: none; }
+.section-tab { flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 8px 14px; border-radius: 6px 6px 0 0; font-weight: 500; white-space: nowrap; color: var(--muted); border-bottom: 2px solid transparent; }
+.section-tab:hover { color: var(--ink); background: var(--panel-2); text-decoration: none; }
+.section-tab.active { color: var(--brass); border-bottom-color: var(--brass); font-weight: 600; }
+
+/* Work report: plain account first, technical detail collapsed. */
+.report-plain section + section { margin-top: 18px; }
+.report-plain h2 { margin: 0 0 4px; font-size: 1.125rem; font-weight: 600; }
+.report-technical summary { cursor: pointer; min-height: 44px; }
+.report-technical section { margin-top: 14px; }

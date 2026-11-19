@@ -1,4 +1,4 @@
-import { reviewEmails, type IntakeReview } from "./intake";
+import { currentReviewEmails, type IntakeReview } from "./intake";
 import type { DueItem } from "./due-items";
 import type { ProjectDef } from "./projects";
 import { buildTimelineUpcoming, isStalled, ownerDay, type OwnerLoopItem, type OwnerLoopEvent } from "./owner-loop";
@@ -58,7 +58,7 @@ export function buildBusinessBoard(input: {
   const endDay = through.toISOString().slice(0, 10);
   return BUSINESSES.map((business) => {
     const items = input.items.filter((item) => businessForProject(item.project)?.key === business.key);
-    const emails = reviewEmails(input.emails.filter((item) => item.business === business.key));
+    const emails = currentReviewEmails(input.emails.filter((item) => item.business === business.key), now);
     const decisions = items.filter((item) => item.kind === "decision" && item.status === "open")
       .sort((a, b) => (a.due_at ?? "9999").localeCompare(b.due_at ?? "9999") || a.created_at.localeCompare(b.created_at));
     const stalled = items.filter((item) => isStalled(item, now)).sort((a, b) => (a.ruled_at ?? "").localeCompare(b.ruled_at ?? ""));

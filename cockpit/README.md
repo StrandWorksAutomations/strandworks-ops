@@ -28,6 +28,15 @@ dates use Supabase through server-only REST calls.
   ruling. The activity view refreshes every 30 seconds while visible and labels
   unavailable sources separately from empty queues. Systems and Treasury use
   their existing registers.
+- **Menu** — five sections (Daily view, Needs you, Kinetic Clinician,
+  Marketing, Company). Each section's pages share a strip of sub-tabs under
+  the header; the list lives in `app/components/tabs.ts`.
+- **Needs you counts** — Overview shows one count per queue that waits on
+  the owner (decisions, emails, jobs, replies, comments, posts to share). An
+  unavailable source shows "?" rather than zero.
+- **Work reports** — `/work/<id>` leads with what was done, what happens
+  next and what is still open. Test output, raw data, Linear and GitHub links
+  are collapsed under "Technical detail".
 - **Timeline** — owner-loop deadlines, milestones and open decisions merge
   with business due dates for the next 30 days, with overdue items first.
   The last 30 days of owner-loop events show rulings, pickups and outcomes,
@@ -38,7 +47,10 @@ dates use Supabase through server-only REST calls.
   watcher within about 15 minutes. Save draft, archive and keep-in-inbox
   actions use the session-checked `/api/inbox/action` route. Seven days of
   scanned job alerts and filtered noise remain visible for inspection.
-  Email bodies are plain text; no email HTML is rendered.
+  Email bodies are plain text; no email HTML is rendered. A review email
+  stays under "Needs you" for seven days, or while its deadline is ahead;
+  after that it moves to a collapsed "Older" list, where one confirmed action
+  clears the list from the dashboard without touching Gmail.
 - **Today** — a dynamic twelve-business board shows review emails, open
   decisions, stalled rulings, 14-day deadlines plus overdue dates, and latest
   email/agent/repository activity. Portfolio review and delivery dates use

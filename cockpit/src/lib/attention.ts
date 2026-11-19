@@ -10,7 +10,7 @@ import { parseCsv } from "./csv";
 import { buildMoneyView, type MoneyView } from "./money";
 import { inAlertWindow, type DueItem } from "./due-items";
 import { isStalled, itemHref, ownerDay, type OwnerLoopItem } from "./owner-loop";
-import { reviewEmails, type IntakeReview } from "./intake";
+import { currentReviewEmails, type IntakeReview } from "./intake";
 import { businessName } from "./businesses";
 
 export type Severity = "now" | "soon" | "watch";
@@ -62,7 +62,7 @@ export function buildAttentionQueue(inputs: AttentionInputs): AttentionItem[] {
   const today = inputs.todayIso;
   const now = inputs.now ?? new Date(`${today}T00:00:00Z`);
 
-  for (const email of reviewEmails(inputs.intakeItems ?? [])) {
+  for (const email of currentReviewEmails(inputs.intakeItems ?? [], now)) {
     items.push({
       severity: "now", dateIso: email.due_at?.slice(0, 10) ?? null,
       title: email.subject || "(No subject)",

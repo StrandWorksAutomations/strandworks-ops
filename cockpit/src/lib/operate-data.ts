@@ -4,6 +4,7 @@ import { fetchOwnerLoopEvents, fetchOwnerLoopItems } from "./owner-loop-data";
 import { readRepoFile } from "./repo";
 import { parseCsv } from "./csv";
 import { buildMoneyView } from "./money";
+import { getNeedsYouQueues } from "./needs-you-data";
 import {
   buildOperateRiver,
   operatePendingDecisions,
@@ -75,10 +76,12 @@ export async function getOperateSnapshot(): Promise<OperateSnapshot> {
     readRepoFile("registers/services.csv").catch(() => null),
   ]);
   const events = buildOperateRiver(reports ?? [], ownerEvents ?? [], now);
+  const pending = ownerItems === null ? null : operatePendingDecisions(ownerItems, now);
   return {
     now: now.toISOString(),
+    queues: await getNeedsYouQueues(pending === null ? null : pending.length, now),
     events,
-    pending: ownerItems === null ? null : operatePendingDecisions(ownerItems, now),
+    pending,
     agents: deriveAgentActivity(events, now),
     systems: servicesCsv === null ? null : buildSystems(servicesCsv),
     treasury: subsCsv === null ? null : buildTreasury(subsCsv),

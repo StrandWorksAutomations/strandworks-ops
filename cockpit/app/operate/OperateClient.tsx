@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "../components/AppHeader";
-import { Navigation } from "../components/Navigation";
+import { Navigation, SectionTabs } from "../components/Navigation";
 import {
   formatOperateTime,
   groupIntoBands,
@@ -15,8 +15,8 @@ import {
 const POLL_MS = 30_000;
 const FILTERS: { key: "all" | RiverCategory; label: string }[] = [
   { key: "all", label: "ALL" },
-  { key: "report", label: "REPORTS" },
-  { key: "owner-loop", label: "OWNER LOOP" },
+  { key: "report", label: "WORK DONE" },
+  { key: "owner-loop", label: "DECISIONS" },
 ];
 
 function prefersReducedMotion(): boolean {
@@ -194,6 +194,20 @@ export function OperateClient({ initial }: { initial: OperateSnapshot }) {
 
         {/* CENTER: THE RIVER */}
         <div className="op-river-col">
+          <SectionTabs active="/operate" />
+          <section className="op-needs" aria-labelledby="op-needs-title">
+            <h2 id="op-needs-title" className="op-needs-title">Needs you</h2>
+            <div className="op-needs-row">
+              {(snap.queues ?? []).map((queue) => (
+                <Link key={queue.key} href={queue.href} prefetch={false}
+                  className={`op-needs-item${queue.count ? " op-needs-waiting" : ""}`}>
+                  <span className="op-needs-count">{queue.count === null ? "?" : queue.count}</span>
+                  <span className="op-needs-label">{queue.label}{queue.count === null ? " · unavailable" : ""}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+          <h2 className="op-needs-title">What happened</h2>
           <div className="op-filters">
             {FILTERS.map((f) => (
               <button

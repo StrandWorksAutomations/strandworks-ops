@@ -40,8 +40,11 @@ export type Treasury = {
   pendingNote: string | null;
 };
 
+export type NeedsYouQueue = { key: string; label: string; href: string; count: number | null };
+
 export type OperateSnapshot = {
   now: string;
+  queues: NeedsYouQueue[];
   events: RiverEvent[];
   pending: PendingDecision[] | null;
   agents: AgentActivity[];

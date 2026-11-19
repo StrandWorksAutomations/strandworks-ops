@@ -49,7 +49,7 @@ describe("Operate server/phone time consistency", () => {
   it("uses the snapshot cutoff even when hydration crosses the five-minute boundary", () => {
     vi.useFakeTimers();
     const snapshot: OperateSnapshot = {
-      now: "2026-11-03T13:00:00Z",
+      now: "2026-11-03T13:00:00Z", queues: [],
       events: [{ id: "near-cutoff", ts: "2026-11-03T12:55:01Z", agent: "codex",
         category: "report", severity: "info", proj: "ops", msg: "A recent event" }],
       pending: [], agents: [], systems: [], reportsAvailable: true, ownerActivityAvailable: true,

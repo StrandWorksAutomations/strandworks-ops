@@ -31,8 +31,10 @@ describe("Operate data and auth", () => {
     const response = await GET(new NextRequest(url, { headers: { cookie: `${cookieNames.session}=${token}` } }));
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
-    expect(select.mock.calls.map(([table]) => table).sort()).toEqual([
-      "owner_loop_events", "owner_loop_items", "portfolio_recent_reports",
+    // Activity and decisions, plus one read-only count per queue that waits on the owner.
+    expect([...new Set(select.mock.calls.map(([table]) => table))].sort()).toEqual([
+      "intake_items", "kc_engagement_actions", "kc_engagement_items", "kc_engagement_sync", "kc_fb_replies", "kc_fb_reply_actions",
+      "kc_group_post_drafts", "kc_job_submissions", "owner_loop_events", "owner_loop_items", "portfolio_recent_reports",
     ]);
     await expect(response.json()).resolves.toMatchObject({
       events: [], pending: [], reportsAvailable: true, ownerActivityAvailable: true,

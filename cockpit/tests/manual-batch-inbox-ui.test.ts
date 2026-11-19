@@ -5,7 +5,7 @@ import {
   ManualBatchInbox, batchPresentation, fetchManualInbox, launchManualBatch, toggleBatchAnswer,
   type InboxAnswer, type InboxBatch, type ManualInboxData,
 } from "../app/components/ManualBatchInbox";
-import { Navigation } from "../app/components/Navigation";
+import { Navigation, SectionTabs } from "../app/components/Navigation";
 
 vi.stubGlobal("React", React);
 const NOW = "2026-11-06T18:00:00.000Z";
@@ -129,8 +129,13 @@ describe("manual inbox rendering", () => {
     expect(html).toContain("Nothing waiting to launch");
     expect(html).toContain("No batches launched yet");
     expect(html).not.toContain("Launch 0 answers");
+    // The menu marks the section; the section strip marks the page.
     const nav = renderToStaticMarkup(React.createElement(Navigation, { active: "/agent-inbox" }));
-    expect(nav).toMatch(/<a(?=[^>]*href="\/agent-inbox")(?=[^>]*aria-current="page")[^>]*>/);
-    expect(nav).toContain("Agent inbox");
+    expect(nav).toMatch(/<a(?=[^>]*href="\/decisions")(?=[^>]*aria-current="page")[^>]*>/);
+    expect(nav).toContain("Needs you");
+    expect(nav.match(/<li>/g)).toHaveLength(5);
+    const strip = renderToStaticMarkup(React.createElement(SectionTabs, { active: "/agent-inbox" }));
+    expect(strip).toMatch(/<a(?=[^>]*href="\/agent-inbox")(?=[^>]*aria-current="page")[^>]*>/);
+    expect(strip).toContain("Agent queue");
   });
 });

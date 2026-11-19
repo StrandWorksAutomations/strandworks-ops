@@ -52,19 +52,45 @@ export function reviewEmails<T extends IntakeReview>(items: T[]): T[] {
     .sort((a, b) => priority[a.priority] - priority[b.priority] || Date.parse(b.received_at) - Date.parse(a.received_at) || a.id.localeCompare(b.id));
 }
 
+// A review email stays in "Needs you" for a week, or longer while its deadline
+// is still ahead. After that it moves to "Older" so the queue shows what is
+// current instead of everything ever received.
+export const REVIEW_CURRENT_DAYS = 7;
+export function isCurrentReview(item: Pick<IntakeReview, "received_at" | "due_at">, now: Date): boolean {
+  const received = Date.parse(item.received_at);
+  if (!Number.isFinite(received) || now.getTime() - received <= REVIEW_CURRENT_DAYS * 86400_000) return true;
+  const due = item.due_at ? Date.parse(item.due_at) : NaN;
+  return Number.isFinite(due) && due >= now.getTime();
+}
+export function currentReviewEmails<T extends IntakeReview>(items: T[], now: Date): T[] {
+  return reviewEmails(items).filter((item) => isCurrentReview(item, now));
+}
+
 export function groupIntake(items: IntakeItem[], now: Date, business = "") {
   const scoped = business ? items.filter((item) => item.business === business) : items;
   const recent = scoped.filter((item) => {
     const age = now.getTime() - Date.parse(item.received_at);
     return age >= 0 && age <= 7 * 86400_000;
   }).sort((a, b) => Date.parse(b.received_at) - Date.parse(a.received_at));
+  const review = reviewEmails(scoped);
   return {
-    needsYou: reviewEmails(scoped),
+    needsYou: review.filter((item) => isCurrentReview(item, now)),
+    older: review.filter((item) => !isCurrentReview(item, now)).sort((a, b) => Date.parse(b.received_at) - Date.parse(a.received_at)),
     jobAlerts: recent.filter((item) => item.category === "job_alert"),
     noise: recent.filter((item) => item.status === "noise"),
     // Keep approval/send outcomes visible even if the RPC closes the review.
     replies: scoped.filter((item) => item.status !== "review" && ["approved", "sent", "failed"].includes(item.reply_status)),
   };
+}
+
+export const CLEAR_OLDER_MAX = 500;
+export function validateClearOlder(raw: unknown): { ok: true; ids: string[] } | { ok: false; error: string } {
+  const ids = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as { ids?: unknown }).ids : null;
+  if (!Array.isArray(ids) || !ids.length || ids.length > CLEAR_OLDER_MAX
+    || !ids.every((id) => typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) {
+    return { ok: false, error: `Expected 1 to ${CLEAR_OLDER_MAX} email IDs.` };
+  }
+  return { ok: true, ids: [...new Set(ids as string[])] };
 }
 
 export function replyStatusLabel(item: Pick<IntakeItem, "reply_status" | "reply_error">): string | null {

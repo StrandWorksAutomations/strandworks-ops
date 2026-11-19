@@ -11,7 +11,7 @@ import { NETWORKS, REPLY_MAX, bucketOf, filterByNetwork, networkCounts, parseNet
 import { fetchEngagement, queueEngagementAction } from "../src/lib/kc-engagement-data";
 import { EngagementCard } from "../app/engagement/EngagementCard";
 import EngagementPage from "../app/engagement/page";
-import { TABS } from "../app/components/tabs";
+import { TABS, sectionOf } from "../app/components/tabs";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const id2 = "22222222-2222-4222-8222-222222222222";
@@ -267,9 +267,11 @@ describe("engagement page", () => {
 });
 
 describe("navigation", () => {
-  it("lists Engagement next to Replies and keeps Replies", () => {
+  it("lists comments next to Replies in the Kinetic Clinician section", () => {
     const hrefs = TABS.map((t) => t.href);
     expect(hrefs.indexOf("/engagement")).toBe(hrefs.indexOf("/replies") + 1);
-    expect(TABS.find((t) => t.href === "/engagement")?.label).toBe("Engagement");
+    expect(TABS.find((t) => t.href === "/engagement")?.label).toBe("Comments");
+    expect(sectionOf("/engagement")).toBe(sectionOf("/replies"));
+    expect(sectionOf("/engagement")?.label).toBe("Kinetic Clinician");
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupIntake, reviewEmails, validateIntakeAction, replyStatusLabel, intakeDate, INTAKE_ACTIONS } from "../src/lib/intake";
+import { groupIntake, reviewEmails, currentReviewEmails, isCurrentReview, validateClearOlder, validateIntakeAction, replyStatusLabel, intakeDate, INTAKE_ACTIONS } from "../src/lib/intake";
 import { buildAttentionQueue } from "../src/lib/attention";
 import { email, EMAIL_ID, NOW } from "./inbox-fixtures";
 
@@ -10,7 +10,25 @@ describe("email review grouping", () => {
     expect(reviewEmails(input).map((item) => item.id)).toEqual(["high-new", "high-old", "normal", "low"]);
     expect(input[0].id).toBe("low");
   });
-  it("limits scanned alerts and noise to seven days while keeping older reviews", () => {
+  it("keeps a review current for seven days, or while its deadline is ahead", () => {
+    expect(isCurrentReview({ received_at: "2026-10-17T12:00:00Z", due_at: null }, NOW)).toBe(true);
+    expect(isCurrentReview({ received_at: "2026-10-17T11:59:59Z", due_at: null }, NOW)).toBe(false);
+    expect(isCurrentReview({ received_at: "2026-09-01T12:00:00Z", due_at: "2026-10-30T12:00:00Z" }, NOW)).toBe(true);
+    expect(isCurrentReview({ received_at: "2026-09-01T12:00:00Z", due_at: "2026-10-20T12:00:00Z" }, NOW)).toBe(false);
+    const items = [email({ id: "old", received_at: "2026-09-01T12:00:00Z" }), email({ id: "new" }),
+      email({ id: "old-due", received_at: "2026-09-02T12:00:00Z", due_at: "2026-11-01T12:00:00Z" })];
+    expect(currentReviewEmails(items, NOW).map((item) => item.id).sort()).toEqual(["new", "old-due"]);
+    const groups = groupIntake(items, NOW);
+    expect(groups.needsYou.map((item) => item.id).sort()).toEqual(["new", "old-due"]);
+    expect(groups.older.map((item) => item.id)).toEqual(["old"]);
+  });
+  it("accepts only a bounded list of email IDs for clearing older mail", () => {
+    expect(validateClearOlder({ ids: [EMAIL_ID, EMAIL_ID] })).toEqual({ ok: true, ids: [EMAIL_ID] });
+    for (const bad of [null, {}, { ids: [] }, { ids: ["x"] }, { ids: [EMAIL_ID, 4] }, { ids: Array(501).fill(EMAIL_ID) }]) {
+      expect(validateClearOlder(bad).ok).toBe(false);
+    }
+  });
+  it("limits scanned alerts and noise to seven days and moves older reviews out of the queue", () => {
     const groups = groupIntake([
       email({ id: "old-review", received_at: "2026-09-01T12:00:00Z" }),
       email({ id: "job", status: "done", category: "job_alert", received_at: "2026-10-17T12:00:00Z" }),
@@ -18,7 +36,8 @@ describe("email review grouping", () => {
       email({ id: "noise", status: "noise" }), email({ id: "old-noise", status: "noise", received_at: "2026-10-16T12:00:00Z" }),
       email({ id: "future", status: "noise", received_at: "2026-10-25T12:00:00Z" }),
     ], NOW);
-    expect(groups.needsYou.map((item) => item.id)).toEqual(["old-review"]);
+    expect(groups.needsYou).toEqual([]);
+    expect(groups.older.map((item) => item.id)).toEqual(["old-review"]);
     expect(groups.jobAlerts.map((item) => item.id)).toEqual(["job"]);
     expect(groups.noise.map((item) => item.id)).toEqual(["noise"]);
   });
