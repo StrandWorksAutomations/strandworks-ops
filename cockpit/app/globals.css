@@ -742,3 +742,7 @@ img, video { max-width: 100%; }
 .report-plain h2 { margin: 0 0 4px; font-size: 1.125rem; font-weight: 600; }
 .report-technical summary { cursor: pointer; min-height: 44px; }
 .report-technical section { margin-top: 14px; }
+
+/* Whole card is tappable when it has somewhere to go (see CardTap). */
+.card:has(a[href]), article:has(a[href]), .op-event-row:has(a[href]), .card:has(details:not([open])) { cursor: pointer; }
+.card:has(a[href]):active, article:has(a[href]):active { filter: brightness(1.08); }

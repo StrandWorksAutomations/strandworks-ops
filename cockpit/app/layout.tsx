@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Semi_Condensed, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { HumanDates } from "./components/HumanDates";
+import { CardTap } from "./components/CardTap";
 
 const body = Barlow({
   subsets: ["latin"],
@@ -42,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body style={{ fontFamily: "var(--font-body)" }}>{children}<HumanDates /></body>
+      <body style={{ fontFamily: "var(--font-body)" }}>{children}<HumanDates /><CardTap /></body>
     </html>
   );
 }
