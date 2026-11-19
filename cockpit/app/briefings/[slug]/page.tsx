@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Chrome } from "../../components/Chrome";
 import { readBriefing, readAttachment } from "@/lib/briefings";
 import { renderMarkdown } from "@/lib/markdown";
+import { formatWhen } from "@/lib/when";
 
 export const revalidate = 60;
 
@@ -13,7 +14,7 @@ export default async function BriefingPage({ params }: { params: Promise<{ slug:
   const attachment = await readAttachment(b);
 
   return (
-    <Chrome title={b.title} sub={`${b.source} · ${b.date} ${b.time} · ${b.host}`} active="/briefings">
+    <Chrome title={b.title} sub={`${b.source} · ${b.at ? formatWhen(b.at) : `${b.date} ${b.time}`}`} active="/briefings">
       <div className="meta" style={{ marginBottom: 10 }}>
         <Link href="/briefings">← all briefs</Link>
       </div>

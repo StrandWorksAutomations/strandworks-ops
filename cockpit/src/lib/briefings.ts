@@ -10,6 +10,7 @@ export type Briefing = {
   slug: string; // filename without .md
   date: string; // YYYY-MM-DD
   time: string; // HH:MM
+  at?: string; // UTC instant from the filename, when it parses
   host: string;
   source: string;
   title: string;
@@ -45,6 +46,7 @@ export function parseBriefing(raw: string, filename: string): Briefing {
     attachment: fm.attachment || undefined,
     attachmentName: fm.attachment_name || undefined,
     attachmentNote: fm.attachment_note || undefined,
+    at: nm ? `${nm[1]}T${nm[2].slice(0, 2)}:${nm[2].slice(2, 4)}:${nm[2].slice(4, 6)}Z` : undefined,
     body,
   };
 }

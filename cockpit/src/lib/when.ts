@@ -18,6 +18,13 @@ export function formatWhen(iso: string | number, now = new Date()): string {
   return Number.isFinite(date.getTime()) ? parts(date, now, true, true, OWNER_TIME_ZONE) : "date unknown";
 }
 
+export function formatTime(iso: string): string {
+  const date = new Date(iso);
+  return Number.isFinite(date.getTime())
+    ? `${new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: OWNER_TIME_ZONE }).format(date)} ET`
+    : "";
+}
+
 // A calendar day with no time, such as a business due date.
 export function formatDay(day: string, now = new Date()): string {
   const date = new Date(`${day.slice(0, 10)}T12:00:00Z`);

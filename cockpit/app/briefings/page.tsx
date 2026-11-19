@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Chrome } from "../components/Chrome";
 import { listBriefings, groupByDate } from "@/lib/briefings";
 import { renderMarkdown } from "@/lib/markdown";
-import { formatDay } from "@/lib/when";
+import { formatDay, formatTime } from "@/lib/when";
 
 export const revalidate = 60;
 
@@ -26,7 +26,7 @@ export default async function BriefingsPage() {
             {g.items.map((b) => (
               <article key={b.slug} className="card" style={{ marginBottom: 10 }}>
                 <div className="meta" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 6 }}>
-                  <span className="mono">{b.time}</span>
+                  <span className="mono">{b.at ? formatTime(b.at) : b.time}</span>
                   <span className="chip">{b.source}</span>
                   <span className="mono" style={{ opacity: 0.7 }}>{b.host}</span>
                   <span style={{ marginLeft: "auto" }}>
