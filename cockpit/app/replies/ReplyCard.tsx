@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DISMISS_REASONS, DRAFT_MAX, SNOOZE_HOURS, STATUS_LABEL, facebookGroupId, isManual, pageAccessHelp, pageAccessLabel, pageAccessReady, safeLinks, type KcPageAccess, type KcReply, type ReplyActionKind } from "@/lib/kc-replies";
+import { LinkRule } from "./LinkRule";
+import type { ReplyLinkRule } from "@/lib/kc-replies";
 
 // The employer pages behind the facts in the draft. Shown to the owner only; never part of the reply.
 export function JobLinks({ reply }: { reply: Pick<KcReply, "job_links"> }) {
@@ -33,7 +35,7 @@ export function copyAndOpen(field: HTMLTextAreaElement | null, text: string, url
   return copied || !!navigator.clipboard;
 }
 
-export function ReplyCard({ reply, pageAccess, groupAliases = [], approvedPending = false, waiting, lastResult, received }: { reply: KcReply; pageAccess?: KcPageAccess | null; groupAliases?: string[]; approvedPending?: boolean; waiting: string | null; lastResult: string | null; received: string }) {
+export function ReplyCard({ reply, pageAccess, linkRule = { policy: "unknown", note: "", checked: "" }, groupAliases = [], approvedPending = false, waiting, lastResult, received }: { reply: KcReply; pageAccess?: KcPageAccess | null; linkRule?: ReplyLinkRule; groupAliases?: string[]; approvedPending?: boolean; waiting: string | null; lastResult: string | null; received: string }) {
   const router = useRouter();
   const field = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState(reply.approved_draft ?? reply.draft);
@@ -87,7 +89,7 @@ export function ReplyCard({ reply, pageAccess, groupAliases = [], approvedPendin
         <span>{reply.source_name}</span>
         <span>{received}</span>
         {reply.kind === "follow_up" ? <span className="chip">reply to your comment</span> : null}
-        {reply.promotion !== "allowed" ? <span className="chip">help only, no links</span> : null}
+        <LinkRule policy={linkRule.policy} note={linkRule.note} checked={linkRule.checked} />
       </div>
       {reply.summary ? <p className="reply-summary"><span className="meta">Points to </span>{reply.summary}</p> : null}
       {reply.kind === "follow_up" && reply.context ? (
@@ -95,6 +97,7 @@ export function ReplyCard({ reply, pageAccess, groupAliases = [], approvedPendin
       ) : null}
       <blockquote className="reply-post">{reply.post_text}</blockquote>
       <a href={reply.source_url} target="_blank" rel="noopener noreferrer">Open the post on Facebook ↗</a>
+      {manual && linkRule.note ? <p className="meta"><strong>Group rules:</strong> {linkRule.note}</p> : null}
       {manual ? <p className={pageReady ? "meta" : "error-text"} role={pageReady ? undefined : "status"}>
         <strong>{pageAccessLabel(pageAccess)}.</strong> {pageAccessHelp(pageAccess)}
         {pageAccess?.note ? <> {pageAccess.note}</> : null}

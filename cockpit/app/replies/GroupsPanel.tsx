@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { GROUP_FILTERS, defaultGroupScope, filterGroups, groupAccessStatus, groupFilterCounts, groupsInScope, latestJoinLimit, pageAccessHelp, pageAccessLabel, publicGroupTarget, type GroupFilter, type GroupScope, type KcGroup } from "@/lib/kc-replies";
+import { LinkRule } from "./LinkRule";
+import { groupLinkCounts, linkPolicy, GROUP_FILTERS, defaultGroupScope, filterGroups, groupAccessStatus, groupFilterCounts, groupsInScope, latestJoinLimit, pageAccessHelp, pageAccessLabel, publicGroupTarget, type GroupFilter, type GroupScope, type KcGroup } from "@/lib/kc-replies";
 
 // Every saved group is considered; Page commenting access determines readiness.
 export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
@@ -16,6 +17,7 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
   const personal = groups.filter((g) => g.stats.personal_member_observed).length;
   const pageMembers = groups.filter((g) => g.stats.page_member_observed).length;
   const joinLimit = latestJoinLimit(groups);
+  const links = groupLinkCounts(groups);
   const targetJobs = targets.filter((group) => publicGroupTarget(group)?.type === "jobs").length;
   const earlierScans = targets.filter((group) => publicGroupTarget(group)?.earlier_scan).length;
 
@@ -29,6 +31,10 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
       <p className="meta">{allCounts.ready} groups checked for commenting as Kinetic Clinician · {groups.length} groups in the full inventory.
         {personal ? <> {personal} personal memberships recorded.</> : null}
         {pageMembers ? <> {pageMembers} Page memberships recorded.</> : null}
+      </p>
+      <p className="meta">Link rules read from each group’s own rules:{" "}
+        <LinkRule policy="allowed" /> {links.allowed} · <LinkRule policy="prohibited" /> {links.prohibited} · <LinkRule policy="unknown" /> {links.unknown}.
+        {" "}A reply carries a link only where links are allowed.
       </p>
       {joinLimit ? <p className="card meta" role="status">
         <strong>Last observed group join limit.</strong> Facebook limited the last group join attempt on <time dateTime={joinLimit.observed_at}>{new Date(joinLimit.observed_at).toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET</time>.
@@ -68,6 +74,8 @@ export function GroupsPanel({ groups }: { groups: KcGroup[] }) {
                   <div className="meta">Reported public · {target.reported_members} members{target.reported_posts_per_day ? <> · {target.reported_posts_per_day} posts/day reported</> : null} · {target.earlier_scan ? "Earlier saved scan" : "Nov 1, 2026 search"}</div>
                   {target.source_group_label && target.source_group_label !== g.name ? <div className="meta">Listed as: {target.source_group_label}</div> : null}
                 </> : null}
+                <div><LinkRule policy={linkPolicy(g.stats.promotion)} note={g.stats.rule_note} checked={g.stats.rules_checked_on} /></div>
+                {g.stats.rule_note ? <div className="meta">{g.stats.rule_note}</div> : null}
                 <div className={groupAccessStatus(g) === "ready" ? "ok-text" : "meta"}>{pageAccessLabel(g.stats.page_access)}</div>
                 <div className="meta">{[
                   g.stats.personal_member_observed ? "Personal membership recorded" : null,

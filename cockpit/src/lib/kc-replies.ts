@@ -67,7 +67,7 @@ export type KcGroupTarget = {
 
 export type KcGroup = {
   id: string; name: string; meta: string; lane: string; status: "joined" | "to_join"; url: string;
-  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess; group_aliases?: string[]; personal_member_observed?: string | null; page_member_observed?: string | null; last_join_limit?: KcJoinLimit | null; target_campaigns?: Record<string, KcGroupTarget> };
+  stats: { queued?: number; posted?: number; dismissed?: number; replies_back?: number; reactions?: number; quiet?: boolean; page_access?: KcPageAccess; group_aliases?: string[]; personal_member_observed?: string | null; page_member_observed?: string | null; last_join_limit?: KcJoinLimit | null; target_campaigns?: Record<string, KcGroupTarget>; promotion?: string; rule_note?: string; rules_checked_on?: string };
 };
 
 export type KcPagePost = { id: string; draft: string; links: KcJobLink[]; status: "draft" | "approved" | "posted" | "dismissed"; created_at: string };
@@ -172,6 +172,27 @@ export function replyGroupIds(reply: Pick<KcReply, "source_url">, groups: KcGrou
   const groupId = facebookGroupId(reply.source_url);
   const group = groups.find((g) => groupId && groupIds(g).includes(groupId));
   return group ? groupIds(group) : [];
+}
+
+/** Whether a group's own rules let a reply carry a link: green, red or yellow on the page. */
+export type LinkPolicy = "allowed" | "prohibited" | "unknown";
+export const LINK_POLICY_LABEL: Record<LinkPolicy, string> = { allowed: "Links allowed", prohibited: "No links", unknown: "Link rule unknown" };
+export function linkPolicy(value: string | null | undefined): LinkPolicy {
+  return value === "allowed" || value === "prohibited" ? value : "unknown";
+}
+export type ReplyLinkRule = { policy: LinkPolicy; note: string; checked: string };
+/** The rule of the group this reply goes to. Kinetic Clinician's own Page always allows its links. */
+export function replyLinkRule(reply: Pick<KcReply, "source_kind" | "source_url" | "promotion">, groups: KcGroup[]): ReplyLinkRule {
+  if (!isManual(reply)) return { policy: "allowed", note: "Kinetic Clinician's own Page.", checked: "" };
+  const groupId = facebookGroupId(reply.source_url);
+  const group = groups.find((g) => groupId && groupIds(g).includes(groupId));
+  if (!group) return { policy: linkPolicy(reply.promotion), note: "", checked: "" };
+  return { policy: linkPolicy(group.stats.promotion), note: group.stats.rule_note ?? "", checked: group.stats.rules_checked_on ?? "" };
+}
+export function groupLinkCounts(groups: KcGroup[]): Record<LinkPolicy, number> {
+  const counts: Record<LinkPolicy, number> = { allowed: 0, prohibited: 0, unknown: 0 };
+  for (const group of groups) counts[linkPolicy(group.stats.promotion)] += 1;
+  return counts;
 }
 
 export function replyPageAccess(reply: Pick<KcReply, "source_kind" | "source_url">, groups: KcGroup[]): KcPageAccess | null {
