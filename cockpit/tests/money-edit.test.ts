@@ -108,6 +108,46 @@ describe("applySubscriptionEdit — delete", () => {
   });
 });
 
+describe("subscription billing prices", () => {
+  const add = { action: "add", service: "Lab", fields: {
+    charge_usd: "19.99", renewal_date: "2028-02-29", billing_cadence: "annually",
+  } } as const;
+
+  it.each([["weekly", "86.62"], ["monthly", "19.99"], ["quarterly", "6.66"], ["annually", "1.67"]])(
+    "keeps the exact %s payment separately from the monthly equivalent", (billing_cadence, expected) => {
+      const { csv } = applySubscriptionEdit(CSV, { ...add, fields: { ...add.fields, billing_cadence } });
+      expect(parseCsv(csv).rows.at(-1)).toMatchObject({ service: "Lab", status: "active", charge_usd: "19.99",
+        cost_monthly_usd: expected, billing_cadence, renewal_date: "2028-02-29" });
+    });
+
+  it("recalculates the monthly equivalent on cadence changes and distinguishes free from unknown", () => {
+    let csv = applySubscriptionEdit(CSV, add).csv;
+    const edit = (fields: Record<string, string>) => {
+      csv = applySubscriptionEdit(csv, { action: "update", service: "Lab", fields }).csv;
+      return parseCsv(csv).rows.at(-1);
+    };
+    expect(edit({ billing_cadence: "quarterly" })).toMatchObject({ charge_usd: "19.99", cost_monthly_usd: "6.66" });
+    expect(edit({ charge_usd: "9.9" })).toMatchObject({ charge_usd: "9.90", cost_monthly_usd: "3.30" });
+    expect(edit({ charge_usd: "0" })).toMatchObject({ charge_usd: "0.00", cost_monthly_usd: "0.00" });
+    expect(edit({ charge_usd: "" })).toMatchObject({ charge_usd: "", cost_monthly_usd: "" });
+  });
+
+  it("rejects duplicates, invalid price/date, or missing add fields", () => {
+    expect(() => applySubscriptionEdit(CSV, { ...add, service: " cLAUde " })).toThrow(/already exists/);
+    for (const changes of [{ charge_usd: "" }, { charge_usd: "-1" }, { charge_usd: "2.001" },
+      { renewal_date: "2027-02-29" }, { renewal_date: "0000-01-01" }, { renewal_date: "" }, { billing_cadence: "once" }]) {
+      expect(() => applySubscriptionEdit(CSV, { ...add, fields: { ...add.fields, ...changes } })).toThrow(EditError);
+    }
+  });
+  it("preserves independent edits and rejects stale field updates", () => {
+    const first = applySubscriptionEdit(CSV, { action: "update", service: "Suno", fields: { discount: "student" } }).csv;
+    const next = applySubscriptionEdit(first, { action: "update", service: "Suno", fields: { plan: "Basic" }, expected: { plan: "" } }).csv;
+    expect(parseCsv(next).rows[1]).toMatchObject({ plan: "Basic", discount: "student", billing_cadence: "monthly (7th)" });
+    expect(() => applySubscriptionEdit(next, { action: "update", service: "Suno", fields: { discount: "annual" },
+      expected: { discount: "" } })).toThrow(/changed/);
+  });
+});
+
 describe("money view — new columns", () => {
   it("excludes one-time cadence from monthly burn, tracks cancel-marked and trials", () => {
     const csv = [

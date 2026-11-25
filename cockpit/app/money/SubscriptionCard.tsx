@@ -5,13 +5,17 @@
 //   edit — cost, plan, cadence (monthly/annually/one-time/custom), renewal date,
 //          trial end (set ⇒ trial, timed alerts fire), discount note
 // Every action POSTs /api/money/update and becomes ONE commit to the register.
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CADENCE_CHOICES, type EditableField, type SubscriptionEdit, type Verdict } from "@/lib/money-edit";
+import { isCalendarDay } from "@/lib/subscription-calendar";
+import { saveSubscription } from "./AddSubscription";
 
 export type CardItem = {
   service: string;
   plan: string;
   costRaw: string;
+  chargeRaw: string;
   costUsd: number | null;
   cadence: string;
   renewalRaw: string;
@@ -30,41 +34,29 @@ const VERDICTS = [
   { value: "cancel", label: "✗", title: "incorrect / cancel", cls: "v-bad" },
 ] as const;
 
-const CADENCES = ["monthly", "annually", "one-time", "custom"] as const;
+function editValues(it: CardItem) {
+  const cadence = CADENCE_CHOICES.some(c => c === it.cadence) ? it.cadence : "custom";
+  return { charge: it.chargeRaw, cost: it.costRaw, plan: it.plan, cadence,
+    cadenceCustom: cadence === "custom" ? it.cadence : "", renewal: isCalendarDay(it.renewalRaw) ? it.renewalRaw : "",
+    trialEnd: it.trialEnd ?? "", discount: it.discount };
+}
 
 export function SubscriptionCard({ it, dryRun }: { it: CardItem; dryRun: boolean }) {
   const router = useRouter();
+  const discountsId = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
 
-  const knownCadence = (CADENCES as readonly string[]).includes(it.cadence)
-    ? it.cadence
-    : it.cadence === ""
-      ? "monthly"
-      : "custom";
-  const [form, setForm] = useState({
-    cost: it.costRaw,
-    plan: it.plan,
-    cadence: knownCadence,
-    cadenceCustom: knownCadence === "custom" ? it.cadence : "",
-    renewal: it.renewalIso ?? "",
-    trialEnd: it.trialEnd ?? "",
-    discount: it.discount,
-  });
+  const [original, setOriginal] = useState(it);
+  const [form, setForm] = useState(() => editValues(it));
 
-  async function post(body: Record<string, unknown>) {
+  async function post(body: SubscriptionEdit & { confirm?: boolean }) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/money/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service: it.service, ...body }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "update failed");
+      await saveSubscription(body);
       setEditing(false);
       setConfirmDelete(false);
       router.refresh();
@@ -75,21 +67,28 @@ export function SubscriptionCard({ it, dryRun }: { it: CardItem; dryRun: boolean
     }
   }
 
-  const setVerdict = (v: string) =>
-    post({ action: "verdict", verdict: it.verdict === v ? "" : v });
+  const setVerdict = (v: Verdict) =>
+    post({ service: it.service, action: "verdict", verdict: it.verdict === v ? "" : v, expected: { verdict: it.verdict } });
 
-  const saveEdit = () =>
-    post({
-      action: "update",
-      fields: {
-        cost_monthly_usd: form.cost.trim(),
-        plan: form.plan,
-        billing_cadence: form.cadence === "custom" ? form.cadenceCustom : form.cadence,
-        renewal_date: form.renewal,
-        trial_end: form.trialEnd,
-        discount: form.discount,
-      },
-    });
+  function saveEdit() {
+    const fields: Partial<Record<EditableField, string>> = {};
+    const expected: typeof fields = {};
+    function changed(field: EditableField, next: string, before: string, displayed = before) {
+      if (next !== displayed) { fields[field] = next; expected[field] = before; }
+    }
+    changed("plan", form.plan, original.plan);
+    changed("billing_cadence", form.cadence === "custom" ? form.cadenceCustom : form.cadence, original.cadence);
+    changed("charge_usd", form.charge.trim(), original.chargeRaw);
+    if (!form.charge && !original.chargeRaw) changed("cost_monthly_usd", form.cost.trim(), original.costRaw);
+    if ("charge_usd" in fields || "billing_cadence" in fields || "cost_monthly_usd" in fields) {
+      Object.assign(expected, { charge_usd: original.chargeRaw, billing_cadence: original.cadence, cost_monthly_usd: original.costRaw });
+    }
+    changed("renewal_date", form.renewal, original.renewalRaw, editValues(original).renewal);
+    changed("trial_end", form.trialEnd, original.trialEnd ?? "");
+    changed("discount", form.discount, original.discount);
+    if (Object.keys(fields).length === 0) { setEditing(false); return; }
+    void post({ action: "update", service: original.service, fields, expected });
+  }
 
   return (
     <div className={`card sub-card verdict-${it.verdict || "none"}`}>
@@ -100,7 +99,7 @@ export function SubscriptionCard({ it, dryRun }: { it: CardItem; dryRun: boolean
           {it.trialEnd ? <span className="badge warn">trial → {it.trialEnd}</span> : null}
           {it.discount ? <span className="badge brass">{it.discount}</span> : null}
         </h3>
-        <span className="cost">{it.costRaw !== "" ? `$${it.costRaw.replace(/^\$/, "")}` : "$ ?"}</span>
+        <span className="cost">{it.chargeRaw ? `$${it.chargeRaw} per payment` : it.costRaw !== "" ? `$${it.costRaw.replace(/^\$/, "")}/mo` : "$ ?"}</span>
       </div>
       <div className="plan">
         {[it.plan, it.cadence, it.renewalRaw ? `renews ${it.renewalRaw}` : ""]
@@ -117,7 +116,9 @@ export function SubscriptionCard({ it, dryRun }: { it: CardItem; dryRun: boolean
 
       {confirmDelete ? (
         <div className="confirm-row">
-          <button className="token-btn halt" disabled={busy} onClick={() => post({ action: "delete", confirm: true })}>
+          <button className="token-btn halt" disabled={busy} onClick={() => post({ service: original.service, action: "delete", confirm: true,
+            expected: { plan: original.plan, cost_monthly_usd: original.costRaw, charge_usd: original.chargeRaw,
+              renewal_date: original.renewalRaw, billing_cadence: original.cadence, discount: original.discount, verdict: original.verdict } })}>
             {busy ? "…" : `DELETE ${it.service}${it.costUsd !== null ? ` (−$${it.costUsd.toFixed(2)}/mo)` : ""}`}
           </button>
           <button className="token-btn" disabled={busy} onClick={() => setConfirmDelete(false)}>
@@ -125,12 +126,15 @@ export function SubscriptionCard({ it, dryRun }: { it: CardItem; dryRun: boolean
           </button>
         </div>
       ) : editing ? (
-        <div className="edit-form">
+        <form className="edit-form" aria-label={`Edit ${it.service}`} onSubmit={(event) => { event.preventDefault(); saveEdit(); }}>
           <label>
-            cost $/mo
-            <input value={form.cost} inputMode="decimal" placeholder="blank = unknown"
-              onChange={(e) => setForm({ ...form, cost: e.target.value })} />
+            Price per payment (USD)
+            <input value={form.charge} type="number" step="0.01" min="0" inputMode="decimal" placeholder="Unknown"
+              onChange={(e) => setForm({ ...form, charge: e.target.value })} />
           </label>
+          {!original.chargeRaw && !form.charge && <label>Monthly estimate (USD)
+            <input value={form.cost} inputMode="decimal" placeholder="Unknown" onChange={(e) => setForm({ ...form, cost: e.target.value })} />
+          </label>}
           <label>
             plan
             <input value={form.plan} onChange={(e) => setForm({ ...form, plan: e.target.value })} />
@@ -138,7 +142,7 @@ export function SubscriptionCard({ it, dryRun }: { it: CardItem; dryRun: boolean
           <label>
             billing
             <select value={form.cadence} onChange={(e) => setForm({ ...form, cadence: e.target.value })}>
-              {CADENCES.map((c) => (
+              {CADENCE_CHOICES.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -152,20 +156,20 @@ export function SubscriptionCard({ it, dryRun }: { it: CardItem; dryRun: boolean
           ) : null}
           <label>
             renews
-            <input type="date" value={form.renewal}
+            <input type="date" min="0001-01-01" max="9999-12-31" value={form.renewal}
               onChange={(e) => setForm({ ...form, renewal: e.target.value })} />
           </label>
           <label>
             trial ends <span className="hint">set ⇒ trial, alerts fire as it nears</span>
-            <input type="date" value={form.trialEnd}
+            <input type="date" min="0001-01-01" max="9999-12-31" value={form.trialEnd}
               onChange={(e) => setForm({ ...form, trialEnd: e.target.value })} />
           </label>
           <label>
             discount
-            <input value={form.discount} list="discount-kinds" placeholder="student / small-business / promo…"
+            <input value={form.discount} list={discountsId} placeholder="student / small-business / promo…"
               onChange={(e) => setForm({ ...form, discount: e.target.value })} />
           </label>
-          <datalist id="discount-kinds">
+          <datalist id={discountsId}>
             <option value="student" />
             <option value="small-business" />
             <option value="nonprofit" />
@@ -173,14 +177,14 @@ export function SubscriptionCard({ it, dryRun }: { it: CardItem; dryRun: boolean
             <option value="promo" />
           </datalist>
           <div className="confirm-row">
-            <button className="token-btn approve" disabled={busy} onClick={saveEdit}>
+            <button className="token-btn approve" disabled={busy} type="submit">
               {busy ? "…" : "SAVE"}
             </button>
-            <button className="token-btn" disabled={busy} onClick={() => setEditing(false)}>
+            <button className="token-btn" disabled={busy} type="button" onClick={() => setEditing(false)}>
               cancel
             </button>
           </div>
-        </div>
+        </form>
       ) : (
         <div className="verdict-row">
           {VERDICTS.map((v) => (
@@ -195,16 +199,16 @@ export function SubscriptionCard({ it, dryRun }: { it: CardItem; dryRun: boolean
             </button>
           ))}
           <span className="v-spacer" />
-          <button className="v-btn" disabled={busy} onClick={() => setEditing(true)} title="edit entry">
+          <button className="v-btn" disabled={busy} onClick={() => { setOriginal(it); setForm(editValues(it)); setError(null); setEditing(true); }} title="edit entry">
             edit
           </button>
-          <button className="v-btn v-bad" disabled={busy} onClick={() => setConfirmDelete(true)} title="delete entry">
+          <button className="v-btn v-bad" disabled={busy} onClick={() => { setOriginal(it); setConfirmDelete(true); }} title="delete entry">
             ✕
           </button>
         </div>
       )}
 
-      {error ? <p className="error-text">{error}{dryRun ? " (dry-run mode)" : ""}</p> : null}
+      {error ? <p className="error-text" role="alert">{error}{dryRun ? " (dry-run mode)" : ""}</p> : null}
     </div>
   );
 }

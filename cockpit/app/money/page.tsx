@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { Chrome } from "../components/Chrome";
 import { readRepoFile } from "@/lib/repo";
-import { buildMoneyView, upcomingRenewals, SPEND_CLASSES, type MoneyItem, type SpendClass } from "@/lib/money";
+import { addDays, buildMoneyView, SPEND_CLASSES, type MoneyItem, type SpendClass } from "@/lib/money";
+import { calendarEvents, calendarSubscriptions } from "@/lib/subscription-calendar";
+import { ownerDay } from "@/lib/owner-loop";
 import { buildSpendView } from "@/lib/spend";
 import { readCeilingUsd } from "@/lib/git";
 import { redactForDisplay } from "@/lib/redact";
 import { writeMode } from "@/lib/rule-writer";
 import { SubscriptionCard, type CardItem } from "./SubscriptionCard";
+import { AddSubscription } from "./AddSubscription";
 
 export const revalidate = 60;
 export const dynamic = "force-dynamic"; // edits must be visible immediately
@@ -26,6 +29,7 @@ function toCardItem(it: MoneyItem): CardItem {
     service: it.service,
     plan: it.plan,
     costRaw: it.costRaw,
+    chargeRaw: it.chargeRaw,
     costUsd: it.costUsd,
     cadence: it.cadence,
     renewalRaw: it.renewalRaw,
@@ -46,10 +50,10 @@ export default async function MoneyPage() {
     readCeilingUsd(),
   ]);
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = ownerDay(new Date().toISOString());
   const money = buildMoneyView(subsCsv);
   const spend = buildSpendView(spendCsv, ceilingUsd);
-  const renewals60 = upcomingRenewals(money, todayIso, 60);
+  const renewals60 = calendarEvents(calendarSubscriptions(money), todayIso, addDays(todayIso, 59));
   const dryRun = writeMode() === "dry-run";
 
   return (
@@ -58,6 +62,7 @@ export default async function MoneyPage() {
       sub={`$${money.knownMonthlyUsd.toFixed(2)}/mo known · ${money.uncostedCount} uncosted${money.cancelMarkedUsd > 0 ? ` · −$${money.cancelMarkedUsd.toFixed(2)} marked to cancel` : ""}${dryRun ? " · DRY-RUN (no commits)" : ""}`}
       active="/money"
     >
+      <AddSubscription />
       <div className="grid">
         {SPEND_CLASSES.filter((c) => ["core", "hidden", "flagged", "review"].includes(c.cls)).map((c) => (
           <a key={c.cls} href={`#${c.cls}`} className={`tile ${c.cls === "core" ? "brass" : c.cls === "flagged" ? "hot" : "warm"}`}>
@@ -84,7 +89,8 @@ export default async function MoneyPage() {
                 <span className="l-date">{t.trialEnd}</span>
                 <span className="l-name">{t.service}</span>
                 <span className={`l-amount ${t.costUsd === null ? "dim" : ""}`}>
-                  {t.costUsd !== null ? `$${t.costUsd.toFixed(2)} after` : "$ ? after"}
+                  {t.chargeUsd !== null ? `$${t.chargeUsd.toFixed(2)} per payment after trial`
+                    : t.costUsd !== null ? `$${t.costUsd.toFixed(2)}/mo equivalent after trial` : "Price unknown"}
                 </span>
               </div>
             ))}
@@ -94,7 +100,7 @@ export default async function MoneyPage() {
 
       <div className="section-head">
         <h2>Renewals · next 60 days</h2>
-        <span className="meta">{renewals60.length} dated</span>
+        <span className="meta">{renewals60.length} scheduled</span>
       </div>
       {renewals60.length === 0 ? (
         <div className="card">
@@ -102,14 +108,14 @@ export default async function MoneyPage() {
         </div>
       ) : (
         <div className="ledger">
-          {renewals60.map((r, i) => (
-            <div key={i} className="l-row">
-              <span className="l-date">{r.renewalIso}</span>
+          {renewals60.map(({ date, subscription: r }) => (
+            <div key={`${date}/${r.service}`} className="l-row">
+              <span className="l-date">{date}</span>
               <span className="l-name">
                 {r.service} <span className="l-sub">{r.status}</span>
               </span>
-              <span className={`l-amount ${r.costUsd === null ? "dim" : ""}`}>
-                {r.costUsd !== null ? `$${r.costUsd.toFixed(2)}` : "$ ?"}
+              <span className={`l-amount ${r.chargeUsd === null ? "dim" : ""}`}>
+                {r.chargeUsd !== null ? `${r.approximate ? "≈" : ""}$${r.chargeUsd.toFixed(2)}` : "Price unknown"}
               </span>
             </div>
           ))}
@@ -158,9 +164,7 @@ export default async function MoneyPage() {
 
       <div className="card">
         <div className="meta">
-          Every figure above is read from registers/subscriptions.csv — the known total is a floor;
-          uncosted services make it understated, never overstated. Edit the register to correct
-          anything here.
+          Monthly totals use each subscription’s monthly equivalent and exclude unknown prices.
         </div>
       </div>
     </Chrome>

@@ -48,6 +48,8 @@ export type MoneyItem = {
   costUsd: number | null; // parsed cost; null = unknown (never guessed)
   costRaw: string; // the register's own cost text ("5.99+", "~12", "")
   costApprox: boolean; // register marked the figure approximate (~, +)
+  chargeRaw: string; // explicit price per billing cycle, empty for legacy entries
+  chargeUsd: number | null;
   cadence: string;
   oneTime: boolean; // cadence says one-time ⇒ excluded from monthly burn
   renewalIso: string | null; // first YYYY-MM-DD found in renewal_date
@@ -95,6 +97,8 @@ export function buildMoneyView(csvText: string | null): MoneyView {
 
   const items: MoneyItem[] = rows.map((r) => {
     const { n, approx } = parseCost(r["cost_monthly_usd"] ?? "");
+    const chargeRaw = (r["charge_usd"] ?? "").trim();
+    const charge = /^\d+(?:\.\d{1,2})?$/.test(chargeRaw) ? Number(chargeRaw) : NaN;
     const cadence = r["billing_cadence"] ?? "";
     return {
       service: r["service"] || "(unnamed)",
@@ -102,6 +106,8 @@ export function buildMoneyView(csvText: string | null): MoneyView {
       costUsd: n,
       costRaw: (r["cost_monthly_usd"] ?? "").trim(),
       costApprox: approx,
+      chargeRaw,
+      chargeUsd: Number.isFinite(charge) ? charge : null,
       cadence,
       oneTime: /one[- ]?time/i.test(cadence),
       renewalIso: parseRenewal(r["renewal_date"] ?? ""),

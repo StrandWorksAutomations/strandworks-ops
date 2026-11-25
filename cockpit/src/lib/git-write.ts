@@ -5,6 +5,7 @@
 // write without GITHUB_TOKEN.
 import fs from "node:fs/promises";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { repoRoot } from "./repo";
 import { writeMode } from "./rule-writer";
 
@@ -13,6 +14,58 @@ export type WriteResult = {
   commitSha?: string;
   path: string;
 };
+
+export class RegisterConflict extends Error {}
+export class RegisterNotFound extends Error {}
+
+/** Transform the same version that GitHub compares on write. Busy or changed files can be retried. */
+export async function updateSubscriptionRegister(
+  change: (text: string) => { csv: string; summary: string }
+): Promise<WriteResult & { summary: string }> {
+  const filePath = "registers/subscriptions.csv";
+  if (writeMode() === "dry-run") {
+    const file = path.join(repoRoot(), filePath);
+    const lockPath = file + ".lock";
+    const temporary = file + "." + randomUUID() + ".tmp";
+    const lock = await fs.open(lockPath, "wx").catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "EEXIST") throw new RegisterConflict("A save is in progress. Try again.");
+      throw error;
+    });
+    try {
+      const current = await fs.readFile(file, "utf8").catch((error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") throw new RegisterNotFound("Subscriptions register not found.");
+        throw error;
+      });
+      const { csv, summary } = change(current);
+      await fs.writeFile(temporary, csv, { flag: "wx" });
+      await fs.rename(temporary, file);
+      return { mode: "dry-run", path: filePath, summary };
+    } finally {
+      await fs.rm(temporary, { force: true });
+      await lock.close();
+      await fs.unlink(lockPath);
+    }
+  }
+  const branch = process.env.COCKPIT_WRITE_BRANCH ?? process.env.COCKPIT_BRANCH ?? "main";
+  const location = `/contents/${filePath}`;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const source = await gh(location + "?ref=" + encodeURIComponent(branch));
+    if (source.encoding !== "base64" || typeof source.content !== "string" || typeof source.sha !== "string") {
+      throw new Error("The subscription register could not be read.");
+    }
+    const { csv, summary } = change(Buffer.from(source.content, "base64").toString("utf8"));
+    try {
+      const saved = await gh(location, { method: "PUT", body: JSON.stringify({
+        branch, sha: source.sha, message: `money: ${summary} (source: cockpit)`, content: Buffer.from(csv).toString("base64"),
+      }) }) as { commit?: { sha?: string } };
+      if (!saved.commit?.sha) throw new Error("The register save could not be confirmed. Refresh before retrying.");
+      return { mode: "github", path: filePath, commitSha: saved.commit.sha, summary };
+    } catch (error) {
+      if (!(error instanceof RegisterConflict) || attempt === 2) throw error;
+    }
+  }
+  throw new RegisterConflict("The register changed. Refresh before saving again.");
+}
 
 export async function commitFileUpdate(
   filePath: string,
@@ -41,6 +94,10 @@ async function gh(pathname: string, init?: RequestInit): Promise<Record<string, 
     cache: "no-store",
   });
   if (!res.ok) {
+    if (res.status === 404 && pathname.startsWith("/contents/registers/subscriptions.csv?")) {
+      throw new RegisterNotFound("Subscriptions register not found.");
+    }
+    if (res.status === 409) throw new RegisterConflict("The register changed. Refresh before saving again.");
     // No response body/headers in the error — keeps token material out of logs.
     throw new Error(`GitHub API ${pathname} failed with status ${res.status}`);
   }

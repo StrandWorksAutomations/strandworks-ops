@@ -31,6 +31,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from datetime import date, datetime, timedelta
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -319,12 +320,24 @@ def main() -> int:
         changed = 0
         for m in matched:
             row = next(r for r in reg if r["service"] == m["service"])
-            new_cost = f"{m['observed_monthly']:.2f}"
-            old_cost = row.get("cost_monthly_usd", "")
-            new_renewal = m["next"].isoformat()
-            if old_cost != new_cost or row.get("renewal_date", "") != new_renewal:
-                row["cost_monthly_usd"] = new_cost
-                row["renewal_date"] = new_renewal
+            updates = {"cost_monthly_usd": f"{m['observed_monthly']:.2f}", "renewal_date": m["next"].isoformat()}
+            if (row.get("charge_usd") or "").strip():
+                cadence = (row.get("billing_cadence") or "").strip().lower()
+                if cadence in ("annual", "yearly"):
+                    cadence = "annually"
+                if re.fullmatch(r"monthly\s*\((?:[1-9]|[12]\d|3[01])(?:st|nd|rd|th)\)", cadence):
+                    cadence = "monthly"
+                if cadence != m["cadence"]:
+                    continue
+                amount = Decimal(f"{m['amount']:.2f}")
+                cycles = {"weekly": 52, "monthly": 12, "quarterly": 4, "annually": 1}
+                monthly = (amount * cycles[cadence] / 12).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                updates.update(charge_usd=str(amount), cost_monthly_usd=str(monthly))
+                # A bank posting date plus 30/365 days can drift from the owner's billing day.
+                if row.get("renewal_date"):
+                    del updates["renewal_date"]
+            if any(row.get(k, "") != v for k, v in updates.items()):
+                row.update(updates)
                 note = f"bank {today}: ${m['amount']:.2f} {m['cadence']} last {m['last']}"
                 row["notes"] = (row.get("notes", "") + "; " + note).strip("; ")
                 changed += 1

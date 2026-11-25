@@ -32,7 +32,8 @@ function ghHeaders(): Record<string, string> {
 
 async function ghGetFile(relPath: string): Promise<string | null> {
   const url = `https://api.github.com/repos/${OWNER_REPO}/contents/${encodeURI(relPath)}?ref=${BRANCH}`;
-  const res = await fetch(url, { headers: ghHeaders(), next: { revalidate: 60 } });
+  const tags = relPath === "registers/subscriptions.csv" ? [relPath] : undefined;
+  const res = await fetch(url, { headers: ghHeaders(), next: { revalidate: 60, tags } });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GitHub read failed (${res.status}) for ${relPath}`);
   const json = (await res.json()) as { content?: string; encoding?: string };
