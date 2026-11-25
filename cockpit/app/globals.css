@@ -617,6 +617,14 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 @media (max-width: 520px) { .job-preview { grid-template-columns: 1fr; } }
 
 /* Facebook reply review (/replies) */
+.train-voice-button { min-height: 44px; padding: 8px 14px; letter-spacing: normal; }
+.voice-dialog { width: min(36rem, calc(100% - 24px)); max-height: calc(100dvh - 32px); padding: 20px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--panel); color: var(--ink); overscroll-behavior: contain; }
+.voice-dialog::backdrop { background: rgba(0, 0, 0, .6); }
+.voice-dialog .section-head { align-items: center; margin-top: 0; }
+.voice-dialog .section-head h2 { font-size: 1.125rem; color: var(--ink); text-transform: none; letter-spacing: normal; }
+.voice-dialog select { margin-top: 4px; font-size: 1rem; }
+.voice-save-notice:not(:empty) { position: fixed; z-index: 5; bottom: 16px; right: 16px; max-width: calc(100% - 32px); margin: 0; padding: 12px 16px; border: 1px solid var(--good); border-radius: 8px; background: var(--panel); }
+.voice-save-notice:empty { margin: 0; }
 .reply-post { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--brass); white-space: pre-wrap; overflow-wrap: anywhere; }
 .reply-draft { width: 100%; margin-top: 4px; font-size: 1rem; line-height: 1.45; resize: vertical; }
 .reply-label { display: block; margin-top: 12px; }

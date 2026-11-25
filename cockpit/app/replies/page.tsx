@@ -5,6 +5,7 @@ import { OWNER_TIME_ZONE } from "@/lib/owner-loop";
 import { ReplyCard } from "./ReplyCard";
 import { PagePostCard } from "./PagePostCard";
 import { GroupsPanel } from "./GroupsPanel";
+import { TrainVoiceButton, VoiceTrainer } from "./VoiceTrainer";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Replies — Strandworks Cockpit" };
@@ -20,7 +21,9 @@ export default async function RepliesPage() {
   const data = await fetchReplies();
   if (!data) {
     return <Chrome title="Replies" sub="Kinetic Clinician Facebook replies" active="/replies">
-      <section className="card"><p className="error-text">Replies could not be loaded. Refresh to retry.</p></section>
+      <VoiceTrainer replies={[]}><TrainVoiceButton />
+        <section className="card"><p className="error-text">Replies could not be loaded. Refresh to retry.</p></section>
+      </VoiceTrainer>
     </Chrome>;
   }
   const decided = (id: string) => pendingDecision(data.actions, id);
@@ -35,16 +38,20 @@ export default async function RepliesPage() {
   const closedAs = (id: string) => data.actions.some((a) => a.item_id === id && !a.applied_at && a.action === "posted") ? "posted" : "dismissed";
   const lastResult = (id: string) => data.actions.find((a) => a.item_id === id && a.applied_at)?.result ?? null;
   const synced = data.replies.reduce((latest, r) => (r.synced_at > latest ? r.synced_at : latest), "");
+  const trainerReplies = [...usable, ...done, ...blocked, ...later].map((r) => ({
+    id: r.id, label: `${r.source_name} · ${r.title || r.post_text.slice(0, 80)}`, prepared: r.results?.prepared_reply ?? null,
+  }));
   return (
     <Chrome title="Replies" sub={`${usable.length} ready to review · ${blocked.length} held for Page access · synced ${when(synced) || "never"}`} active="/replies">
+      <VoiceTrainer replies={trainerReplies}>
       <section className="section">
-        <div className="section-head"><h2>Waiting for you</h2><span className="meta">group replies are posted by hand</span></div>
-        <p className="meta">Before pasting, use Facebook’s account picture → See all profiles → <a href={PAGE_URL} target="_blank" rel="noopener noreferrer">Kinetic Clinician</a>. The comment box must show the Page’s name.</p>
+        <div className="section-head"><h2>Waiting for you</h2><TrainVoiceButton /></div>
+        <p className="meta">Group replies are posted by hand. Before pasting, use Facebook’s account picture → See all profiles → <a href={PAGE_URL} target="_blank" rel="noopener noreferrer">Kinetic Clinician</a>. The comment box must show the Page’s name.</p>
         {usable.length === 0 ? <p className="meta card">No replies ready to post as Kinetic Clinician. {blocked.length ? "Replies held for group access are below." : "The group scan is scheduled at 8am, 1pm and 7pm."}</p>
           : usable.map((r) => <ReplyCard key={`${r.id}-${r.revision}`} reply={r} pageAccess={replyPageAccess(r, data.groups)} linkRule={replyLinkRule(r, data.groups)} groupAliases={replyGroupIds(r, data.groups)} approvedPending={decided(r.id) === "approved"} waiting={waiting(r.id)} lastResult={lastResult(r.id)} received={when(r.created_at)} />)}
         {later.length ? <details className="card">
           <summary className="meta">Snoozed ({later.length})</summary>
-          <ul className="share-history">{later.map((r) => <li key={r.id}>{r.title} <span className="meta"> · back {when(snoozedUntil(r, data.actions))}</span></li>)}</ul>
+          <ul className="share-history">{later.map((r) => <li key={r.id}>{r.title} <span className="meta"> · back {when(snoozedUntil(r, data.actions))}</span>{" "}<TrainVoiceButton itemId={r.id} /></li>)}</ul>
         </details> : null}
       </section>
       {blocked.length ? <section className="section">
@@ -62,6 +69,7 @@ export default async function RepliesPage() {
             <span className={`badge ${r.status === "posted" || r.delivery_state === "sent" ? "ok" : ""}`}>{r.delivery_state ?? (decided(r.id) === "closed" ? closedAs(r.id) : r.status)}</span>{" "}
             {r.title} <span className="meta"> · {r.source_name} · <a href={r.source_url} target="_blank" rel="noopener noreferrer">post</a></span>
             {r.status === "posted" ? <span className="meta reply-results"> · {resultLine(r.results) ?? "results after 2 days"}</span> : null}
+            {" "}<TrainVoiceButton itemId={r.id} />
           </li>)}
         </ul>}
       </section>
@@ -69,6 +77,7 @@ export default async function RepliesPage() {
         <div className="section-head"><h2>Groups</h2><span className="meta">Kinetic Clinician Page access and results</span></div>
         <GroupsPanel groups={data.groups} />
       </section> : null}
+      </VoiceTrainer>
     </Chrome>
   );
 }

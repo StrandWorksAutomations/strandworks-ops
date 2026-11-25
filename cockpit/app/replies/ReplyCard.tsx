@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DISMISS_REASONS, DRAFT_MAX, SNOOZE_HOURS, STATUS_LABEL, facebookGroupId, isManual, pageAccessHelp, pageAccessLabel, pageAccessReady, safeLinks, type KcPageAccess, type KcReply, type ReplyActionKind } from "@/lib/kc-replies";
 import { LinkRule } from "./LinkRule";
+import { TrainVoiceButton } from "./VoiceTrainer";
 import type { ReplyLinkRule } from "@/lib/kc-replies";
 
 // The employer pages behind the facts in the draft. Shown to the owner only; never part of the reply.
@@ -123,6 +124,7 @@ export function ReplyCard({ reply, pageAccess, linkRule = { policy: "unknown", n
             {edited ? <button className="token-btn" disabled={busy} onClick={() => act("save").then((ok) => ok && setDone("Edit saved."))}>Save edit</button> : null}
           </>}
           <button className="token-btn halt" disabled={busy} aria-expanded={asking} onClick={() => setAsking(!asking)}>Dismiss</button>
+          <TrainVoiceButton itemId={reply.id} />
         </div>
       )}
       {!finished && asking ? (
