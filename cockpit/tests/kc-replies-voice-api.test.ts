@@ -71,7 +71,38 @@ describe("Replies voice examples", () => {
     const posted_reply = "First line.\n\n  Second line.";
     expect(await (await POST(await request({ ...pair, posted_reply }))).json()).toMatchObject({ recordedPosted: true });
     expect(sbRpc).toHaveBeenCalledWith("kc_save_fb_posted_reply", expect.objectContaining({ p_posted_reply: posted_reply }));
-    expect(await (await POST(await request({ ...pair, item_id: "manual-12cb07fa-571a-492c-b01c-414d04dbc465" }))).json()).toMatchObject({ recordedPosted: false });
+    expect(await (await POST(await request({ ...pair, item_id: "manual-12cb07fa-571a-492c-b01c-414d04dbc465" }))).json()).toMatchObject({ recordedPosted: false, trainedVoice: true });
+  });
+  it("saves, reloads and clears a linked correction reason using the version of the pair", async () => {
+    const version = "2026-11-25T08:00:00.123456Z";
+    const saved = { ...pair, correction_reason: "voice", updated_at: version };
+    vi.mocked(sbSelect).mockResolvedValueOnce([saved]);
+    expect(await (await GET(await request())).json()).toEqual({ example: saved });
+    for (const reason of ["voice", "job_match", "job_details", "link", "other", null]) {
+      vi.mocked(sbRpc).mockResolvedValueOnce([{ ...saved, correction_reason: reason }]);
+      const input = { ...pair, correction_reason: reason, expected_updated_at: version };
+      expect(await (await POST(await request(input))).json()).toMatchObject({
+        example: { correction_reason: reason }, recordedPosted: true, trainedVoice: reason === "voice" || reason === null,
+      });
+      expect(sbRpc).toHaveBeenLastCalledWith("kc_save_fb_posted_reply_with_reason",
+        expect.objectContaining({ p_correction_reason: reason, p_expected_updated_at: version }));
+    }
+    vi.mocked(sbRpc).mockResolvedValueOnce([]);
+    expect((await POST(await request({ ...pair, correction_reason: "job_match", expected_updated_at: version }))).status).toBe(409);
+  });
+  it("uses the stored reason when a caller omits the reason on a linked save", async () => {
+    vi.mocked(sbRpc).mockResolvedValueOnce([{ ...pair, correction_reason: "job_match" }]);
+    expect(await (await POST(await request(pair))).json()).toMatchObject({
+      example: { correction_reason: "job_match" }, recordedPosted: true, trainedVoice: false,
+    });
+  });
+  it("rejects reasons on incomplete, unchanged or standalone examples and rejects unknown reason codes", async () => {
+    for (const input of [{ ...pair, correction_reason: "surprise" }, { ...pair, correction_reason: "toString" },
+      { ...pair, correction_reason: "voice", prepared_reply: null }, { ...pair, correction_reason: "other", prepared_reply: "  a\r\nb ", posted_reply: "a\nb" },
+      { ...pair, correction_reason: "link", item_id: "manual-12cb07fa-571a-492c-b01c-414d04dbc465" }]) {
+      expect((await POST(await request(input))).status).toBe(400);
+    }
+    expect(sbRpc).not.toHaveBeenCalled();
   });
   it("keeps a delivery conflict retryable and a missing source distinct from a stale edit", async () => {
     vi.mocked(sbRpc).mockRejectedValueOnce(new Error("rpc: reply_delivery_in_progress")).mockRejectedValueOnce(new Error("rpc: reply_missing"));

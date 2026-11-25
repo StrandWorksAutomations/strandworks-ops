@@ -3,10 +3,11 @@
 import { createContext, useContext, useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { DRAFT_MAX } from "@/lib/kc-replies";
+import { CORRECTION_REASONS, editedReply, isCorrectionReason, postedReplyConfirmation, type CorrectionReason } from "@/lib/reply-feedback";
 import { ReplyInstructionsEditor } from "./ReplyInstructionsEditor";
 
 export type VoiceReply = { id: string; label: string; prepared: string | null; posted: boolean; wording: string | null };
-type Example = { prepared_reply: string; posted_reply: string; updated_at: string | null };
+type Example = { prepared_reply: string; posted_reply: string; updated_at: string | null; correction_reason?: CorrectionReason | null };
 const OpenTrainer = createContext<((id?: string) => void) | null>(null);
 
 export function TrainVoiceButton({ itemId }: { itemId?: string }) {
@@ -54,7 +55,7 @@ export function VoiceTrainer({ replies, children }: { replies: VoiceReply[]; chi
     dialog.current?.showModal();
   }
 
-  function saved(recordedPosted: boolean, trainedVoice: boolean) {
+  function saved(recordedPosted: boolean, trainedVoice: boolean, reason: CorrectionReason | null) {
     if (selected) drafts.current.delete(selected);
     if (!recordedPosted) {
       if (selected === manualId.current) manualId.current = null;
@@ -62,8 +63,7 @@ export function VoiceTrainer({ replies, children }: { replies: VoiceReply[]; chi
       setNotice(reply ? "Voice example saved." : "Standalone voice example saved.");
       return;
     }
-    const postedNotice = reply?.posted ? "Posted wording saved." : "Reply marked as posted.";
-    setConfirmation(trainedVoice ? `${postedNotice} Voice example saved.` : postedNotice);
+    setConfirmation(postedReplyConfirmation(!!reply?.posted, trainedVoice, reason));
     startRefresh(() => router.refresh());
   }
 
@@ -99,12 +99,14 @@ export function VoiceTrainer({ replies, children }: { replies: VoiceReply[]; chi
 
 function VoiceExampleForm({ id, prepared, wording, manual, posted, pendingDraft, saving, setSaving, onDraft, onSaved }: {
   id: string; prepared: string; wording: string; manual: boolean; posted: boolean; pendingDraft?: Example; saving: boolean;
-  setSaving: (value: boolean) => void; onDraft: (value: Example | null) => void; onSaved: (recordedPosted: boolean, trainedVoice: boolean) => void;
+  setSaving: (value: boolean) => void; onDraft: (value: Example | null) => void;
+  onSaved: (recordedPosted: boolean, trainedVoice: boolean, reason: CorrectionReason | null) => void;
 }) {
   const [value, setValue] = useState<Example>(pendingDraft ?? { prepared_reply: prepared, posted_reply: wording, updated_at: null });
   const [phase, setPhase] = useState<"loading" | "ready" | "load-failed">(pendingDraft || manual ? "ready" : "loading");
   const [error, setError] = useState("");
   const [conflict, setConflict] = useState(false);
+  const canLabel = !manual && editedReply(value.prepared_reply, value.posted_reply);
 
   useEffect(() => {
     if (phase !== "loading") return;
@@ -127,7 +129,10 @@ function VoiceExampleForm({ id, prepared, wording, manual, posted, pendingDraft,
   }, [id, phase, prepared, wording]);
 
   function edit(field: "prepared_reply" | "posted_reply", text: string) {
-    const next = { ...value, [field]: text };
+    update({ ...value, [field]: text });
+  }
+
+  function update(next: Example) {
     setValue(next);
     onDraft(next);
   }
@@ -145,11 +150,14 @@ function VoiceExampleForm({ id, prepared, wording, manual, posted, pendingDraft,
     setError("");
     try {
       const res = await fetch("/api/replies/voice", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ item_id: id, prepared_reply: value.prepared_reply, posted_reply: value.posted_reply, expected_updated_at: value.updated_at }) });
+        body: JSON.stringify({ item_id: id, prepared_reply: value.prepared_reply, posted_reply: value.posted_reply, expected_updated_at: value.updated_at,
+          ...(canLabel ? { correction_reason: value.correction_reason ?? null } : {}) }) });
       const json = await res.json();
       if (res.status === 409 && json.code !== "delivery_in_progress") setConflict(true);
-      if (res.ok && json.ok) onSaved(json.recordedPosted === true, json.trainedVoice === true);
-      else setError(json.error || "Couldn’t save the voice example. Try again.");
+      if (res.ok && json.ok) {
+        const reason = json.example?.correction_reason;
+        onSaved(json.recordedPosted === true, json.trainedVoice === true, isCorrectionReason(reason) ? reason : null);
+      } else setError(json.error || "Couldn’t save the voice example. Try again.");
     } catch { setError("Couldn’t confirm the save. Try again."); }
     finally { setSaving(false); }
   }
@@ -164,6 +172,13 @@ function VoiceExampleForm({ id, prepared, wording, manual, posted, pendingDraft,
     <textarea id="voice-posted" className="answer-input reply-draft" rows={5} value={value.posted_reply}
       placeholder="Paste your posted wording" required maxLength={DRAFT_MAX} readOnly={locked}
       onChange={(event) => edit("posted_reply", event.target.value)} />
+    {canLabel && <label className="reply-label" htmlFor="voice-reason">What did you change? (optional)
+      <select id="voice-reason" className="answer-input" value={value.correction_reason ?? ""} disabled={locked}
+        onChange={event => update({ ...value, correction_reason: isCorrectionReason(event.target.value) ? event.target.value : null })}>
+        <option value="">No reason selected</option>
+        {Object.entries(CORRECTION_REASONS).map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+      </select>
+    </label>}
     {phase === "loading" && <p className="meta" role="status">Loading example…</p>}
     {error && <p className="error-text" role="alert">{error}</p>}
     <div className="confirm-row">
