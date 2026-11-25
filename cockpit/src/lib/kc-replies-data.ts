@@ -34,8 +34,15 @@ export async function queueReplyAction(v: ReplyActionInput): Promise<void> {
       }
     }
   }
-  await sbInsert("kc_fb_reply_actions", { item_id: v.id, action: v.action, base_revision: v.revision, draft: v.draft ?? null,
-    reason: v.reason ?? null, snooze_until: v.snooze_until ?? null });
+  try {
+    await sbInsert("kc_fb_reply_actions", { item_id: v.id, action: v.action, base_revision: v.revision, draft: v.draft ?? null,
+      reason: v.reason ?? null, snooze_until: v.snooze_until ?? null });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("reply_already_posted")) {
+      throw new ReplyAccessError("This reply is already posted. Refresh to see it in Done.");
+    }
+    throw error;
+  }
 }
 
 /** The weekly Page post lives only in the dashboard; nothing on the Mac posts it. */

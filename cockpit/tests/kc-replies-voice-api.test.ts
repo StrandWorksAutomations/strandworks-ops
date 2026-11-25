@@ -27,10 +27,27 @@ describe("Replies voice examples", () => {
     expect(sbRpc).not.toHaveBeenCalled();
   });
   it("loads the previous example and distinguishes a new example from a read error", async () => {
-    vi.mocked(sbSelect).mockResolvedValueOnce([]).mockResolvedValueOnce([pair]).mockRejectedValueOnce(new Error());
+    vi.mocked(sbSelect).mockResolvedValueOnce([]).mockResolvedValueOnce([]).mockResolvedValueOnce([pair]).mockRejectedValueOnce(new Error());
     expect(await (await GET(await request())).json()).toEqual({ example: null });
     expect(await (await GET(await request())).json()).toEqual({ example: pair });
     expect((await GET(await request())).status).toBe(502);
+  });
+  it("reopens a linked posting receipt without inventing a training example", async () => {
+    const receipt = { posted_reply: "My actual reply.", updated_at: "2026-11-25T00:01:00Z" };
+    vi.mocked(sbSelect).mockResolvedValueOnce([]).mockResolvedValueOnce([receipt]);
+    expect(await (await GET(await request())).json()).toEqual({ example: null, receipt });
+  });
+  it("records exact posted wording alone for a linked reply and keeps its revision", async () => {
+    const posted_reply = "  My reply.\n\n  Second line.  ";
+    const expected_updated_at = "2026-11-25T00:01:00Z";
+    vi.mocked(sbRpc).mockResolvedValue([{ prepared_reply: null, posted_reply, updated_at: "2026-11-25T00:02:00Z" }]);
+    const response = await POST(await request({ item_id: id, posted_reply, expected_updated_at }));
+    expect(await response.json()).toMatchObject({ ok: true, recordedPosted: true, trainedVoice: false, example: null });
+    expect(sbRpc).toHaveBeenCalledWith("kc_save_fb_posted_reply", { p_item_id: id, p_prepared_reply: null, p_posted_reply: posted_reply, p_expected_updated_at: expected_updated_at });
+  });
+  it("requires a genuine original for a standalone voice example", async () => {
+    expect((await POST(await request({ ...pair, item_id: "manual-12cb07fa-571a-492c-b01c-414d04dbc465", prepared_reply: "   " }))).status).toBe(400);
+    expect(sbRpc).not.toHaveBeenCalled();
   });
   it("accepts the dashboard host when Next normalizes its internal hostname", async () => {
     const req = await request(pair, true, "http://127.0.0.1:3111");
@@ -45,9 +62,23 @@ describe("Replies voice examples", () => {
   it.each([id, "manual-12cb07fa-571a-492c-b01c-414d04dbc465"])("saves a pair to voice storage for %s", async item_id => {
     vi.mocked(sbRpc).mockResolvedValue([pair]);
     expect((await POST(await request({ ...pair, item_id }))).status).toBe(200);
-    expect(sbRpc).toHaveBeenCalledWith("kc_save_fb_reply_voice_example", {
-      p_item_id: item_id, p_prepared_reply: "Happy to assist!", p_posted_reply: "Glad to help.", p_expected_updated_at: null,
+    expect(sbRpc).toHaveBeenCalledWith(item_id === id ? "kc_save_fb_posted_reply" : "kc_save_fb_reply_voice_example", {
+      p_item_id: item_id, p_prepared_reply: pair.prepared_reply, p_posted_reply: "Glad to help.", p_expected_updated_at: null,
     });
+  });
+  it("records the literal posted text and distinguishes a linked reply from a standalone example", async () => {
+    vi.mocked(sbRpc).mockResolvedValue([pair]);
+    const posted_reply = "First line.\n\n  Second line.";
+    expect(await (await POST(await request({ ...pair, posted_reply }))).json()).toMatchObject({ recordedPosted: true });
+    expect(sbRpc).toHaveBeenCalledWith("kc_save_fb_posted_reply", expect.objectContaining({ p_posted_reply: posted_reply }));
+    expect(await (await POST(await request({ ...pair, item_id: "manual-12cb07fa-571a-492c-b01c-414d04dbc465" }))).json()).toMatchObject({ recordedPosted: false });
+  });
+  it("keeps a delivery conflict retryable and a missing source distinct from a stale edit", async () => {
+    vi.mocked(sbRpc).mockRejectedValueOnce(new Error("rpc: reply_delivery_in_progress")).mockRejectedValueOnce(new Error("rpc: reply_missing"));
+    const busy = await POST(await request(pair));
+    expect(busy.status).toBe(409);
+    expect(await busy.json()).toMatchObject({ code: "delivery_in_progress" });
+    expect((await POST(await request(pair))).status).toBe(404);
   });
   it("reports an edit conflict and storage failures without claiming a save", async () => {
     vi.mocked(sbRpc).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error());

@@ -663,6 +663,14 @@ a.l-row:hover { background: var(--panel-2); text-decoration: none; }
 
 /* Facebook reply review (/replies) */
 .train-voice-button { min-height: 44px; padding: 8px 14px; letter-spacing: normal; }
+.reply-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+section[aria-labelledby="reply-statistics-heading"] .confirm-row { flex-wrap: wrap; }
+section[aria-labelledby="reply-statistics-heading"] .confirm-row .token-btn { flex: 0 0 auto; padding-inline: 12px; white-space: nowrap; }
+section[aria-labelledby="reply-statistics-heading"] th { overflow-wrap: normal; }
+@media (max-width: 600px) {
+  section[aria-labelledby="reply-statistics-heading"] .confirm-row label { flex: 1 1 40%; }
+  section[aria-labelledby="reply-statistics-heading"] .confirm-row input { display: block; max-width: 100%; }
+}
 .voice-dialog { width: min(36rem, calc(100% - 24px)); max-height: calc(100dvh - 32px); padding: 20px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--panel); color: var(--ink); overscroll-behavior: contain; }
 .voice-dialog::backdrop { background: rgba(0, 0, 0, .6); }
 .voice-dialog .section-head { align-items: center; margin-top: 0; }

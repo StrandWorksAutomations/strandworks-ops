@@ -33,7 +33,7 @@ export type KcReply = {
 };
 
 /** What happened after a group reply was posted, from the scan's read-only rechecks. */
-export type KcResults = { checks: number; checked_at: string; found: boolean; gone: boolean; reactions: number; replies: number; page_access?: KcPageAccess; prepared_reply?: string | null };
+export type KcResults = { checks: number; checked_at: string; found: boolean; gone: boolean; reactions: number; replies: number; page_access?: KcPageAccess; prepared_reply?: string | null; posted_at?: string | null };
 
 export const KINETIC_PAGE_ID = "61595378964295";
 export type KcPageAccess = {
