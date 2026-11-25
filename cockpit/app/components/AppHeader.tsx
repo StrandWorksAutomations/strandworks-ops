@@ -6,6 +6,7 @@ import { TextSize } from "./TextSize";
 import { ThemeToggle } from "./ThemeToggle";
 import { DashboardBridgeStatus } from "./DashboardBridgeStatus";
 import { PaymentCalendar } from "./PaymentCalendar";
+import { SessionActivity } from "./SessionActivity";
 
 // One header, including Operate and the sign-in screens. Native dialog keeps
 // keyboard focus inside the menu and returns focus to its opener on dismissal.
@@ -29,6 +30,7 @@ export function AppHeader({ title, sub, active = "", locked = false }: {
   }, [open]);
 
   return <>
+    {!locked && <SessionActivity />}
     <a className="skip-link" href="#main-content">Skip to content</a>
     <header className={`topbar${locked ? "" : " topbar-with-bot"}`}>
       <button type="button" className="header-button menu-toggle" aria-haspopup="dialog"

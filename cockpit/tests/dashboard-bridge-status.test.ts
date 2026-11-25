@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/session", () => ({ verifySessionToken: vi.fn(), cookieNames: { session: "cockpit-session" } }));
+vi.mock("@/lib/session", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/session")>(),
+  verifySessionToken: vi.fn(),
+  hasOwnerSession: vi.fn().mockResolvedValue(false),
+  authOpenUntil: () => null,
+}));
 vi.mock("@/lib/supabase-rest", () => ({ supabaseConfigured: vi.fn() }));
-import { verifySessionToken } from "@/lib/session";
+import { cookieNames, verifySessionToken } from "@/lib/session";
 import { supabaseConfigured } from "@/lib/supabase-rest";
 import {
   BRIDGE_HOST, BRIDGE_BUCKET, BRIDGE_OBJECT, BRIDGE_TOKEN_LABEL_PREFIX,
@@ -39,7 +44,7 @@ function response(value: unknown, status = 200) { return new Response(JSON.strin
 function post(body: unknown = payload(), authorization: string | null = `Bearer ${token}`) {
   return new NextRequest("http://localhost:3111/api/loop/agent/heartbeat", { method: "POST", headers: { "Content-Type": "application/json", ...(authorization ? { Authorization: authorization } : {}) }, body: JSON.stringify(body) });
 }
-function get() { return new NextRequest("http://localhost:3111/api/loop/agent-status", { headers: { Cookie: "cockpit-session=test-owner-session" } }); }
+function get() { return new NextRequest("http://localhost:3111/api/loop/agent-status", { headers: { Cookie: `${cookieNames.session}=test-owner-session` } }); }
 function permitToken() { vi.mocked(fetch).mockResolvedValueOnce(response([{ label: `${BRIDGE_TOKEN_LABEL_PREFIX}test` }])); }
 
 beforeEach(() => {

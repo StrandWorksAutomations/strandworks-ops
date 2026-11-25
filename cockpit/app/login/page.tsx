@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { AppHeader } from "../components/AppHeader";
-import { startAuthentication } from "@simplewebauthn/browser";
+import { signInWithPasskey } from "@/lib/passkey-login";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -13,23 +13,7 @@ export default function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      const optRes = await fetch("/api/auth/login-options", { method: "POST" });
-      if (optRes.status === 409) {
-        setError("No passkey enrolled yet. Owner setup: open /setup on the enrollment device.");
-        return;
-      }
-      if (!optRes.ok) throw new Error(`could not start login (HTTP ${optRes.status})`);
-      const options = await optRes.json();
-      const assertion = await startAuthentication({ optionsJSON: options });
-      const verifyRes = await fetch("/api/auth/login-verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(assertion),
-      });
-      if (!verifyRes.ok) {
-        const detail = await verifyRes.json().then(d => d?.error).catch(() => null);
-        throw new Error(detail ? `${detail} (HTTP ${verifyRes.status})` : `verification failed (HTTP ${verifyRes.status})`);
-      }
+      await signInWithPasskey();
       router.push("/operate");
       router.refresh();
     } catch (e) {

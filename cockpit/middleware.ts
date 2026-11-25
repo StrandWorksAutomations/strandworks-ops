@@ -2,13 +2,14 @@
 // POST authenticates its revocable agent token in its handler; browser routes
 // continue to require the owner's session.
 import { NextRequest, NextResponse } from "next/server";
-import { verifySessionToken, cookieNames } from "@/lib/session";
+import { authOpenUntil, hasOwnerSession, createSessionToken, matchesBrowserOrigin, cookieNames, sessionCookieOptions } from "@/lib/session";
 
 const PUBLIC_PATHS = [/^\/login$/, /^\/setup$/, /^\/api\/auth\//];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   if (PUBLIC_PATHS.some((re) => re.test(pathname))) return NextResponse.next();
+  if ((req.method === "GET" || req.method === "HEAD") && /^\/r\/[0-9a-f]{10,64}$/.test(pathname)) return NextResponse.next();
   if (["/api/loop/agent", "/api/loop/agent/heartbeat", "/api/loop/batches/agent"].includes(pathname) && req.method === "POST") return NextResponse.next();
 
   // Dev-only bridge: `?dev-session=<HMAC-signed token>` sets the session
@@ -17,7 +18,7 @@ export async function middleware(req: NextRequest) {
   // same HMAC as any session — this adds no new trust, only a delivery path.
   if (process.env.NODE_ENV !== "production") {
     const t = req.nextUrl.searchParams.get("dev-session");
-    if (t && (await verifySessionToken(t))) {
+    if (t && (await hasOwnerSession(t))) {
       const clean = req.nextUrl.clone();
       clean.searchParams.delete("dev-session");
       const res = NextResponse.redirect(clean);
@@ -33,12 +34,23 @@ export async function middleware(req: NextRequest) {
         path: "/",
         maxAge: 60 * 60,
       });
+      res.cookies.delete(cookieNames.locked);
       return res;
     }
   }
 
-  const ok = await verifySessionToken(req.cookies.get(cookieNames.session)?.value);
-  if (ok) return NextResponse.next();
+  if (!req.cookies.has(cookieNames.locked)) {
+    if (await hasOwnerSession(req.cookies.get(cookieNames.session)?.value)) {
+      const response = NextResponse.next();
+      // Existing dashboard tabs also renew on deliberate navigation and owner edits.
+      // Background reads, Next prefetches and the agent relays do not renew cookies.
+      const navigation = req.method === "GET" && req.headers.get("sec-fetch-mode") === "navigate" && req.headers.get("sec-fetch-user") === "?1";
+      const ownerEdit = req.method === "POST" && pathname.startsWith("/api/") && matchesBrowserOrigin(req);
+      if (navigation || ownerEdit) response.cookies.set(cookieNames.session, await createSessionToken(), sessionCookieOptions());
+      return response;
+    }
+    if (authOpenUntil() !== null) return NextResponse.next();
+  }
 
   if (pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });

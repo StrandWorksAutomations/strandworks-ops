@@ -57,7 +57,7 @@ async function verifyToken(token: string | undefined): Promise<Record<string, un
   if (diff !== 0) return null;
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf-8"));
-    if (typeof data.exp !== "number" || data.exp < Date.now()) return null;
+    if (typeof data.exp !== "number" || data.exp <= Date.now()) return null;
     return data;
   } catch {
     return null;
@@ -78,8 +78,19 @@ export function authOpenUntil(now = Date.now()): number | null {
 
 export async function verifySessionToken(token: string | undefined): Promise<boolean> {
   if (authOpenUntil() !== null) return true;
+  return hasOwnerSession(token);
+}
+
+// Only a previously signed-in owner may receive a renewed cookie. A temporary
+// open window provides access for its own duration and never mints a session.
+export async function hasOwnerSession(token: string | undefined): Promise<boolean> {
   const data = await verifyToken(token);
   return data?.sub === "owner";
+}
+
+export function matchesBrowserOrigin(req: Request): boolean {
+  const url = new URL(req.url);
+  return req.headers.get("origin") === `${url.protocol}//${req.headers.get("host") ?? url.host}`;
 }
 
 export async function createChallengeToken(challenge: string, purpose: "auth" | "register"): Promise<string> {
@@ -95,7 +106,7 @@ export async function verifyChallengeToken(
   return data.challenge;
 }
 
-export const cookieNames = { session: SESSION_COOKIE, challenge: CHALLENGE_COOKIE };
+export const cookieNames = { session: SESSION_COOKIE, challenge: CHALLENGE_COOKIE, locked: "cockpit_locked" };
 
 export function sessionCookieOptions() {
   return {

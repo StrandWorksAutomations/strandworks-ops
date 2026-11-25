@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
 
   const res = NextResponse.json({ ok: true });
   res.cookies.set(cookieNames.session, await createSessionToken(), sessionCookieOptions());
+  res.cookies.delete(cookieNames.locked);
   res.cookies.delete(cookieNames.challenge);
   return res;
 }
