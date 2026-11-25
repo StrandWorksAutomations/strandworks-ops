@@ -12,6 +12,8 @@ export function PagePostCard({ post }: { post: KcPagePost }) {
   const field = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState(post.draft);
   const [status, setStatus] = useState(post.status);
+  const [approvedDraft, setApprovedDraft] = useState(post.status === "approved" ? post.draft.trim() : null);
+  const approved = status === "approved" && draft.trim() === approvedDraft;
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function PagePostCard({ post }: { post: KcPagePost }) {
 
   async function approve() {
     setNote(copy());
-    if (await act("approve")) setStatus("approved");
+    if (await act("approve")) { setApprovedDraft(draft.trim()); setStatus("approved"); }
     else setNote(null);
   }
 
@@ -49,21 +51,21 @@ export function PagePostCard({ post }: { post: KcPagePost }) {
   return (
     <article className="card share-card">
       <div className="loop-meta">
-        <span className={`badge ${status === "approved" ? "ok" : ""}`}>{status === "approved" ? "approved" : "to review"}</span>
+        <span className={`badge ${approved ? "ok" : ""}`}>{approved ? "approved" : "to review"}</span>
         <span>Kinetic Clinician Page</span>
         <span>week {post.id.slice(-2)}</span>
       </div>
       <label className="meta reply-label" htmlFor={`post-${post.id}`}>Weekly post</label>
       <textarea ref={field} id={`post-${post.id}`} className="answer-input reply-draft" value={draft} maxLength={DRAFT_MAX} rows={14}
         readOnly={busy} onChange={(e) => setDraft(e.target.value)} />
-      <JobLinks reply={{ job_links: post.links }} />
+      <JobLinks reply={{ job_links: post.links }} controls={{ draft, onDraftChange: setDraft, disabled: busy }} />
       <div className="confirm-row">
-        {status === "approved" ? <>
+        {approved ? <>
           <button className="token-btn" disabled={busy} onClick={() => setNote(copy())}>Copy and open again</button>
           <button className="token-btn approve" disabled={busy} onClick={() => finish("posted")}>I posted it</button>
         </> : <>
           <button className="token-btn approve" disabled={busy || !draft.trim()} onClick={approve}>Approve, copy and open Page</button>
-          {draft.trim() !== post.draft.trim() ? <button className="token-btn" disabled={busy} onClick={() => act("save").then((ok) => ok && setNote("Edit saved."))}>Save edit</button> : null}
+          {draft.trim() !== post.draft.trim() ? <button className="token-btn" disabled={busy} onClick={() => act("save").then((ok) => { if (ok) { setStatus("draft"); setApprovedDraft(null); setNote("Edit saved."); } })}>Save edit</button> : null}
         </>}
         <button className="token-btn halt" disabled={busy} onClick={() => finish("dismiss")}>Skip this week</button>
       </div>

@@ -54,4 +54,16 @@ describe("reply actions enforce Page access on the server", () => {
     expect(rest.sbSelect).toHaveBeenCalledTimes(1);
     expect(rest.sbInsert).toHaveBeenCalledTimes(1);
   });
+  it("keeps a linked draft editable while enforcing the current group rule and disclosure on approval", async () => {
+    const draft = "See https://kineticclinician.com/jobs/.";
+    await queueReplyAction({ ...action, action: "save", draft });
+    for (const [policy, reason] of [["prohibited", "prohibits"], ["unknown", "unconfirmed"], ["allowed", "disclose"]]) {
+      rest.sbSelect.mockResolvedValueOnce([groupReply]).mockResolvedValueOnce([{ id: "1", stats: { promotion: policy, page_access: access } }]);
+      await expect(queueReplyAction({ ...action, draft })).rejects.toThrow(reason === "disclose" ? /I run Kinetic Clinician/ : reason);
+    }
+    expect(rest.sbInsert).toHaveBeenCalledTimes(1);
+    rest.sbSelect.mockResolvedValueOnce([groupReply]).mockResolvedValueOnce([{ id: "1", stats: { promotion: "allowed", page_access: access } }]);
+    await queueReplyAction({ ...action, draft: "I run Kinetic Clinician. " + draft });
+    expect(rest.sbInsert).toHaveBeenCalledTimes(2);
+  });
 });

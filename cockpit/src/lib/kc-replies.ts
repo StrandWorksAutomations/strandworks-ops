@@ -4,7 +4,10 @@
 // (dashboard_sync.py via page_api.py run). The cockpit never posts to Facebook: Page replies send
 // from the Mac after approval; group replies are posted by hand.
 
-export type KcJobLink = { label: string; url: string };
+export type KcJobDetail = { source_id: string; title: string; employer: string; location?: string; pay?: string;
+  employment_type?: string; details?: { label: string; value: string }[]; source_url?: string; checked_at: string; snapshot_source?: "website" | "match" };
+export type KcJobLink = { label: string; url: string; share_url?: string; original_url?: string; job?: KcJobDetail;
+  job_state?: "current" | "closed" | "unavailable"; job_checked_at?: string; match_recorded_at?: string };
 export type KcEvidence = { claim: string; source_url: string; checked_at: string; note: string };
 
 export type KcReply = {
@@ -72,7 +75,14 @@ export type KcGroup = {
 
 export type KcPagePost = { id: string; draft: string; links: KcJobLink[]; status: "draft" | "approved" | "posted" | "dismissed"; created_at: string };
 
-export type KcReplyAction = { id: number; item_id: string; action: ReplyActionKind; created_at: string; applied_at: string | null; result: string | null; snooze_until?: string | null };
+export type KcReplyAction = { id: number; item_id: string; action: ReplyActionKind; created_at: string; applied_at: string | null; result: string | null; snooze_until?: string | null; draft?: string | null; base_revision?: number };
+export type PendingReplyEdit = { action: "save" | "approve"; draft: string };
+
+/** The queue is read newest-first. Reload the exact submitted wording while the worker catches up. */
+export function pendingReplyEdit(actions: KcReplyAction[], reply: Pick<KcReply, "id" | "revision">): PendingReplyEdit | null {
+  const a = actions.find(a => a.item_id === reply.id && !a.applied_at && a.base_revision === reply.revision && (a.action === "save" || a.action === "approve"));
+  return a?.draft && (a.action === "save" || a.action === "approve") ? { action: a.action, draft: a.draft } : null;
+}
 
 export const REPLY_COLUMNS =
   "id,revision,status,source_kind,source_name,source_url,title,post_text,context,topic,draft,approved_draft,promotion,job_links,evidence,delivery_state,created_at,synced_at,kind,snoozed_until,results,summary";

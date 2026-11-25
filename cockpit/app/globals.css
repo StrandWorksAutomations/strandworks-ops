@@ -682,8 +682,19 @@ section[aria-labelledby="reply-statistics-heading"] th { overflow-wrap: normal; 
 .reply-draft { width: 100%; margin-top: 4px; font-size: 1rem; line-height: 1.45; resize: vertical; }
 .reply-label { display: block; margin-top: 12px; }
 .reply-jobs { margin: 8px 0; }
-.reply-jobs ul { margin: 4px 0 0; padding-left: 18px; }
+.reply-jobs ul { list-style: none; margin: 4px 0 0; padding: 0; }
 .reply-jobs li { margin: 4px 0; overflow-wrap: anywhere; }
+.reply-link-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.reply-link-line > a { flex: 1 1 160px; min-width: 0; }
+.reply-link-toggle { min-width: 44px; min-height: 44px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--ink); font-size: 1.25rem; cursor: pointer; }
+.reply-link-toggle[aria-pressed="true"] { color: var(--good); border-color: currentColor; }
+.reply-link-toggle:disabled { opacity: .55; cursor: default; }
+.reply-job-detail { margin: 0 0 8px 52px; }
+.reply-job-detail summary { cursor: pointer; padding: 5px 0; }
+.reply-job-facts { margin: 6px 0; }
+.reply-job-facts > div { display: flex; gap: 4px 12px; flex-wrap: wrap; }
+.reply-job-facts dt { color: var(--muted); }
+.reply-job-facts dd { margin: 0; }
 
 /* Login and first-run setup: a narrow centered panel outside the section rail. */
 .gate { max-width: 420px; margin: 0 auto; padding: 0 16px; }

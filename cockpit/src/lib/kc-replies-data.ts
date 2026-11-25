@@ -1,6 +1,8 @@
 import "server-only";
+import { approvalLinkIssue } from "./reply-link-editor";
+
 import { sbInsert, sbSelect, sbUpdate, supabaseConfigured } from "./supabase-rest";
-import { REPLY_COLUMNS, ReplyAccessError, facebookGroupId, isManual, pageAccessReady, replyGroupIds, replyPageAccess, type KcGroup, type KcPagePost, type KcReply, type KcReplyAction, type PagePostAction, type ReplyActionInput } from "./kc-replies";
+import { REPLY_COLUMNS, ReplyAccessError, facebookGroupId, isManual, pageAccessReady, replyGroupIds, replyLinkRule, replyPageAccess, type KcGroup, type KcPagePost, type KcReply, type KcReplyAction, type PagePostAction, type ReplyActionInput } from "./kc-replies";
 
 export type RepliesData = { replies: KcReply[]; actions: KcReplyAction[]; groups: KcGroup[]; pagePosts: KcPagePost[] };
 
@@ -10,7 +12,7 @@ export async function fetchReplies(): Promise<RepliesData | null> {
   try {
     const [replies, actions, groups, pagePosts] = await Promise.all([
       sbSelect<KcReply>("kc_fb_replies", `select=${REPLY_COLUMNS}&order=created_at.desc&limit=200`),
-      sbSelect<KcReplyAction>("kc_fb_reply_actions", `select=id,item_id,action,created_at,applied_at,result,snooze_until&created_at=gte.${since}&order=id.desc&limit=200`),
+      sbSelect<KcReplyAction>("kc_fb_reply_actions", `select=id,item_id,action,created_at,applied_at,result,snooze_until,draft,base_revision&created_at=gte.${since}&order=id.desc&limit=200`),
       sbSelect<KcGroup>("kc_fb_groups", "select=id,name,meta,lane,status,url,stats&order=name.asc&limit=1000").catch(() => []),
       sbSelect<KcPagePost>("kc_fb_page_posts", "select=id,draft,links,status,created_at&order=id.desc&limit=2").catch(() => []),
     ]);
@@ -29,6 +31,10 @@ export async function queueReplyAction(v: ReplyActionInput): Promise<void> {
       // Facebook may use a numeric ID in permalinks even when the saved group
       // uses its readable slug. Match only IDs/aliases from the synced list.
       const groups = groupId ? await sbSelect<KcGroup>("kc_fb_groups", "select=id,stats&limit=1000") : [];
+      if (v.action === "approve") {
+        const issue = approvalLinkIssue(v.draft ?? "", replyLinkRule(reply, groups).policy);
+        if (issue) throw new ReplyAccessError(issue);
+      }
       if (!pageAccessReady(replyPageAccess(reply, groups), groupId, replyGroupIds(reply, groups))) {
         throw new ReplyAccessError("Kinetic Clinician's access to comment in this group has not been confirmed. The existing draft is preserved; check the group's Page access first.");
       }
@@ -47,7 +53,7 @@ export async function queueReplyAction(v: ReplyActionInput): Promise<void> {
 
 /** The weekly Page post lives only in the dashboard; nothing on the Mac posts it. */
 export async function updatePagePost(v: { id: string; action: PagePostAction; draft?: string }): Promise<void> {
-  const status = { save: undefined, approve: "approved", posted: "posted", dismiss: "dismissed" }[v.action];
+  const status = { save: "draft", approve: "approved", posted: "posted", dismiss: "dismissed" }[v.action];
   await sbUpdate("kc_fb_page_posts", `id=eq.${v.id}`, { ...(v.draft ? { draft: v.draft } : {}), ...(status ? { status } : {}), updated_at: new Date().toISOString() });
 }
 

@@ -2,24 +2,13 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DISMISS_REASONS, DRAFT_MAX, SNOOZE_HOURS, STATUS_LABEL, facebookGroupId, isManual, pageAccessHelp, pageAccessLabel, pageAccessReady, safeLinks, type KcPageAccess, type KcReply, type ReplyActionKind } from "@/lib/kc-replies";
+import { DISMISS_REASONS, DRAFT_MAX, SNOOZE_HOURS, STATUS_LABEL, facebookGroupId, isManual, pageAccessHelp, pageAccessLabel, pageAccessReady, type KcPageAccess, type KcReply, type PendingReplyEdit, type ReplyActionKind } from "@/lib/kc-replies";
+import { approvalLinkIssue } from "@/lib/reply-link-editor";
+import { JobLinks } from "./JobLinks";
+export { JobLinks } from "./JobLinks";
 import { LinkRule } from "./LinkRule";
 import { TrainVoiceButton } from "./VoiceTrainer";
 import type { ReplyLinkRule } from "@/lib/kc-replies";
-
-// The employer pages behind the facts in the draft. Shown to the owner only; never part of the reply.
-export function JobLinks({ reply }: { reply: Pick<KcReply, "job_links"> }) {
-  const links = safeLinks(reply.job_links);
-  if (!links.length) return null;
-  return (
-    <div className="reply-jobs">
-      <div className="meta">Check the jobs this reply mentions (not part of the reply)</div>
-      <ul>
-        {links.map((l) => <li key={l.url}><a href={l.url} target="_blank" rel="noopener noreferrer nofollow">{l.label} ↗</a></li>)}
-      </ul>
-    </div>
-  );
-}
 
 // Copies synchronously (select + execCommand) so it still counts as part of the click,
 // then opens the post; both must happen inside the click for the browser to allow them.
@@ -36,11 +25,13 @@ export function copyAndOpen(field: HTMLTextAreaElement | null, text: string, url
   return copied || !!navigator.clipboard;
 }
 
-export function ReplyCard({ reply, pageAccess, linkRule = { policy: "unknown", note: "", checked: "" }, groupAliases = [], approvedPending = false, waiting, lastResult, received }: { reply: KcReply; pageAccess?: KcPageAccess | null; linkRule?: ReplyLinkRule; groupAliases?: string[]; approvedPending?: boolean; waiting: string | null; lastResult: string | null; received: string }) {
+export function ReplyCard({ reply, pageAccess, linkRule = { policy: "unknown", note: "", checked: "" }, groupAliases = [], pendingEdit = null, waiting, lastResult, received }: { reply: KcReply; pageAccess?: KcPageAccess | null; linkRule?: ReplyLinkRule; groupAliases?: string[]; pendingEdit?: PendingReplyEdit | null; waiting: string | null; lastResult: string | null; received: string }) {
   const router = useRouter();
   const field = useRef<HTMLTextAreaElement>(null);
-  const [draft, setDraft] = useState(reply.approved_draft ?? reply.draft);
-  const [approvedText, setApprovedText] = useState<string | null>(approvedPending ? reply.draft : reply.status === "approved" ? reply.approved_draft : null);
+  const initialDraft = pendingEdit?.draft ?? reply.approved_draft ?? reply.draft;
+  const [draft, setDraft] = useState(initialDraft);
+  const [savedText, setSavedText] = useState(initialDraft);
+  const [approvedText, setApprovedText] = useState<string | null>(pendingEdit ? (pendingEdit.action === "approve" ? pendingEdit.draft : null) : reply.status === "approved" ? initialDraft : null);
   const [gone, setGone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +40,9 @@ export function ReplyCard({ reply, pageAccess, linkRule = { policy: "unknown", n
   const manual = isManual(reply);
   const pageReady = !manual || pageAccessReady(pageAccess, facebookGroupId(reply.source_url), groupAliases);
   const approved = approvedText !== null;
-  const edited = draft.trim() !== (approvedText ?? reply.draft).trim();
+  const edited = draft.trim() !== (approvedText ?? savedText).trim();
   const finished = reply.status === "posted" || reply.status === "dismissed" || !!reply.delivery_state;
+  const linkIssue = manual ? approvalLinkIssue(draft, linkRule.policy) : null;
 
   async function act(action: ReplyActionKind, extra: { reason?: string; hours?: number } = {}): Promise<boolean> {
     setBusy(true);
@@ -66,7 +58,7 @@ export function ReplyCard({ reply, pageAccess, linkRule = { policy: "unknown", n
   }
 
   async function approve() {
-    if (!pageReady) return;
+    if (!pageReady || !!linkIssue) return;
     const text = draft.trim();
     if (manual) {
       const copied = copyAndOpen(field.current, text, reply.source_url);
@@ -86,7 +78,7 @@ export function ReplyCard({ reply, pageAccess, linkRule = { policy: "unknown", n
   return (
     <article className="card share-card" id={reply.id}>
       <div className="loop-meta">
-        <span className={`badge ${!pageReady ? "warn" : approved ? "ok" : reply.status === "needs_context" ? "warn" : ""}`}>{reply.delivery_state ?? (!pageReady ? "held for Page access" : approved ? "approved" : STATUS_LABEL[reply.status] ?? reply.status)}</span>
+        <span className={`badge ${!pageReady ? "warn" : approved && !edited ? "ok" : reply.status === "needs_context" ? "warn" : ""}`}>{reply.delivery_state ?? (!pageReady ? "held for Page access" : approved && !edited ? "approved" : reply.status === "approved" ? "to review" : STATUS_LABEL[reply.status] ?? reply.status)}</span>
         <span>{reply.source_name}</span>
         <span>{received}</span>
         {reply.kind === "follow_up" ? <span className="chip">reply to your comment</span> : null}
@@ -103,10 +95,11 @@ export function ReplyCard({ reply, pageAccess, linkRule = { policy: "unknown", n
         <strong>{pageAccessLabel(pageAccess)}.</strong> {pageAccessHelp(pageAccess)}
         {pageAccess?.note ? <> {pageAccess.note}</> : null}
       </p> : null}
-      <label className="meta reply-label" htmlFor={`draft-${reply.id}`}>{approved ? "Approved reply" : "Suggested reply"}</label>
+      <label className="meta reply-label" htmlFor={`draft-${reply.id}`}>{approved && !edited ? "Approved reply" : "Suggested reply"}</label>
       <textarea ref={field} id={`draft-${reply.id}`} className="answer-input reply-draft" value={draft} maxLength={DRAFT_MAX} rows={7}
         readOnly={finished || busy} onChange={(e) => setDraft(e.target.value)} />
-      <JobLinks reply={reply} />
+      <JobLinks reply={reply} controls={{ draft, onDraftChange: setDraft, disabled: finished || busy, group: manual }} />
+      {linkIssue && <p className="meta" role="status">{linkIssue}</p>}
       {reply.evidence.length ? (
         <details><summary className="meta">Facts given to the drafter ({reply.evidence.length})</summary>
           {reply.evidence.map((e) => <p key={e.claim} className="meta">{e.claim}</p>)}
@@ -116,12 +109,12 @@ export function ReplyCard({ reply, pageAccess, linkRule = { policy: "unknown", n
       {finished ? null : (
         <div className="confirm-row">
           {approved && !edited ? <>
-            {manual ? <button className="token-btn" disabled={busy || !pageReady} onClick={() => setDone(copyAndOpen(field.current, approvedText ?? draft, reply.source_url) ? "Copied and opened the post. Confirm the comment box says Kinetic Clinician." : "Opened the post. Copy failed; select the reply and copy it.")}>Copy and open again</button> : null}
+            {manual ? <button className="token-btn" disabled={busy || !pageReady || !!linkIssue} onClick={() => setDone(copyAndOpen(field.current, approvedText ?? draft, reply.source_url) ? "Copied and opened the post. Confirm the comment box says Kinetic Clinician." : "Opened the post. Copy failed; select the reply and copy it.")}>Copy and open again</button> : null}
             {manual ? <button className="token-btn approve" disabled={busy || !pageReady} onClick={() => close("posted")}>I posted as Kinetic Clinician</button>
               : <span className="meta">Sends from the Page automatically.</span>}
           </> : <>
-            <button className="token-btn approve" disabled={busy || !draft.trim() || !pageReady} onClick={approve}>{manual ? "Approve, copy and open post" : edited ? "Save and approve" : "Approve"}</button>
-            {edited ? <button className="token-btn" disabled={busy} onClick={() => act("save").then((ok) => ok && setDone("Edit saved."))}>Save edit</button> : null}
+            <button className="token-btn approve" disabled={busy || !draft.trim() || !pageReady || !!linkIssue} onClick={approve}>{manual ? "Approve, copy and open post" : edited ? "Save and approve" : "Approve"}</button>
+            {edited ? <button className="token-btn" disabled={busy} onClick={() => act("save").then((ok) => { if (ok) { setSavedText(draft.trim()); setApprovedText(null); setDone("Edit saved."); } })}>Save edit</button> : null}
           </>}
           <button className="token-btn halt" disabled={busy} aria-expanded={asking} onClick={() => setAsking(!asking)}>Dismiss</button>
           <TrainVoiceButton itemId={reply.id} />
