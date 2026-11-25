@@ -1,5 +1,17 @@
 import { expect, it } from "vitest";
-import { countReplies, readPageviews, replyCsv, replyRange, total, type OutcomeFact, type EngagementFact } from "../src/lib/reply-stats";
+import { countReplies, readPageviews, replyCsv, replyRange, total, weeklyDraftEdits, type OutcomeFact, type EngagementFact } from "../src/lib/reply-stats";
+
+it("groups dated posted comparisons by Monday within the chosen range and retains missing coverage", () => {
+  const day = (day: string, as_drafted: number, edited: number, missing: number) => ({ day, as_drafted, edited, missing });
+  expect(weeklyDraftEdits([
+    day("2026-11-07", 9, 0, 0), day("2026-11-08", 1, 0, 1), day("2026-11-09", 2, 1, 0),
+    day("2026-11-11", 0, 1, 2), day("2026-11-12", 0, 5, 0), day("undated", 0, 1, 1),
+  ], "2026-11-08", "2026-11-11")).toEqual({
+    totals: { as_drafted: 3, edited: 2, missing: 3 }, undated: 2,
+    weeks: [day("2026-11-09", 2, 2, 2), day("2026-11-02", 1, 0, 1)],
+  });
+  expect(weeklyDraftEdits([], "2026-11-08", "2026-11-11").weeks).toEqual([]);
+});
 
 const ledger = (over: Partial<OutcomeFact>): OutcomeFact => ({ item_id: "A", platform: "facebook", source_kind: "public_group",
   posted_at: "2026-11-24T02:32:00Z", source_url: "https://www.facebook.com/groups/111/posts/222", ...over });

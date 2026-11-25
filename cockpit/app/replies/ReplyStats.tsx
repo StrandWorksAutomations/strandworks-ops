@@ -1,7 +1,7 @@
 import { readRepoFile } from "@/lib/repo";
 import { sbSelect } from "@/lib/supabase-rest";
 import { ownerDay } from "@/lib/owner-loop";
-import { countReplies, readPageviews, type EngagementFact, type JobClickDay, type OutcomeFact } from "@/lib/reply-stats";
+import { countReplies, readPageviews, type DraftEditDay, type EngagementFact, type JobClickDay, type OutcomeFact } from "@/lib/reply-stats";
 import { ReplyStatsPanel } from "./ReplyStatsPanel";
 
 async function allRows<T>(table: string, query: string, id: keyof T & string): Promise<T[]> {
@@ -17,11 +17,12 @@ async function allRows<T>(table: string, query: string, id: keyof T & string): P
 }
 
 export async function ReplyStats() {
-  const [ledger, engagement, traffic, clicks] = await Promise.allSettled([
+  const [ledger, engagement, traffic, clicks, draftEdits] = await Promise.allSettled([
     allRows<OutcomeFact>("kc_reply_outcomes", "select=item_id,platform,source_kind,source_url,posted_at", "item_id"),
     allRows<EngagementFact>("kc_engagement_items", "select=id,network,external_id,post_external_id,post_url,status,delivery_result&or=(status.eq.sent,and(status.eq.dismissed,delivery_result.eq.Already%20answered%20on%20the%20network.))", "id"),
     readRepoFile("registers/kc-website-pageviews.json"),
     allRows<JobClickDay>("kc_reply_site_job_click_days", "select=day,job_clicks", "day"),
+    allRows<DraftEditDay>("kc_reply_draft_edit_days", "select=day,as_drafted,edited,missing", "day"),
   ]);
   const missed = [ledger.status === "rejected" && "the Replies ledger", engagement.status === "rejected" && "Engagement"].filter(Boolean);
   return <section className="section" aria-labelledby="reply-statistics-heading">
@@ -31,6 +32,7 @@ export async function ReplyStats() {
       <ReplyStatsPanel counts={countReplies(ledger.status === "fulfilled" ? ledger.value : [], engagement.status === "fulfilled" ? engagement.value : [])}
         views={readPageviews(traffic.status === "fulfilled" ? traffic.value : null)} today={ownerDay(new Date().toISOString())}
         clicks={clicks.status === "fulfilled" ? Object.fromEntries(clicks.value.map(r => [r.day, r.job_clicks])) : null}
+        draftEdits={draftEdits.status === "fulfilled" ? draftEdits.value : null}
         facebookAvailable={ledger.status === "fulfilled"} engagementAvailable={engagement.status === "fulfilled"} />
     </>}
   </section>;

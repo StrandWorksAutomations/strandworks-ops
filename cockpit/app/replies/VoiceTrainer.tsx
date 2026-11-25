@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { DRAFT_MAX } from "@/lib/kc-replies";
+import { ReplyInstructionsEditor } from "./ReplyInstructionsEditor";
 
 export type VoiceReply = { id: string; label: string; prepared: string | null; posted: boolean; wording: string | null };
 type Example = { prepared_reply: string; posted_reply: string; updated_at: string | null };
@@ -21,6 +22,7 @@ export function VoiceTrainer({ replies, children }: { replies: VoiceReply[]; chi
   const drafts = useRef(new Map<string, Example>());
   const [selected, setSelected] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [instructions, setInstructions] = useState(false);
   const [refreshing, startRefresh] = useTransition();
   const [confirmation, setConfirmation] = useState("");
   const [notice, setNotice] = useState("");
@@ -46,6 +48,7 @@ export function VoiceTrainer({ replies, children }: { replies: VoiceReply[]; chi
   }
 
   function open(id?: string) {
+    setInstructions(false);
     setSelected(id ?? manualId.current ?? replies.find((r) => r.prepared)?.id ?? replies[0]?.id ?? manualExample());
     setNotice("");
     dialog.current?.showModal();
@@ -72,7 +75,12 @@ export function VoiceTrainer({ replies, children }: { replies: VoiceReply[]; chi
       <div className="section-head"><h2 id="voice-trainer-title" tabIndex={-1} autoFocus>Train Voice</h2>
         <button type="button" className="header-button" disabled={busy} onClick={() => dialog.current?.close()}>Close</button>
       </div>
-      {selected && <>
+      {selected && <div className="confirm-row" role="group" aria-label="Train Voice options">
+        <button type="button" className={instructions ? "token-btn" : "token-btn blessed"} aria-pressed={!instructions} disabled={busy} onClick={() => setInstructions(false)}>Reply example</button>
+        <button type="button" className={instructions ? "token-btn blessed" : "token-btn"} aria-pressed={instructions} disabled={busy} onClick={() => setInstructions(true)}>Reply instructions</button>
+      </div>}
+      <ReplyInstructionsEditor active={!!selected && instructions} saving={busy} setSaving={setSaving} />
+      {selected && !instructions && <>
         {replies.length > 0 && <label className="reply-label">Reply
           <select className="answer-input" disabled={busy} value={reply?.id ?? "manual"}
             onChange={(event) => setSelected(event.target.value === "manual" ? manualExample() : event.target.value)}>

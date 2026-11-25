@@ -86,6 +86,26 @@ export function countReplies(ledger: OutcomeFact[], engagement: EngagementFact[]
 
 export type Pageviews = Record<string, number>;
 export type JobClickDay = { day: string; job_clicks: number };
+export type DraftEditDay = { day: string; as_drafted: number; edited: number; missing: number };
+
+export function weeklyDraftEdits(days: DraftEditDay[], start: string, end: string) {
+  const weeks = new Map<string, DraftEditDay>();
+  const totals = { as_drafted: 0, edited: 0, missing: 0 };
+  let undated = 0;
+  for (const row of days) {
+    if (row.day === "undated") { undated += row.as_drafted + row.edited + row.missing; continue; }
+    if (row.day < start || row.day > end) continue;
+    const weekday = new Date(row.day + "T12:00:00Z").getUTCDay();
+    const monday = addDays(row.day, -((weekday + 6) % 7));
+    const week = weeks.get(monday) ?? { day: monday, as_drafted: 0, edited: 0, missing: 0 };
+    for (const key of ["as_drafted", "edited", "missing"] as const) {
+      week[key] += row[key];
+      totals[key] += row[key];
+    }
+    weeks.set(monday, week);
+  }
+  return { totals, weeks: Array.from(weeks.values()).sort((a, b) => b.day.localeCompare(a.day)), undated };
+}
 export function readPageviews(raw: string | null): Pageviews {
   if (!raw) return {};
   try {
